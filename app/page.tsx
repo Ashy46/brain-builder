@@ -13,6 +13,9 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { convertJsonToFlow } from "./utils/nodeConverter";
+import { Button } from "@/components/ui/button";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const defaultJson = {
   id: "1",
@@ -67,25 +70,57 @@ export default function Home() {
     }
   };
 
+  const handleFormatJson = () => {
+    try {
+      const jsonData = JSON.parse(jsonInput);
+      setJsonInput(JSON.stringify(jsonData, null, 2));
+    } catch (error) {
+      alert("Invalid JSON format");
+    }
+  };
+
   return (
-    <div className="h-screen w-screen flex">
-      <div className="w-1/3 p-4 border-r">
-        <label htmlFor="json-input" className="block mb-2 font-medium">
-          Node Structure (JSON)
-        </label>
-        <textarea
-          id="json-input"
-          className="w-full h-96 p-2 font-mono text-sm"
-          value={jsonInput}
-          onChange={(e) => setJsonInput(e.target.value)}
-          placeholder="Enter JSON structure for nodes..."
-        />
-        <button
-          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          onClick={handleJsonSubmit}
-        >
+    <div className="h-screen w-screen flex bg-background">
+      <div className="w-1/3 p-4 border-r border-border flex flex-col">
+        <div className="flex justify-between items-center mb-2">
+          <label htmlFor="json-input" className="font-medium">
+            Node Structure (JSON)
+          </label>
+          <Button variant="outline" size="sm" onClick={handleFormatJson}>
+            Format JSON
+          </Button>
+        </div>
+        <div className="relative flex-1 rounded-md border border-border">
+          <textarea
+            id="json-input"
+            className="absolute inset-0 w-full h-full p-2 font-mono text-sm bg-transparent resize-none outline-none text-transparent caret-foreground selection:bg-muted"
+            value={jsonInput}
+            onChange={(e) => setJsonInput(e.target.value)}
+            placeholder="Enter JSON structure for nodes..."
+            spellCheck={false}
+          />
+          <SyntaxHighlighter
+            language="json"
+            style={vscDarkPlus}
+            customStyle={{
+              margin: 0,
+              height: "100%",
+              background: "transparent",
+              padding: "0.5rem",
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+            }}
+            showLineNumbers
+            wrapLines
+            wrapLongLines
+          >
+            {jsonInput}
+          </SyntaxHighlighter>
+        </div>
+        <Button className="mt-2" onClick={handleJsonSubmit}>
           Update Graph
-        </button>
+        </Button>
       </div>
       <div className="flex-1">
         <ReactFlow
@@ -95,6 +130,7 @@ export default function Home() {
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           fitView
+          className="bg-muted"
         >
           <Background />
           <Controls />
