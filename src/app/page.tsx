@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 import { Node, Edge } from "@xyflow/react";
-import { JsonEditor } from "./components/JsonEditor";
-import { Graph } from "./components/Graph";
+
 import { convertJsonToFlow } from "@/lib/utils/flow";
+
+import { Graph } from "@/components/graph";
+import { CodeEditor } from "@/components/code-editor";
 
 const defaultJson = {
   id: "1",
@@ -34,6 +37,17 @@ export default function Home() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
 
+  useEffect(() => {
+    try {
+      const jsonData = JSON.parse(jsonInput);
+      const { nodes: newNodes, edges: newEdges } = convertJsonToFlow(jsonData);
+      setNodes(newNodes);
+      setEdges(newEdges);
+    } catch (error) {
+      console.error("Error loading initial JSON:", error);
+    }
+  }, []);
+
   const handleJsonSubmit = () => {
     try {
       const jsonData = JSON.parse(jsonInput);
@@ -48,11 +62,7 @@ export default function Home() {
   return (
     <div className="h-screen w-screen flex bg-background">
       <div className="w-1/3 p-4 border-r border-border">
-        <JsonEditor
-          jsonInput={jsonInput}
-          onJsonChange={setJsonInput}
-          onSubmit={handleJsonSubmit}
-        />
+        <CodeEditor value={jsonInput} onChange={setJsonInput} language="json" />
       </div>
       <div className="flex-1">
         <Graph

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef, forwardRef, useImperativeHandle } from "react";
 
 import {
   ReactFlow,
@@ -11,24 +11,39 @@ import {
   addEdge,
   Node,
   Edge,
+  ReactFlowInstance,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
 import { cn } from "@/lib/utils";
 
-export function Graph({
-  nodes,
-  edges,
-  onNodesChange,
-  onEdgesChange,
-  className,
-}: {
+export interface GraphRef {
+  fitView: () => void;
+}
+
+export const Graph = forwardRef<GraphRef, {
   nodes: Node[];
   edges: Edge[];
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
+  onNodeClick?: (node: Node) => void;
   className?: string;
-}) {
+}>(({
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  onNodeClick,
+  className,
+}, ref) => {
+  const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    fitView: () => {
+      reactFlowInstance.current?.fitView();
+    }
+  }));
+
   const onNodesChangeCallback = useCallback(
     (changes: any) => onNodesChange(applyNodeChanges(changes, nodes)),
     [nodes, onNodesChange]
@@ -50,6 +65,10 @@ export function Graph({
         edges={edges}
         onEdgesChange={onEdgesChangeCallback}
         onConnect={onConnect}
+        onNodeClick={(_, node) => onNodeClick?.(node)}
+        onInit={(instance) => {
+          reactFlowInstance.current = instance;
+        }}
         fitView
         className="bg-muted"
       >
@@ -58,4 +77,4 @@ export function Graph({
       </ReactFlow>
     </div>
   );
-}
+});

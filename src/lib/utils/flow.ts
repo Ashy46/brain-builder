@@ -1,4 +1,4 @@
-import { Node, Edge, XYPosition } from "@xyflow/react";
+import { Node, Edge } from "@xyflow/react";
 
 import { JsonNode } from "@/types/flow";
 
@@ -63,7 +63,30 @@ export function convertJsonToFlow(jsonNode: JsonNode): {
   nodes: Node[];
   edges: Edge[];
 } {
-  const startPosition = { x: 0, y: 0 };
-  const result = calculateNodePositions(jsonNode, startPosition);
-  return { nodes: result.nodes, edges: result.edges };
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  function processNode(node: JsonNode, level: number = 0) {
+    const currentNode: Node = {
+      id: node.id,
+      position: node.position || { x: 0, y: 0 },
+      data: { label: node.label },
+      type: level === 0 ? "input" : "default",
+    };
+    nodes.push(currentNode);
+
+    if (node.children) {
+      node.children.forEach((child) => {
+        processNode(child, level + 1);
+        edges.push({
+          id: `${node.id}-${child.id}`,
+          source: node.id,
+          target: child.id,
+        });
+      });
+    }
+  }
+
+  processNode(jsonNode);
+  return { nodes, edges };
 }
