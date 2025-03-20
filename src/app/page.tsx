@@ -1,12 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
-import { Node, Edge } from "@xyflow/react";
-
-import { convertJsonToFlow } from "@/lib/utils/flow";
-
-import { Graph } from "@/components/graph";
+import { useState, useEffect, useRef } from "react";
+import { Graph, GraphRef } from "@/components/graph";
 import { CodeEditor } from "@/components/code-editor";
 
 const defaultJson = {
@@ -34,42 +29,49 @@ export default function Home() {
   const [jsonInput, setJsonInput] = useState(
     JSON.stringify(defaultJson, null, 2)
   );
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
-
-  useEffect(() => {
-    try {
-      const jsonData = JSON.parse(jsonInput);
-      const { nodes: newNodes, edges: newEdges } = convertJsonToFlow(jsonData);
-      setNodes(newNodes);
-      setEdges(newEdges);
-    } catch (error) {
-      console.error("Error loading initial JSON:", error);
-    }
-  }, []);
+  const graphRef = useRef<GraphRef>(null);
 
   const handleJsonSubmit = () => {
     try {
       const jsonData = JSON.parse(jsonInput);
-      const { nodes: newNodes, edges: newEdges } = convertJsonToFlow(jsonData);
-      setNodes(newNodes);
-      setEdges(newEdges);
+      setJsonInput(JSON.stringify(jsonData, null, 2));
     } catch (error) {
       alert("Invalid JSON format");
     }
   };
 
+  const handleJsonChange = (newJson: any) => {
+    setJsonInput(JSON.stringify(newJson, null, 2));
+  };
+
+  const handleAddNode = () => {
+    graphRef.current?.addNode();
+  };
+
   return (
     <div className="h-screen w-screen flex bg-background">
-      <div className="w-1/3 p-4 border-r border-border">
+      <div className="w-1/3 p-4 border-r border-border flex flex-col">
+        <div className="mb-4 flex gap-2">
+          <button
+            onClick={handleAddNode}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            Add New Node
+          </button>
+          <button
+            onClick={handleJsonSubmit}
+            className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90"
+          >
+            Apply JSON
+          </button>
+        </div>
         <CodeEditor value={jsonInput} onChange={setJsonInput} language="json" />
       </div>
       <div className="flex-1">
         <Graph
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={setNodes}
-          onEdgesChange={setEdges}
+          ref={graphRef}
+          initialJson={JSON.parse(jsonInput)}
+          onJsonChange={handleJsonChange}
         />
       </div>
     </div>

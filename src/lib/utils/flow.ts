@@ -5,7 +5,7 @@ import { JsonNode } from "@/types/flow";
 const VERTICAL_SPACING = 100;
 const HORIZONTAL_SPACING = 200;
 
-function calculateNodePositions(
+export function calculateNodePositions(
   jsonNode: JsonNode,
   startPosition: XYPosition,
   level: number = 0
