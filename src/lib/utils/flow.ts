@@ -1,4 +1,4 @@
-import { Node, Edge } from "@xyflow/react";
+import { Node, Edge, XYPosition } from "@xyflow/react";
 
 import { JsonNode } from "@/types/flow";
 
