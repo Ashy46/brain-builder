@@ -1,35 +1,30 @@
 import Editor from "@monaco-editor/react";
 
-interface CodeEditorProps {
-  value: string;
-  onChange: (value: string) => void;
-  language?: string;
-  readOnly?: boolean;
-  height?: string;
-  width?: string;
-}
+import { cn } from "@/lib/utils";
 
 export function CodeEditor({
   value,
   onChange,
   language = "plaintext",
   readOnly = false,
-  height = "100%",
-  width = "100%",
-}: CodeEditorProps) {
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  language?: string;
+  readOnly?: boolean;
+  className?: string;
+}) {
   const handleEditorChange = (value: string | undefined) => {
     onChange(value || "");
   };
 
   return (
     <div
-      style={{
-        height,
-        width,
-        border: "1px solid var(--border)",
-        borderRadius: "0.375rem",
-        overflow: "hidden",
-      }}
+      className={cn(
+        "h-full w-full border border-border rounded-md overflow-hidden",
+        className
+      )}
     >
       <Editor
         height="100%"
@@ -40,9 +35,9 @@ export function CodeEditor({
           readOnly,
           fontSize: 14,
           lineNumbers: "on",
-          minimap: { enabled: false },
+          minimap: { enabled: true },
           scrollBeyondLastLine: false,
-          roundedSelection: false,
+          roundedSelection: true,
           scrollbar: {
             vertical: "visible",
             horizontal: "visible",
@@ -52,9 +47,6 @@ export function CodeEditor({
           folding: true,
           renderWhitespace: "selection",
           renderLineHighlight: "all",
-          bracketPairColorization: {
-            enabled: true,
-          },
           guides: {
             indentation: true,
             bracketPairs: true,
