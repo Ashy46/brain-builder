@@ -1,5 +1,5 @@
 import Editor from "@monaco-editor/react";
-
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 
 export function CodeEditor({
@@ -15,6 +15,8 @@ export function CodeEditor({
   readOnly?: boolean;
   className?: string;
 }) {
+  const { theme } = useTheme();
+  
   const handleEditorChange = (value: string | undefined) => {
     onChange(value || "");
   };
@@ -31,6 +33,7 @@ export function CodeEditor({
         defaultLanguage={language}
         defaultValue={value}
         onChange={handleEditorChange}
+        theme={theme === "dark" ? "vs-dark" : "light"}
         options={{
           readOnly,
           fontSize: 14,
