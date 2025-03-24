@@ -1,26 +1,23 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
-import { Loader2, Code2 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { Loader2, ChevronLeft } from "lucide-react";
 
 import { Graph, GraphRef } from "@/app/dashboard/graphs/[id]/graph";
-import { CodeEditor } from "@/app/dashboard/graphs/[id]/code-editor";
 import { createClient } from "@/lib/supabase/client/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
 export default function GraphPage() {
   const { id } = useParams();
   const { user } = useAuth();
   const supabase = createClient();
   const graphRef = useRef<GraphRef>(null);
+  const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(true);
   const [graphData, setGraphData] = useState<any>(null);
-  const [jsonInput, setJsonInput] = useState("");
-  const [showJsonEditor, setShowJsonEditor] = useState(false);
 
   useEffect(() => {
     async function fetchGraph() {
@@ -40,43 +37,48 @@ export default function GraphPage() {
       }
 
       // Validate the graph data structure
-      if (!data || !data.json || !data.json.id || !data.json.label) {
+      if (!data || !Array.isArray(data.nodes)) {
         console.error("Invalid graph data structure:", data);
         return;
       }
 
-      setGraphData(data);
-      setJsonInput(JSON.stringify(data.json, null, 2));
+      // Convert nodes array to expected JSON format
+      const rootNode = {
+        id: "root",
+        label: data.name || "Root",
+        children: data.nodes.map((node: any) => ({
+          id: node.id || String(Math.random()),
+          label: node.label || "Node",
+          position: node.position,
+          children: [],
+        })),
+      };
+
+      setGraphData({ ...data, json: rootNode });
       setIsLoading(false);
     }
 
     fetchGraph();
   }, [user, id, supabase]);
 
-  const handleJsonSubmit = async () => {
-    try {
-      const jsonData = JSON.parse(jsonInput);
-      setJsonInput(JSON.stringify(jsonData, null, 2));
+  const handleJsonChange = async (json: any) => {
+    const nodes = json.children.map((node: any) => ({
+      id: node.id,
+      label: node.label,
+      position: node.position,
+    }));
 
-      // Update the graph in the database
-      const { error } = await supabase
-        .from("graphs")
-        .update({ json: jsonData })
-        .eq("id", id);
+    const { error } = await supabase
+      .from("graphs")
+      .update({ nodes })
+      .eq("id", id);
 
-      if (error) {
-        console.error("Error updating graph:", error);
-        return;
-      }
-
-      setGraphData((prev: any) => ({ ...prev, json: jsonData }));
-    } catch (error) {
-      alert("Invalid JSON format");
+    if (error) {
+      console.error("Error updating graph:", error);
+      return;
     }
-  };
 
-  const handleJsonChange = (newJson: any) => {
-    setJsonInput(JSON.stringify(newJson, null, 2));
+    setGraphData((prev: any) => ({ ...prev, json }));
   };
 
   const handleAddNode = () => {
@@ -100,50 +102,19 @@ export default function GraphPage() {
   }
 
   return (
-    <div className="h-screen w-screen flex bg-background">
-      <div className="flex-1 relative">
-        <div className="absolute top-4 right-4 z-10 flex gap-2">
-          <Button
-            onClick={handleAddNode}
-            variant="outline"
-            size="sm"
-            className="bg-background/80 backdrop-blur-sm"
-          >
-            Add Node
-          </Button>
-          <Button
-            onClick={() => setShowJsonEditor(!showJsonEditor)}
-            variant="outline"
-            size="sm"
-            className="bg-background/80 backdrop-blur-sm"
-          >
-            <Code2 className="w-4 h-4 mr-2" />
-            {showJsonEditor ? "Hide JSON" : "Show JSON"}
-          </Button>
-        </div>
-        <Graph
-          ref={graphRef}
-          initialJson={graphData.json}
-          onJsonChange={handleJsonChange}
-        />
+    <>
+      <div className="absolute top-4 left-4 z-10">
+        <Button variant="outline" onClick={() => router.back()}>
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </Button>
       </div>
 
-      {showJsonEditor && (
-        <Card className="w-1/3 border-l border-border rounded-none">
-          <div className="p-4 border-b border-border">
-            <Button onClick={handleJsonSubmit} className="w-full">
-              Apply JSON
-            </Button>
-          </div>
-          <div className="h-[calc(100vh-4rem)]">
-            <CodeEditor
-              value={jsonInput}
-              onChange={setJsonInput}
-              language="json"
-            />
-          </div>
-        </Card>
-      )}
-    </div>
+      <Graph
+        ref={graphRef}
+        initialJson={graphData.json}
+        onJsonChange={handleJsonChange}
+      />
+    </>
   );
 }

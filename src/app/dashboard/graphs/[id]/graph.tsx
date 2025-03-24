@@ -18,13 +18,111 @@ import {
   Node,
   Edge,
   ReactFlowInstance,
+  XYPosition,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
 import { cn } from "@/lib/utils";
-import { calculateNodePositions } from "@/app/dashboard/graphs/[id]/flow";
-import { CustomNode } from "./custom-node";
-import { CustomControls } from "./custom-controls";
+import { CustomNode } from "./nodes";
+import { Controls } from "./controls";
+
+// Types
+export interface JsonNode {
+  id: string;
+  label: string;
+  position?: { x: number; y: number };
+  children?: JsonNode[];
+}
+
+// Flow utilities
+const VERTICAL_SPACING = 100;
+const HORIZONTAL_SPACING = 200;
+
+export function calculateNodePositions(
+  jsonNode: JsonNode,
+  startPosition: XYPosition,
+  level: number = 0
+): { nodes: Node[]; edges: Edge[]; width: number } {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  const currentNode: Node = {
+    id: jsonNode.id,
+    position: startPosition,
+    data: { label: jsonNode.label },
+    type: "custom",
+  };
+  nodes.push(currentNode);
+
+  if (!jsonNode.children || jsonNode.children.length === 0) {
+    return { nodes, edges, width: 0 };
+  }
+
+  const children = jsonNode.children;
+  const childResults = children.map((child, index) => {
+    const childStartX =
+      startPosition.x -
+      (HORIZONTAL_SPACING * (children.length - 1)) / 2 +
+      HORIZONTAL_SPACING * index;
+    const childStartY = startPosition.y + VERTICAL_SPACING;
+
+    return calculateNodePositions(
+      child,
+      { x: childStartX, y: childStartY },
+      level + 1
+    );
+  });
+
+  childResults.forEach((result, index) => {
+    nodes.push(...result.nodes);
+    edges.push(...result.edges);
+
+    edges.push({
+      id: `${jsonNode.id}-${children[index].id}`,
+      source: jsonNode.id,
+      target: children[index].id,
+    });
+  });
+
+  const totalWidth = Math.max(
+    ...childResults.map((result) => result.width),
+    HORIZONTAL_SPACING * (children.length - 1)
+  );
+
+  return { nodes, edges, width: totalWidth };
+}
+
+export function convertJsonToFlow(jsonNode: JsonNode): {
+  nodes: Node[];
+  edges: Edge[];
+} {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+
+  function processNode(node: JsonNode, level: number = 0) {
+    const currentNode: Node = {
+      id: node.id,
+      position: node.position || { x: 0, y: 0 },
+      data: { label: node.label },
+      type: "custom",
+    };
+    nodes.push(currentNode);
+
+    if (node.children) {
+      node.children.forEach((child) => {
+        processNode(child, level + 1);
+        edges.push({
+          id: `${node.id}-${child.id}`,
+          source: node.id,
+          target: child.id,
+        });
+      });
+    }
+  }
+
+  processNode(jsonNode);
+  return { nodes, edges };
+}
 
 // Define node types
 const nodeTypes = {
@@ -37,8 +135,8 @@ export interface GraphRef {
 }
 
 interface GraphProps {
-  initialJson: any;
-  onJsonChange: (json: any) => void;
+  initialJson: JsonNode;
+  onJsonChange: (json: JsonNode) => void;
   className?: string;
 }
 
@@ -50,8 +148,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
     const [isInteractive, setIsInteractive] = useState(true);
 
-    // Initialize nodes and edges from JSON
-    const initializeGraph = useCallback((json: any) => {
+    const initializeGraph = useCallback((json: JsonNode) => {
       if (!json || typeof json !== 'object') {
         console.error('Invalid JSON data:', json);
         return;
@@ -69,10 +166,9 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       }
     }, []);
 
-    // Update JSON when nodes change
     const updateJsonWithNodePositions = useCallback(
       (newNodes: Node[]) => {
-        const updateNodePositions = (node: any) => {
+        const updateNodePositions = (node: JsonNode) => {
           const flowNode = newNodes.find((n) => n.id === node.id);
           if (flowNode) {
             node.position = flowNode.position;
@@ -89,7 +185,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       [initialJson, onJsonChange]
     );
 
-    // Initialize on mount
     useEffect(() => {
       if (initialJson) {
         initializeGraph(initialJson);
@@ -102,7 +197,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       },
       addNode: (parentId?: string) => {
         const newNodeId = String(Date.now());
-        const newNode = {
+        const newNode: JsonNode = {
           id: newNodeId,
           label: "New Node",
           position: { x: 100, y: 100 },
@@ -112,7 +207,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
         if (parentId) {
           // Add as child of selected node
-          const addToParent = (node: any): boolean => {
+          const addToParent = (node: JsonNode): boolean => {
             if (node.id === parentId) {
               if (!node.children) node.children = [];
               node.children.push(newNode);
@@ -176,7 +271,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           elementsSelectable={isInteractive}
         >
           <Background className="!bg-muted" />
-          <CustomControls 
+          <Controls 
             isInteractive={isInteractive}
             onInteractivityChange={setIsInteractive}
           />
@@ -185,3 +280,5 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     );
   }
 );
+
+Graph.displayName = "Graph";
