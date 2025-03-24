@@ -1,15 +1,18 @@
-import { useReactFlow } from '@xyflow/react';
-import { ZoomIn, ZoomOut, Maximize, Lock, Unlock } from 'lucide-react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useReactFlow } from "@xyflow/react";
+import { ZoomIn, ZoomOut, Maximize, Lock, Unlock } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ControlsProps {
   onInteractivityChange?: (isInteractive: boolean) => void;
   isInteractive?: boolean;
 }
 
-export function Controls({ onInteractivityChange, isInteractive = true }: ControlsProps) {
+export function Controls({
+  onInteractivityChange,
+  isInteractive = true,
+}: ControlsProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const [isLocked, setIsLocked] = useState(!isInteractive);
 
@@ -20,43 +23,45 @@ export function Controls({ onInteractivityChange, isInteractive = true }: Contro
   };
 
   return (
-    <div className="absolute bottom-4 left-4 flex flex-col gap-2 p-2 rounded-lg bg-background/80 backdrop-blur border shadow-lg">
+    <div className="absolute bottom-4 left-4 flex flex-col gap-2">
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         onClick={() => zoomIn()}
-        className="h-8 w-8 hover:bg-background/80"
+        className="size-10 bg-background/50 hover:bg-accent/50"
         disabled={isLocked}
       >
         <ZoomIn className="h-4 w-4" />
       </Button>
-      
+
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         onClick={() => zoomOut()}
-        className="h-8 w-8 hover:bg-background/80"
+        className="size-10 bg-background/50 hover:bg-accent/50"
         disabled={isLocked}
       >
         <ZoomOut className="h-4 w-4" />
       </Button>
-      
+
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         onClick={() => fitView({ duration: 500 })}
-        className="h-8 w-8 hover:bg-background/80"
+        className="size-10 bg-background/50 hover:bg-accent/50"
+        disabled={isLocked}
       >
         <Maximize className="h-4 w-4" />
       </Button>
 
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         onClick={handleLockToggle}
         className={cn(
-          "h-8 w-8 hover:bg-background/80",
-          isLocked && "text-destructive"
+          "size-10 bg-background/50 hover:bg-accent/50",
+          isLocked &&
+            "border-destructive text-destructive hover:bg-destructive/10"
         )}
       >
         {isLocked ? (
@@ -67,4 +72,4 @@ export function Controls({ onInteractivityChange, isInteractive = true }: Contro
       </Button>
     </div>
   );
-} 
+}
