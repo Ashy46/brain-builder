@@ -12,16 +12,19 @@ import { Tables } from "@/types/supabase";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CreateGraphDialog } from "./create-graph";
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const [graphs, setGraphs] = useState<Tables<"graphs">[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
     async function fetchGraphs() {
       if (!user) return;
+      setIsLoading(true);
 
       const { data, error } = await supabase
         .from("graphs")
@@ -36,6 +39,7 @@ export default function DashboardPage() {
       }
 
       setGraphs(data || []);
+      setIsLoading(false);
     }
 
     fetchGraphs();
@@ -47,16 +51,20 @@ export default function DashboardPage() {
 
       <div className="grid gap-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="animate-in zoom-in-95">
+          <Card className="animate-in zoom-in-98">
             <CardHeader>
               <CardTitle>Total Graphs</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{graphs.length}</p>
+              {isLoading ? (
+                <Skeleton className="h-9 w-16" />
+              ) : (
+                <p className="text-3xl font-bold">{graphs.length}</p>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="animate-in zoom-in-95">
+          <Card className="animate-in zoom-in-98">
             <CardHeader>
               <CardTitle>Actions</CardTitle>
             </CardHeader>
@@ -77,8 +85,26 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        <Card className="animate-in zoom-in-95">
-          {graphs.length > 0 ? (
+        <Card className="animate-in zoom-in-98">
+          {isLoading ? (
+            <CardContent className="space-y-4">
+              <Skeleton className="h-8 w-32 mb-4" />
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-4 rounded-lg border bg-card"
+                  >
+                    <div className="flex flex-col gap-2">
+                      <Skeleton className="h-6 w-48" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                    <Skeleton className="h-10 w-24" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          ) : graphs.length > 0 ? (
             <>
               <CardHeader>
                 <CardTitle>Recent Graphs</CardTitle>
