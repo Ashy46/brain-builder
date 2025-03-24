@@ -23,258 +23,214 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { cn } from "@/lib/utils";
-import { CustomNode } from "./nodes";
+import { Node as CustomNode } from "./nodes";
 import { Controls } from "./controls";
+import { createClient } from "@/lib/supabase/client/client";
+import { useAuth } from "@/lib/hooks/use-auth";
 
-// Types
-export interface JsonNode {
+export interface GraphNode {
   id: string;
   label: string;
-  position?: { x: number; y: number };
-  children?: JsonNode[];
+  position: { x: number; y: number };
+  parentId?: string;
 }
 
-// Flow utilities
 const VERTICAL_SPACING = 100;
 const HORIZONTAL_SPACING = 200;
 
-export function calculateNodePositions(
-  jsonNode: JsonNode,
-  startPosition: XYPosition,
-  level: number = 0
-): { nodes: Node[]; edges: Edge[]; width: number } {
-  const nodes: Node[] = [];
-  const edges: Edge[] = [];
-
-  const currentNode: Node = {
-    id: jsonNode.id,
-    position: startPosition,
-    data: { label: jsonNode.label },
-    type: "custom",
-  };
-  nodes.push(currentNode);
-
-  if (!jsonNode.children || jsonNode.children.length === 0) {
-    return { nodes, edges, width: 0 };
-  }
-
-  const children = jsonNode.children;
-  const childResults = children.map((child, index) => {
-    const childStartX =
-      startPosition.x -
-      (HORIZONTAL_SPACING * (children.length - 1)) / 2 +
-      HORIZONTAL_SPACING * index;
-    const childStartY = startPosition.y + VERTICAL_SPACING;
-
-    return calculateNodePositions(
-      child,
-      { x: childStartX, y: childStartY },
-      level + 1
-    );
-  });
-
-  childResults.forEach((result, index) => {
-    nodes.push(...result.nodes);
-    edges.push(...result.edges);
-
-    edges.push({
-      id: `${jsonNode.id}-${children[index].id}`,
-      source: jsonNode.id,
-      target: children[index].id,
-    });
-  });
-
-  const totalWidth = Math.max(
-    ...childResults.map((result) => result.width),
-    HORIZONTAL_SPACING * (children.length - 1)
-  );
-
-  return { nodes, edges, width: totalWidth };
-}
-
-export function convertJsonToFlow(jsonNode: JsonNode): {
-  nodes: Node[];
-  edges: Edge[];
-} {
-  const nodes: Node[] = [];
-  const edges: Edge[] = [];
-
-  function processNode(node: JsonNode, level: number = 0) {
-    const currentNode: Node = {
-      id: node.id,
-      position: node.position || { x: 0, y: 0 },
-      data: { label: node.label },
-      type: "custom",
-    };
-    nodes.push(currentNode);
-
-    if (node.children) {
-      node.children.forEach((child) => {
-        processNode(child, level + 1);
-        edges.push({
-          id: `${node.id}-${child.id}`,
-          source: node.id,
-          target: child.id,
-        });
-      });
-    }
-  }
-
-  processNode(jsonNode);
-  return { nodes, edges };
-}
-
-// Define node types
 const nodeTypes = {
   custom: CustomNode,
 };
 
 export interface GraphRef {
   fitView: () => void;
-  addNode: (parentId?: string) => void;
+  addNode: () => void;
+  selectedNode: Node | null;
 }
 
 interface GraphProps {
-  initialJson: JsonNode;
-  onJsonChange: (json: JsonNode) => void;
+  graphId: string;
   className?: string;
 }
 
 export const Graph = forwardRef<GraphRef, GraphProps>(
-  ({ initialJson, onJsonChange, className }, ref) => {
+  ({ graphId, className }, ref) => {
     const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
+    const { user } = useAuth();
+    const supabase = createClient();
+    
+    const [isLoading, setIsLoading] = useState(true);
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-    const [isInteractive, setIsInteractive] = useState(true);
 
-    const initializeGraph = useCallback((json: JsonNode) => {
-      if (!json || typeof json !== 'object') {
-        console.error('Invalid JSON data:', json);
-        return;
+    // Fetch graph data
+    useEffect(() => {
+      async function fetchGraph() {
+        if (!user || !graphId) return;
+        setIsLoading(true);
+
+        const { data, error } = await supabase
+          .from("graphs")
+          .select("*")
+          .eq("id", graphId)
+          .eq("user_id", user.id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching graph:", error);
+          return;
+        }
+
+        if (!data) {
+          console.error("No graph data found");
+          return;
+        }
+
+        const graphNodes = Array.isArray(data.nodes) ? data.nodes : [];
+        
+        // Convert to ReactFlow nodes and edges
+        const flowNodes: Node[] = graphNodes.map((node: GraphNode) => ({
+          id: node.id,
+          position: node.position,
+          data: { label: node.label },
+          type: "custom",
+        }));
+
+        const flowEdges: Edge[] = graphNodes
+          .filter((node: GraphNode) => node.parentId)
+          .map((node: GraphNode) => ({
+            id: `${node.parentId}-${node.id}`,
+            source: node.parentId!,
+            target: node.id,
+          }));
+
+        setNodes(flowNodes);
+        setEdges(flowEdges);
+        setIsLoading(false);
       }
 
-      try {
-        const { nodes: newNodes, edges: newEdges } = calculateNodePositions(
-          json,
-          { x: 0, y: 0 }
-        );
+      fetchGraph();
+    }, [user, graphId, supabase]);
+
+    const updateGraphData = useCallback(async (newNodes: Node[], newEdges: Edge[]) => {
+      // Convert back to GraphNode format
+      const graphNodes: GraphNode[] = newNodes.map(node => ({
+        id: node.id,
+        label: node.data.label as string,
+        position: node.position,
+        parentId: newEdges.find(edge => edge.target === node.id)?.source,
+      }));
+
+      // Update database
+      const { error } = await supabase
+        .from("graphs")
+        .update({ nodes: graphNodes })
+        .eq("id", graphId);
+
+      if (error) {
+        console.error("Error updating graph:", error);
+        return false;
+      }
+
+      return true;
+    }, [graphId, supabase]);
+
+    const onNodesChangeCallback = useCallback(
+      async (changes: any) => {
+        const newNodes = applyNodeChanges(changes, nodes);
         setNodes(newNodes);
-        setEdges(newEdges);
-      } catch (error) {
-        console.error('Error initializing graph:', error);
-      }
-    }, []);
 
-    const updateJsonWithNodePositions = useCallback(
-      (newNodes: Node[]) => {
-        const updateNodePositions = (node: JsonNode) => {
-          const flowNode = newNodes.find((n) => n.id === node.id);
-          if (flowNode) {
-            node.position = flowNode.position;
-          }
-          if (node.children) {
-            node.children.forEach(updateNodePositions);
-          }
-        };
-
-        const updatedJson = JSON.parse(JSON.stringify(initialJson));
-        updateNodePositions(updatedJson);
-        onJsonChange(updatedJson);
+        // Update database
+        await updateGraphData(newNodes, edges);
       },
-      [initialJson, onJsonChange]
+      [nodes, edges, updateGraphData]
     );
 
-    useEffect(() => {
-      if (initialJson) {
-        initializeGraph(initialJson);
-      }
-    }, [initialJson, initializeGraph]);
+    const onEdgesChangeCallback = useCallback(
+      async (changes: any) => {
+        const newEdges = applyEdgeChanges(changes, edges);
+        setEdges(newEdges);
+
+        // Update database
+        await updateGraphData(nodes, newEdges);
+      },
+      [nodes, edges, updateGraphData]
+    );
+
+    const onConnect = useCallback(
+      async (params: any) => {
+        const newEdges = addEdge(params, edges);
+        setEdges(newEdges);
+
+        // Update database
+        await updateGraphData(nodes, newEdges);
+      },
+      [nodes, edges, updateGraphData]
+    );
+
+    const onNodeClick = useCallback((event: any, node: Node) => {
+      event.stopPropagation();
+      setSelectedNode(node);
+    }, []);
 
     useImperativeHandle(ref, () => ({
       fitView: () => {
         reactFlowInstance.current?.fitView();
       },
-      addNode: (parentId?: string) => {
+      addNode: () => {
         const newNodeId = String(Date.now());
-        const newNode: JsonNode = {
+        const newNode: Node = {
           id: newNodeId,
-          label: "New Node",
           position: { x: 100, y: 100 },
+          data: { label: "New Node" },
+          type: "custom",
         };
 
-        const updatedJson = JSON.parse(JSON.stringify(initialJson));
+        const newNodes = [...nodes, newNode];
+        setNodes(newNodes);
 
-        if (parentId) {
-          // Add as child of selected node
-          const addToParent = (node: JsonNode): boolean => {
-            if (node.id === parentId) {
-              if (!node.children) node.children = [];
-              node.children.push(newNode);
-              return true;
-            }
-            if (node.children) {
-              return node.children.some(addToParent);
-            }
-            return false;
+        // If a node is selected, create an edge
+        if (selectedNode) {
+          const newEdge: Edge = {
+            id: `${selectedNode.id}-${newNodeId}`,
+            source: selectedNode.id,
+            target: newNodeId,
           };
-          addToParent(updatedJson);
+          const newEdges = [...edges, newEdge];
+          setEdges(newEdges);
+          updateGraphData(newNodes, newEdges);
         } else {
-          // Add to root level
-          if (!updatedJson.children) updatedJson.children = [];
-          updatedJson.children.push(newNode);
+          updateGraphData(newNodes, edges);
         }
-
-        onJsonChange(updatedJson);
-        initializeGraph(updatedJson);
       },
+      selectedNode,
     }));
 
-    const onNodesChangeCallback = useCallback(
-      (changes: any) => {
-        const newNodes = applyNodeChanges(changes, nodes);
-        setNodes(newNodes);
-        updateJsonWithNodePositions(newNodes);
-      },
-      [nodes, updateJsonWithNodePositions]
-    );
-
-    const onEdgesChangeCallback = useCallback(
-      (changes: any) => setEdges(applyEdgeChanges(changes, edges)),
-      [edges]
-    );
-
-    const onConnect = useCallback(
-      (params: any) => setEdges(addEdge(params, edges)),
-      [edges]
-    );
+    if (isLoading) {
+      return (
+        <div className="h-screen w-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+        </div>
+      );
+    }
 
     return (
-      <div className={cn("w-full h-full", className)}>
+      <div className={cn("h-screen w-screen", className)}>
         <ReactFlow
           nodes={nodes}
-          onNodesChange={onNodesChangeCallback}
           edges={edges}
+          onNodesChange={onNodesChangeCallback}
           onEdgesChange={onEdgesChangeCallback}
           onConnect={onConnect}
-          onNodeClick={(_, node) => setSelectedNode(node)}
+          onNodeClick={onNodeClick}
+          nodeTypes={nodeTypes}
           onInit={(instance) => {
             reactFlowInstance.current = instance;
           }}
-          nodeTypes={nodeTypes}
-          fitView
-          className="bg-muted"
-          nodesConnectable={isInteractive}
-          nodesDraggable={isInteractive}
-          zoomOnScroll={isInteractive}
-          panOnScroll={isInteractive}
-          elementsSelectable={isInteractive}
         >
-          <Background className="!bg-muted" />
-          <Controls 
-            isInteractive={isInteractive}
-            onInteractivityChange={setIsInteractive}
-          />
+          <Background />
+          <Controls />
         </ReactFlow>
       </div>
     );
