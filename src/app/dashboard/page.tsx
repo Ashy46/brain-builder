@@ -12,6 +12,7 @@ import { Tables } from "@/types/supabase";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { CreateGraphDialog } from "./create-graph";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -60,16 +61,18 @@ export default function DashboardPage() {
               <CardTitle>Actions</CardTitle>
             </CardHeader>
             <CardContent>
-              <Link href="/graphs/new" className="w-full">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full flex items-center justify-center gap-2"
-                >
-                  <PlusCircle className="w-5 h-5" />
-                  Create New Graph
-                </Button>
-              </Link>
+              <CreateGraphDialog
+                trigger={
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="w-full flex items-center justify-center gap-2"
+                  >
+                    <PlusCircle className="w-5 h-5" />
+                    Create New Graph
+                  </Button>
+                }
+              />
             </CardContent>
           </Card>
         </div>
