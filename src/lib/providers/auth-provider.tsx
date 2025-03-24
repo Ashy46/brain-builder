@@ -44,23 +44,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initAuthUser = async () => {
     try {
       setError(null);
-      setLoading(true);
       const supabase = createClient();
       const {
-        data: { user: fetchedAuthUser },
+        data: { session },
         error: initError,
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
 
       if (initError) {
-        setError("Authentication failed. Please try signing in again.");
         console.error("Failed to initialize auth:", initError);
         setAuthUser(undefined);
         return;
       }
 
-      setAuthUser(fetchedAuthUser || undefined);
+      setAuthUser(session?.user || undefined);
     } catch (error) {
-      setError("An unexpected error occurred. Please refresh the page.");
       console.error("Error during auth initialization:", error);
       setAuthUser(undefined);
     } finally {

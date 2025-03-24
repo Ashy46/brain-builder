@@ -13,14 +13,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const signupSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const signupSchema = z
+  .object({
+    email: z.string().email("Please enter a valid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 interface SignupFormProps {
   className?: string;
@@ -45,13 +47,22 @@ export default function SignupForm({ className }: SignupFormProps) {
     setValidationErrors({});
 
     try {
-      const result = signupSchema.safeParse({ email, password, confirmPassword });
+      const result = signupSchema.safeParse({
+        email,
+        password,
+        confirmPassword,
+      });
 
       if (!result.success) {
-        const errors: { email?: string; password?: string; confirmPassword?: string } = {};
+        const errors: {
+          email?: string;
+          password?: string;
+          confirmPassword?: string;
+        } = {};
         result.error.errors.forEach((error: z.ZodIssue) => {
           if (error.path[0]) {
-            errors[error.path[0] as "email" | "password" | "confirmPassword"] = error.message;
+            errors[error.path[0] as "email" | "password" | "confirmPassword"] =
+              error.message;
           }
         });
         setValidationErrors(errors);
@@ -149,4 +160,4 @@ export default function SignupForm({ className }: SignupFormProps) {
       </div>
     </div>
   );
-} 
+}
