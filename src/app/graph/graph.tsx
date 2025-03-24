@@ -21,7 +21,7 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { cn } from "@/lib/utils";
-import { calculateNodePositions } from "@/lib/utils/flow";
+import { calculateNodePositions } from "@/app/graph/flow";
 import { CustomNode } from "./custom-node";
 import { CustomControls } from "./custom-controls";
 
