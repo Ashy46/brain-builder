@@ -51,10 +51,12 @@ export interface GraphRef {
 interface GraphProps {
   graphId: string;
   className?: string;
+  onUpdateStart?: () => void;
+  onUpdateEnd?: () => void;
 }
 
 export const Graph = forwardRef<GraphRef, GraphProps>(
-  ({ graphId, className }, ref) => {
+  ({ graphId, className, onUpdateStart, onUpdateEnd }, ref) => {
     const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
     const { user } = useAuth();
     const supabase = createClient();
@@ -114,27 +116,32 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     }, [user, graphId, supabase]);
 
     const updateGraphData = useCallback(async (newNodes: Node[], newEdges: Edge[]) => {
-      // Convert back to GraphNode format
-      const graphNodes: GraphNode[] = newNodes.map(node => ({
-        id: node.id,
-        label: node.data.label as string,
-        position: node.position,
-        parentId: newEdges.find(edge => edge.target === node.id)?.source,
-      }));
+      onUpdateStart?.();
+      try {
+        // Convert back to GraphNode format
+        const graphNodes: GraphNode[] = newNodes.map(node => ({
+          id: node.id,
+          label: node.data.label as string,
+          position: node.position,
+          parentId: newEdges.find(edge => edge.target === node.id)?.source,
+        }));
 
-      // Update database
-      const { error } = await supabase
-        .from("graphs")
-        .update({ nodes: graphNodes })
-        .eq("id", graphId);
+        // Update database
+        const { error } = await supabase
+          .from("graphs")
+          .update({ nodes: graphNodes })
+          .eq("id", graphId);
 
-      if (error) {
-        console.error("Error updating graph:", error);
-        return false;
+        if (error) {
+          console.error("Error updating graph:", error);
+          return false;
+        }
+
+        return true;
+      } finally {
+        onUpdateEnd?.();
       }
-
-      return true;
-    }, [graphId, supabase]);
+    }, [graphId, supabase, onUpdateStart, onUpdateEnd]);
 
     const onNodesChangeCallback = useCallback(
       async (changes: any) => {

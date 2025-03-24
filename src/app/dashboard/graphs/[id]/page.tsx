@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 
 import { Graph, GraphRef } from "@/app/dashboard/graphs/[id]/graph";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 export default function GraphPage() {
   const { id } = useParams();
   const router = useRouter();
-
   const graphRef = useRef<GraphRef>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   if (!id) {
     return null;
@@ -32,7 +32,18 @@ export default function GraphPage() {
         </Button>
       </div>
 
-      <Graph ref={graphRef} graphId={id as string} />
+      {isUpdating && (
+        <div className="absolute top-4 right-4 z-10">
+          <Loader2 className="h-6 w-6 animate-spin text-foreground" />
+        </div>
+      )}
+
+      <Graph
+        ref={graphRef}
+        graphId={id as string}
+        onUpdateStart={() => setIsUpdating(true)}
+        onUpdateEnd={() => setIsUpdating(false)}
+      />
     </>
   );
 }
