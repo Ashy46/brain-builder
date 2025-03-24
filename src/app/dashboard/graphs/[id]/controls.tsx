@@ -23,7 +23,7 @@ export function Controls({
   };
 
   return (
-    <div className="absolute bottom-4 left-4 flex flex-col gap-2">
+    <div className="absolute bottom-4 left-4 flex flex-col gap-2 z-10">
       <Button
         variant="outline"
         size="icon"
