@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 
 import { useAuth } from "@/lib/hooks/use-auth";
-import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,11 +23,7 @@ const signupSchema = z
     path: ["confirmPassword"],
   });
 
-interface SignupFormProps {
-  className?: string;
-}
-
-export default function SignupForm({ className }: SignupFormProps) {
+export default function SignupPage() {
   const router = useRouter();
 
   const { signUp, error: authError } = useAuth();
@@ -81,7 +76,7 @@ export default function SignupForm({ className }: SignupFormProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className={cn("w-full max-w-md", className)}>
+      <div className="w-full max-w-md">
         <Card>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">

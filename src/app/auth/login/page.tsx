@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 
 import { useAuth } from "@/lib/hooks/use-auth";
-import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,11 +17,7 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-interface LoginFormProps {
-  className?: string;
-}
-
-export default function LoginForm({ className }: LoginFormProps) {
+export default function LoginPage() {
   const router = useRouter();
 
   const { logIn, error: authError } = useAuth();
@@ -64,7 +59,7 @@ export default function LoginForm({ className }: LoginFormProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className={cn("w-full max-w-md", className)}>
+      <div className="w-full max-w-md">
         <Card>
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
