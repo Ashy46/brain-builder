@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 
 import { ThemeProvider } from "@/lib/providers/theme-provider";
+import { AuthProvider } from "@/lib/providers/auth-provider";
 
 import "./globals.css";
 
@@ -22,14 +23,16 @@ export default function RootLayout({
       <html lang="en" suppressHydrationWarning>
         <head />
         <body className={figtree.className}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
+          <AuthProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
+          </AuthProvider>
         </body>
       </html>
     </>

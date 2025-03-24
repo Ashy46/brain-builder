@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { AuthContext } from "@/lib/providers/auth";
+import { AuthContext } from "@/lib/providers/auth-provider";
 
 export function useAuth() {
   const context = React.useContext(AuthContext);
