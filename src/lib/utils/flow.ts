@@ -17,7 +17,7 @@ export function calculateNodePositions(
     id: jsonNode.id,
     position: startPosition,
     data: { label: jsonNode.label },
-    type: level === 0 ? "input" : "default",
+    type: "custom",
   };
   nodes.push(currentNode);
 
@@ -71,7 +71,7 @@ export function convertJsonToFlow(jsonNode: JsonNode): {
       id: node.id,
       position: node.position || { x: 0, y: 0 },
       data: { label: node.label },
-      type: level === 0 ? "input" : "default",
+      type: "custom",
     };
     nodes.push(currentNode);
 

@@ -10,7 +10,6 @@ import {
 
 import {
   ReactFlow,
-  Controls,
   Background,
   applyNodeChanges,
   applyEdgeChanges,
@@ -23,6 +22,13 @@ import "@xyflow/react/dist/style.css";
 
 import { cn } from "@/lib/utils";
 import { calculateNodePositions } from "@/lib/utils/flow";
+import { CustomNode } from "./custom-node";
+import { CustomControls } from "./custom-controls";
+
+// Define node types
+const nodeTypes = {
+  custom: CustomNode,
+};
 
 export interface GraphRef {
   fitView: () => void;
@@ -41,6 +47,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+    const [isInteractive, setIsInteractive] = useState(true);
 
     // Initialize nodes and edges from JSON
     const initializeGraph = useCallback((json: any) => {
@@ -147,11 +154,20 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           onInit={(instance) => {
             reactFlowInstance.current = instance;
           }}
+          nodeTypes={nodeTypes}
           fitView
           className="bg-muted"
+          nodesConnectable={isInteractive}
+          nodesDraggable={isInteractive}
+          zoomOnScroll={isInteractive}
+          panOnScroll={isInteractive}
+          elementsSelectable={isInteractive}
         >
-          <Background />
-          <Controls />
+          <Background className="!bg-muted" />
+          <CustomControls 
+            isInteractive={isInteractive}
+            onInteractivityChange={setIsInteractive}
+          />
         </ReactFlow>
       </div>
     );

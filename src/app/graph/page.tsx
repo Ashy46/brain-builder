@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Graph, GraphRef } from "@/components/graph";
-import { CodeEditor } from "@/components/code-editor";
+import { Graph, GraphRef } from "@/app/graph/graph";
+import { CodeEditor } from "@/app/graph/code-editor";
 
 const defaultJson = {
   id: "1",
