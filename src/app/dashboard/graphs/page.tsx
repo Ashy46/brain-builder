@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { BrainCircuit, PlusCircle } from "lucide-react";
+import { BrainCircuit, PlusCircle, Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client/client";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -30,11 +30,13 @@ export default function GraphsPage() {
   const [graphs, setGraphs] = useState<Tables<"graphs">[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
     async function fetchGraphs() {
       if (!user) return;
+      setIsLoading(true);
 
       const start = (currentPage - 1) * ITEMS_PER_PAGE;
       const end = start + ITEMS_PER_PAGE - 1;
@@ -55,12 +57,15 @@ export default function GraphsPage() {
       if (count) {
         setTotalPages(Math.ceil(count / ITEMS_PER_PAGE));
       }
+      setIsLoading(false);
     }
 
     fetchGraphs();
   }, [user, supabase, currentPage]);
 
-  return (
+  return isLoading ? (
+    <Loader2 className="size-12 animate-spin" />
+  ) : (
     <>
       <div className="flex justify-between items-center mb-5">
         <h1 className="text-4xl font-bold">My Graphs</h1>
@@ -74,7 +79,7 @@ export default function GraphsPage() {
         />
       </div>
 
-      <Card className="animate-in zoom-in-95">
+      <Card className="animate-in fade-in zoom-in-98">
         {graphs.length > 0 ? (
           <>
             <CardHeader>

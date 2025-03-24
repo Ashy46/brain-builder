@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { PlusCircle, BrainCircuit } from "lucide-react";
+import { PlusCircle, BrainCircuit, Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client/client";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -45,26 +45,24 @@ export default function DashboardPage() {
     fetchGraphs();
   }, [user, supabase]);
 
-  return (
+  return isLoading ? (
+    <Loader2 className="size-12 animate-spin" />
+  ) : (
     <>
       <h1 className="text-4xl font-bold mb-5">Dashboard</h1>
 
       <div className="grid gap-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="animate-in zoom-in-98">
+          <Card className="animate-in fade-in zoom-in-98">
             <CardHeader>
               <CardTitle>Total Graphs</CardTitle>
             </CardHeader>
             <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-9 w-16" />
-              ) : (
-                <p className="text-3xl font-bold">{graphs.length}</p>
-              )}
+              <p className="text-3xl font-bold">{graphs.length}</p>
             </CardContent>
           </Card>
 
-          <Card className="animate-in zoom-in-98">
+          <Card className="animate-in fade-in zoom-in-98">
             <CardHeader>
               <CardTitle>Actions</CardTitle>
             </CardHeader>
@@ -85,7 +83,7 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        <Card className="animate-in zoom-in-98">
+        <Card className="animate-in fade-in zoom-in-98">
           {isLoading ? (
             <CardContent className="space-y-4">
               <Skeleton className="h-8 w-32 mb-4" />
