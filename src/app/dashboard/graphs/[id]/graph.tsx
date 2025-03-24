@@ -6,6 +6,7 @@ import {
   forwardRef,
   useImperativeHandle,
   useState,
+  useEffect,
 } from "react";
 
 import {
@@ -21,7 +22,7 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { cn } from "@/lib/utils";
-import { calculateNodePositions } from "@/app/graph/flow";
+import { calculateNodePositions } from "@/app/dashboard/graphs/[id]/flow";
 import { CustomNode } from "./custom-node";
 import { CustomControls } from "./custom-controls";
 
@@ -51,12 +52,21 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
     // Initialize nodes and edges from JSON
     const initializeGraph = useCallback((json: any) => {
-      const { nodes: newNodes, edges: newEdges } = calculateNodePositions(
-        json,
-        { x: 0, y: 0 }
-      );
-      setNodes(newNodes);
-      setEdges(newEdges);
+      if (!json || typeof json !== 'object') {
+        console.error('Invalid JSON data:', json);
+        return;
+      }
+
+      try {
+        const { nodes: newNodes, edges: newEdges } = calculateNodePositions(
+          json,
+          { x: 0, y: 0 }
+        );
+        setNodes(newNodes);
+        setEdges(newEdges);
+      } catch (error) {
+        console.error('Error initializing graph:', error);
+      }
     }, []);
 
     // Update JSON when nodes change
@@ -80,9 +90,11 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     );
 
     // Initialize on mount
-    useState(() => {
-      initializeGraph(initialJson);
-    });
+    useEffect(() => {
+      if (initialJson) {
+        initializeGraph(initialJson);
+      }
+    }, [initialJson, initializeGraph]);
 
     useImperativeHandle(ref, () => ({
       fitView: () => {

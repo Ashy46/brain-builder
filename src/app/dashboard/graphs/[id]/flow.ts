@@ -1,6 +1,6 @@
 import { Node, Edge, XYPosition } from "@xyflow/react";
 
-import { JsonNode } from "@/app/graph/types";
+import { JsonNode } from "@/app/dashboard/graphs/[id]/types";
 
 const VERTICAL_SPACING = 100;
 const HORIZONTAL_SPACING = 200;

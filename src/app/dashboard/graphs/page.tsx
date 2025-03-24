@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { BrainCircuit, PlusCircle, Loader2 } from "lucide-react";
+import { BrainCircuit, PlusCircle, Loader2, Trash2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client/client";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -20,6 +20,15 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { CreateGraphDialog } from "../create-graph";
 
 const ITEMS_PER_PAGE = 10;
@@ -31,6 +40,10 @@ export default function GraphsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [graphToDelete, setGraphToDelete] = useState<Tables<"graphs"> | null>(
+    null
+  );
   const supabase = createClient();
 
   useEffect(() => {
@@ -63,6 +76,26 @@ export default function GraphsPage() {
     fetchGraphs();
   }, [user, supabase, currentPage]);
 
+  const handleDelete = async () => {
+    if (!graphToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("graphs")
+        .delete()
+        .eq("id", graphToDelete.id)
+        .eq("user_id", user?.id);
+
+      if (error) throw error;
+
+      setGraphs((prev) => prev.filter((g) => g.id !== graphToDelete.id));
+      setDeleteDialogOpen(false);
+      setGraphToDelete(null);
+    } catch (error) {
+      console.error("Error deleting graph:", error);
+    }
+  };
+
   return isLoading ? (
     <Loader2 className="size-12 animate-spin" />
   ) : (
@@ -79,7 +112,7 @@ export default function GraphsPage() {
         />
       </div>
 
-      <Card className="animate-in fade-in zoom-in-98">
+      <Card className="animate-in fade-in zoom-in-95">
         {graphs.length > 0 ? (
           <>
             <CardHeader>
@@ -99,9 +132,54 @@ export default function GraphsPage() {
                         {new Date(graph.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <Link href={`/graphs/${graph.id}`}>
-                      <Button variant="outline">View Graph</Button>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/dashboard/graphs/${graph.id}`}>
+                        <Button variant="outline">View Graph</Button>
+                      </Link>
+                      <Dialog
+                        open={
+                          deleteDialogOpen && graphToDelete?.id === graph.id
+                        }
+                        onOpenChange={setDeleteDialogOpen}
+                      >
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setGraphToDelete(graph)}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Delete Graph</DialogTitle>
+                            <DialogDescription>
+                              Are you sure you want to delete "{graph.name}"?
+                              This action cannot be undone.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setDeleteDialogOpen(false);
+                                setGraphToDelete(null);
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={handleDelete}
+                            >
+                              Delete
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </div>
                 ))}
               </div>

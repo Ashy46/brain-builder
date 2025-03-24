@@ -53,7 +53,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="animate-in fade-in zoom-in-98">
+          <Card className="animate-in fade-in zoom-in-95">
             <CardHeader>
               <CardTitle>Total Graphs</CardTitle>
             </CardHeader>
@@ -62,7 +62,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="animate-in fade-in zoom-in-98">
+          <Card className="animate-in fade-in zoom-in-95">
             <CardHeader>
               <CardTitle>Actions</CardTitle>
             </CardHeader>
@@ -83,7 +83,7 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        <Card className="animate-in fade-in zoom-in-98">
+        <Card className="animate-in fade-in zoom-in-95">
           {isLoading ? (
             <CardContent className="space-y-4">
               <Skeleton className="h-8 w-32 mb-4" />

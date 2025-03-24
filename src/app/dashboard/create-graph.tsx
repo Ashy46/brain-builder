@@ -46,7 +46,6 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
           {
             name,
             user_id: user.id,
-            data: {},
           },
         ])
         .select()

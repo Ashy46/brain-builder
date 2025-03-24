@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-interface CustomControlsProps {
+interface ControlsProps {
   onInteractivityChange?: (isInteractive: boolean) => void;
   isInteractive?: boolean;
 }
 
-export function CustomControls({ onInteractivityChange, isInteractive = true }: CustomControlsProps) {
+export function Controls({ onInteractivityChange, isInteractive = true }: ControlsProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const [isLocked, setIsLocked] = useState(!isInteractive);
 
