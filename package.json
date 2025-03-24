@@ -24,6 +24,7 @@
     "copy-webpack-plugin": "^13.0.0",
     "lucide-react": "^0.483.0",
     "monaco-editor": "^0.52.2",
+    "motion": "^12.5.0",
     "next": "15.2.3",
     "next-themes": "^0.4.6",
     "react": "^19.0.0",
