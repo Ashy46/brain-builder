@@ -40,20 +40,22 @@ export default function DashboardPage() {
     <>
       <h1 className="text-4xl font-bold mb-5">Dashboard</h1>
 
-      <div className="grid gap-6">
-        {/* Top Row - 2 Column Layout */}
+      <div className="grid gap-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Stats Card */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-2">Total Graphs</h3>
             <p className="text-3xl font-bold">{graphs.length}</p>
           </Card>
 
-          {/* Create New Graph Card */}
           <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-2">Actions</h3>
             <div className="flex flex-col items-center justify-center h-full">
               <Link href="/graphs/new" className="w-full">
-                <Button size="lg" className="w-full flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full flex items-center justify-center gap-2"
+                >
                   <PlusCircle className="w-5 h-5" />
                   Create New Graph
                 </Button>
@@ -62,13 +64,12 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Recent Graphs Card */}
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-6">Recent Graphs</h2>
           {graphs.length > 0 ? (
             <div className="space-y-4">
               {graphs.map((graph) => (
-                <div 
+                <div
                   key={graph.id}
                   className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                 >
@@ -86,7 +87,9 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              <p>No graphs created yet. Create your first graph to get started!</p>
+              <p>
+                No graphs created yet. Create your first graph to get started!
+              </p>
             </div>
           )}
         </Card>
