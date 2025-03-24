@@ -1,13 +1,17 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+
+import { PlusCircle, BrainCircuit } from "lucide-react";
+
 import { createClient } from "@/lib/supabase/client/client";
 import { useAuth } from "@/lib/hooks/use-auth";
+
 import { Tables } from "@/types/supabase";
+
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -42,14 +46,20 @@ export default function DashboardPage() {
 
       <div className="grid gap-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-2">Total Graphs</h3>
-            <p className="text-3xl font-bold">{graphs.length}</p>
+          <Card className="animate-in zoom-in-95">
+            <CardHeader>
+              <CardTitle>Total Graphs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{graphs.length}</p>
+            </CardContent>
           </Card>
 
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-2">Actions</h3>
-            <div className="flex flex-col items-center justify-center h-full">
+          <Card className="animate-in zoom-in-95">
+            <CardHeader>
+              <CardTitle>Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
               <Link href="/graphs/new" className="w-full">
                 <Button
                   variant="outline"
@@ -60,37 +70,47 @@ export default function DashboardPage() {
                   Create New Graph
                 </Button>
               </Link>
-            </div>
+            </CardContent>
           </Card>
         </div>
 
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-6">Recent Graphs</h2>
+        <Card className="animate-in zoom-in-95">
           {graphs.length > 0 ? (
-            <div className="space-y-4">
-              {graphs.map((graph) => (
-                <div
-                  key={graph.id}
-                  className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium text-lg">{graph.name}</span>
-                    <span className="text-sm text-muted-foreground">
-                      Created {new Date(graph.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <Link href={`/graphs/${graph.id}`}>
-                    <Button variant="outline">View Graph</Button>
-                  </Link>
+            <>
+              <CardHeader>
+                <CardTitle>Recent Graphs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {graphs.map((graph) => (
+                    <div
+                      key={graph.id}
+                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium text-lg">
+                          {graph.name}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          Created{" "}
+                          {new Date(graph.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <Link href={`/graphs/${graph.id}`}>
+                        <Button variant="outline">View Graph</Button>
+                      </Link>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </CardContent>
+            </>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>
+            <CardContent className="min-h-[300px] flex flex-col items-center justify-center gap-5">
+              <BrainCircuit className="w-10 h-10 text-muted-foreground" />
+              <p className="text-muted-foreground">
                 No graphs created yet. Create your first graph to get started!
               </p>
-            </div>
+            </CardContent>
           )}
         </Card>
       </div>
