@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -31,21 +31,37 @@ interface AnalysisMethod {
 }
 
 interface ParametersProps {
+  initialParameters?: {
+    patientParameters: Parameter[];
+    analysisMethods: AnalysisMethod[];
+  };
   onParametersChange: (parameters: {
     patientParameters: Parameter[];
     analysisMethods: AnalysisMethod[];
   }) => void;
 }
 
-export function Parameters({ onParametersChange }: ParametersProps) {
-  const [patientParameters, setPatientParameters] = useState<Parameter[]>([
-    { id: "1", name: "Age", value: "" },
-    { id: "2", name: "Gender", value: "male" },
-  ]);
+export function Parameters({ initialParameters, onParametersChange }: ParametersProps) {
+  const [patientParameters, setPatientParameters] = useState<Parameter[]>(
+    initialParameters?.patientParameters || [
+      { id: "1", name: "Age", value: "" },
+      { id: "2", name: "Gender", value: "male" },
+    ]
+  );
 
-  const [analysisMethods, setAnalysisMethods] = useState<AnalysisMethod[]>([
-    { id: "1", name: "Standard Analysis", type: "standard" },
-  ]);
+  const [analysisMethods, setAnalysisMethods] = useState<AnalysisMethod[]>(
+    initialParameters?.analysisMethods || [
+      { id: "1", name: "Standard Analysis", type: "standard" },
+    ]
+  );
+
+  // Update state when initialParameters changes
+  useEffect(() => {
+    if (initialParameters) {
+      setPatientParameters(initialParameters.patientParameters);
+      setAnalysisMethods(initialParameters.analysisMethods);
+    }
+  }, [initialParameters]);
 
   const handleParameterChange = (id: string, field: "name" | "value", newValue: string) => {
     setPatientParameters(prev => {
