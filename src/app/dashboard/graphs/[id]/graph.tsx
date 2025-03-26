@@ -258,25 +258,20 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
     const onConnect = useCallback(
       async (params: any) => {
-        // Get source and target nodes
         const sourceNode = nodes.find(node => node.id === params.source);
         const targetNode = nodes.find(node => node.id === params.target);
 
         if (!sourceNode || !targetNode) return;
 
-        // Analysis nodes can only have one child
         if (sourceNode.type === "analysis") {
-          // Remove any existing connections from this analysis node
           const newEdges = edges.filter(edge => edge.source !== sourceNode.id);
           
-          // Add the new connection
           const newEdge = {
             id: `${sourceNode.id}-${targetNode.id}`,
             source: sourceNode.id,
             target: targetNode.id,
           };
           
-          // Update the node data with the child ID
           const updatedNodes = nodes.map(node => {
             if (node.id === sourceNode.id) {
               return {
@@ -296,7 +291,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           return;
         }
 
-        // Rest of the existing conditional node logic
         if (sourceNode.type === "conditional") {
           const existingConnections = edges.filter(edge => edge.source === params.source);
           if (existingConnections.length >= 2) {
@@ -334,7 +328,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           return;
         }
 
-        // Prompt nodes cannot have children
         if (sourceNode.type === "prompt") {
           return;
         }
