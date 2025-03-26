@@ -18,25 +18,18 @@ import {
   Node,
   Edge,
   ReactFlowInstance,
-  XYPosition,
   useReactFlow,
   ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { cn } from "@/lib/utils";
-import {
-  nodeTypes,
-  NodeType,
-  CustomNodeData,
-  AnalysisNodeData,
-  ConditionalNodeData,
-  PromptNodeData,
-} from "./nodes";
-import { Controls } from "./controls";
-import { AddNodeDialog } from "./add-node-dialog";
 import { createClient } from "@/lib/supabase/client/client";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { cn } from "@/lib/utils";
+
+import { nodeTypes, NodeType } from "./nodes";
+import { Controls } from "./controls";
+import { AddNodeDialog } from "./add-node-dialog";
 
 export interface GraphNode {
   id: string;
@@ -46,6 +39,7 @@ export interface GraphNode {
   trueChildId?: string;
   falseChildId?: string;
   childId?: string;
+  prompt?: string;
 }
 
 const VERTICAL_SPACING = 100;
@@ -117,7 +111,7 @@ function Flow({
         onOpenChange={setIsAddNodeDialogOpen}
         onAddNode={handleAddNode}
         isRootNode={isRootNode}
-        hasAnalysisNode={nodes.some(node => node.type === "analysis")}
+        hasAnalysisNode={nodes.some((node) => node.type === "analysis")}
       />
     </>
   );
@@ -173,6 +167,9 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             ...(node.type === "analysis" && {
               childId: node.childId,
             }),
+            ...(node.type === "prompt" && {
+              prompt: node.prompt || "",
+            }),
           },
         }));
 
@@ -214,6 +211,55 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
       fetchGraph();
     }, [user, graphId, supabase]);
+
+    useEffect(() => {
+      const handlePromptChange = async (event: Event) => {
+        const customEvent = event as CustomEvent<{
+          nodeId: string;
+          prompt: string;
+        }>;
+        const { nodeId, prompt } = customEvent.detail;
+        if (!user || !graphId) return;
+
+        setNodes((prevNodes) =>
+          prevNodes.map((node) =>
+            node.id === nodeId
+              ? {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    prompt,
+                  },
+                }
+              : node
+          )
+        );
+
+        const { data: graphData } = await supabase
+          .from("graphs")
+          .select("nodes")
+          .eq("id", graphId)
+          .eq("user_id", user.id)
+          .single();
+
+        if (!graphData) return;
+
+        const updatedNodes = graphData.nodes.map((node: GraphNode) =>
+          node.id === nodeId ? { ...node, prompt } : node
+        );
+
+        await supabase
+          .from("graphs")
+          .update({ nodes: updatedNodes })
+          .eq("id", graphId)
+          .eq("user_id", user.id);
+      };
+
+      window.addEventListener("promptChange", handlePromptChange);
+      return () => {
+        window.removeEventListener("promptChange", handlePromptChange);
+      };
+    }, [user, graphId]);
 
     const updateGraphData = useCallback(
       async (newNodes: Node[], newEdges: Edge[]) => {
