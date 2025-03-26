@@ -41,11 +41,14 @@ import { useAuth } from "@/lib/hooks/use-auth";
 export interface GraphNode {
   id: string;
   label: string;
-  type: NodeType;
   position: { x: number; y: number };
-  trueChildId?: string;
-  falseChildId?: string;
-  childId?: string;
+  data: {
+    type: NodeType;
+    prompt?: string;
+    childId?: string;
+    trueChildId?: string;
+    falseChildId?: string;
+  };
 }
 
 const VERTICAL_SPACING = 100;
@@ -97,6 +100,17 @@ function Flow({
 }: FlowProps) {
   const { getViewport } = useReactFlow();
 
+  // Handle keyboard events for node deletion
+  const onKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (selectedNode && (event.key === 'Delete' || event.key === 'Backspace')) {
+        const changes = [{ id: selectedNode.id, type: 'remove' as const }];
+        onNodesChange(changes);
+      }
+    },
+    [selectedNode, onNodesChange]
+  );
+
   return (
     <>
       <ReactFlow
@@ -108,6 +122,7 @@ function Flow({
         onNodeClick={onNodeClick}
         nodeTypes={nodeTypes}
         onInit={onInit}
+        onKeyDown={onKeyDown}
       >
         <Background />
         <Controls />
@@ -135,136 +150,423 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
     const [isAddNodeDialogOpen, setIsAddNodeDialogOpen] = useState(false);
 
+    // Helper function to update node data
+    const updateNodeData = useCallback(
+      async (nodeId: string, newData: any) => {
+        // First, retrieve the current node data
+        const { data: currentNode, error: fetchError } = await supabase
+          .from("nodes")
+          .select("data")
+          .eq("id", nodeId)
+          .single();
+          
+        if (fetchError) {
+          console.error("Error fetching current node data:", fetchError);
+          return false;
+        }
+        
+        // Merge the existing data with the new data
+        const mergedData = { ...currentNode.data, ...newData };
+        
+        // Update with the merged data
+        const { error } = await supabase
+          .from("nodes")
+          .update({ data: mergedData })
+          .eq("id", nodeId);
+
+        if (error) {
+          console.error("Error updating node data:", error);
+          return false;
+        }
+
+        // Update nodes state
+        setNodes((currentNodes) =>
+          currentNodes.map((node) =>
+            node.id === nodeId ? { ...node, data: { ...node.data, ...newData } } : node
+          )
+        );
+
+        return true;
+      },
+      [supabase]
+    );
+
+    // Helper function to create an edge
+    const createEdge = useCallback(
+      async (sourceId: string, targetId: string, sourceHandle?: string) => {
+        try {
+          // Create the edge in the database - let Supabase generate the UUID
+          const { data: newEdge, error } = await supabase
+            .from("edges")
+            .insert({
+              source_node_id: sourceId,
+              target_node_id: targetId,
+            })
+            .select()
+            .single();
+
+          if (error) {
+            console.error("Error creating edge:", error);
+            return null;
+          }
+
+          // Create the new edge object
+          const newEdgeObj: Edge = {
+            id: newEdge.id,
+            source: sourceId,
+            target: targetId,
+            ...(sourceHandle && { sourceHandle }),
+          };
+
+          return newEdgeObj;
+        } catch (error) {
+          console.error("Error in createEdge:", error);
+          return null;
+        }
+      },
+      [supabase]
+    );
+
+    // Helper function to delete an edge
+    const deleteEdge = useCallback(
+      async (edgeId: string) => {
+        const { error } = await supabase.from("edges").delete().eq("id", edgeId);
+
+        if (error) {
+          console.error(`Error deleting edge ${edgeId}:`, error);
+          return false;
+        }
+
+        return true;
+      },
+      [supabase]
+    );
+
+    // Helper function to update node relationships when an edge is created or deleted
+    const updateNodeRelationships = useCallback(
+      async (sourceNode: Node, targetNode: Node, sourceHandle?: string, isRemove: boolean = false) => {
+        if (!sourceNode || !targetNode) return;
+
+        try {
+          const nodeType = sourceNode.type as NodeType;
+
+          if (nodeType === "analysis") {
+            await updateNodeData(sourceNode.id, {
+              childId: isRemove ? undefined : targetNode.id,
+            });
+          } else if (nodeType === "conditional") {
+            if (sourceHandle === "true") {
+              await updateNodeData(sourceNode.id, {
+                trueChildId: isRemove ? undefined : targetNode.id,
+              });
+            } else if (sourceHandle === "false") {
+              await updateNodeData(sourceNode.id, {
+                falseChildId: isRemove ? undefined : targetNode.id,
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Error updating node relationships:", error);
+        }
+      },
+      [updateNodeData]
+    );
+
     useEffect(() => {
       async function fetchGraph() {
         if (!user || !graphId) return;
         setIsLoading(true);
 
-        const { data, error } = await supabase
-          .from("graphs")
-          .select("*")
-          .eq("id", graphId)
-          .eq("user_id", user.id)
-          .single();
+        try {
+          // First, fetch the graph metadata
+          const { data: graphData, error: graphError } = await supabase
+            .from("graphs")
+            .select("*")
+            .eq("id", graphId)
+            .eq("user_id", user.id)
+            .single();
 
-        if (error) {
-          console.error("Error fetching graph:", error);
-          return;
-        }
-
-        if (!data) {
-          console.error("No graph data found");
-          return;
-        }
-
-        const graphNodes = Array.isArray(data.nodes) ? data.nodes : [];
-
-        const flowNodes: Node[] = graphNodes.map((node: GraphNode) => ({
-          id: node.id,
-          position: node.position,
-          type: node.type,
-          data: {
-            label: node.label,
-            type: node.type,
-            ...(node.type === "conditional" && {
-              trueChildId: node.trueChildId,
-              falseChildId: node.falseChildId,
-            }),
-            ...(node.type === "analysis" && {
-              childId: node.childId,
-            }),
-          },
-        }));
-
-        const flowEdges: Edge[] = graphNodes.flatMap((node: GraphNode) => {
-          const edges: Edge[] = [];
-
-          if (node.type === "conditional") {
-            if (node.trueChildId) {
-              edges.push({
-                id: `${node.id}-${node.trueChildId}-true`,
-                source: node.id,
-                target: node.trueChildId,
-                sourceHandle: "true",
-              });
-            }
-            if (node.falseChildId) {
-              edges.push({
-                id: `${node.id}-${node.falseChildId}-false`,
-                source: node.id,
-                target: node.falseChildId,
-                sourceHandle: "false",
-              });
-            }
-          } else if (node.type === "analysis" && node.childId) {
-            edges.push({
-              id: `${node.id}-${node.childId}`,
-              source: node.id,
-              target: node.childId,
-            });
+          if (graphError) {
+            console.error("Error fetching graph:", graphError);
+            return;
           }
 
-          return edges;
-        });
+          if (!graphData) {
+            console.error("No graph data found");
+            return;
+          }
 
-        setNodes(flowNodes);
-        setEdges(flowEdges);
-        setIsLoading(false);
+          // Then fetch nodes for this graph
+          const { data: nodesData, error: nodesError } = await supabase
+            .from("nodes")
+            .select("*")
+            .eq("graph_id", graphId);
+
+          if (nodesError) {
+            console.error("Error fetching nodes:", nodesError);
+            return;
+          }
+
+          // Fetch edges
+          const { data: edgesData, error: edgesError } = await supabase
+            .from("edges")
+            .select("*")
+            .in(
+              "source_node_id",
+              nodesData.map((node) => node.id)
+            );
+
+          if (edgesError) {
+            console.error("Error fetching edges:", edgesError);
+            return;
+          }
+
+          // Transform nodes into React Flow format
+          const flowNodes: Node[] = nodesData.map((node) => {
+            const nodeData = node.data || {};
+            const nodeType = nodeData.type || "prompt"; // Default to prompt if not specified
+
+            const baseNodeData = {
+              label: node.label,
+              type: nodeType,
+            };
+
+            // Add type-specific properties and callbacks
+            let fullNodeData: any = { ...baseNodeData };
+
+            if (nodeType === "prompt") {
+              fullNodeData = {
+                ...baseNodeData,
+                prompt: nodeData.prompt || "",
+                onPromptChange: async (nodeId: string, newData: PromptNodeData) => {
+                  await updateNodeData(nodeId, { prompt: newData.prompt });
+                },
+              };
+            } else if (nodeType === "analysis") {
+              fullNodeData = {
+                ...baseNodeData,
+                childId: nodeData.childId,
+              };
+            } else if (nodeType === "conditional") {
+              fullNodeData = {
+                ...baseNodeData,
+                trueChildId: nodeData.trueChildId,
+                falseChildId: nodeData.falseChildId,
+              };
+            }
+
+            return {
+              id: node.id,
+              position: { x: node.position_x, y: node.position_y },
+              type: nodeType,
+              data: fullNodeData,
+            };
+          });
+
+          // Transform edges into React Flow format
+          const flowEdges: Edge[] = edgesData.map((edge) => {
+            const sourceNode = nodesData.find(n => n.id === edge.source_node_id);
+            let sourceHandle: string | undefined = undefined;
+            
+            if (sourceNode?.data?.type === "conditional") {
+              // Handle potential null/undefined values with safe type checking
+              const trueChildId = sourceNode.data?.trueChildId;
+              const falseChildId = sourceNode.data?.falseChildId;
+              
+              if (trueChildId && trueChildId === edge.target_node_id) {
+                sourceHandle = "true";
+              } else if (falseChildId && falseChildId === edge.target_node_id) {
+                sourceHandle = "false";
+              }
+            }
+
+            return {
+              id: edge.id,
+              source: edge.source_node_id,
+              target: edge.target_node_id,
+              ...(sourceHandle && { sourceHandle }),
+            };
+          });
+
+          // Set state
+          setNodes(flowNodes);
+          setEdges(flowEdges);
+          setIsLoading(false);
+        } catch (error) {
+          console.error("Error in fetchGraph:", error);
+          setIsLoading(false);
+        }
       }
 
       fetchGraph();
-    }, [user, graphId, supabase]);
+    }, [user, graphId, supabase, updateNodeData]);
 
     const updateGraphData = useCallback(
       async (newNodes: Node[], newEdges: Edge[]) => {
         onUpdateStart?.();
         try {
-          const graphNodes = newNodes.map((node) => ({
-            id: node.id,
-            label: node.data.label,
-            type: node.data.type,
-            position: node.position,
-            trueChildId: node.data.trueChildId,
-            falseChildId: node.data.falseChildId,
-            childId: node.data.childId,
-          }));
+          // Update node positions
+          for (const node of newNodes) {
+            const { error } = await supabase
+              .from("nodes")
+              .update({
+                position_x: node.position.x,
+                position_y: node.position.y,
+              })
+              .eq("id", node.id);
 
-          const { error } = await supabase
-            .from("graphs")
-            .update({ nodes: graphNodes })
-            .eq("id", graphId);
-
-          if (error) {
-            console.error("Error updating graph:", error);
-            return false;
+            if (error) {
+              console.error("Error updating node position:", error);
+            }
           }
 
           return true;
+        } catch (error) {
+          console.error("Error in updateGraphData:", error);
+          return false;
         } finally {
           onUpdateEnd?.();
         }
       },
-      [graphId, supabase, onUpdateStart, onUpdateEnd]
-    );
-
-    const onNodesChangeCallback = useCallback(
-      async (changes: any) => {
-        const newNodes = applyNodeChanges(changes, nodes);
-        setNodes(newNodes);
-
-        await updateGraphData(newNodes, edges);
-      },
-      [nodes, edges, updateGraphData]
+      [supabase, onUpdateStart, onUpdateEnd]
     );
 
     const onEdgesChangeCallback = useCallback(
       async (changes: any) => {
+        // Apply the changes to local state
         const newEdges = applyEdgeChanges(changes, edges);
         setEdges(newEdges);
 
-        await updateGraphData(nodes, newEdges);
+        // Handle edge deletions
+        const removedEdges = changes.filter(
+          (change: any) => change.type === "remove"
+        );
+
+        for (const change of removedEdges) {
+          const edgeId = change.id;
+          const edge = edges.find((e) => e.id === edgeId);
+          
+          if (edge) {
+            // Delete edge from the database
+            await deleteEdge(edgeId);
+            
+            // Update node relationships
+            const sourceNode = nodes.find((n) => n.id === edge.source);
+            const targetNode = nodes.find((n) => n.id === edge.target);
+            
+            if (sourceNode && targetNode) {
+              await updateNodeRelationships(
+                sourceNode, 
+                targetNode, 
+                edge.sourceHandle || undefined, 
+                true // isRemove = true
+              );
+            }
+          }
+        }
       },
-      [nodes, edges, updateGraphData]
+      [edges, nodes, deleteEdge, updateNodeRelationships]
+    );
+
+    // Function to safely delete a node and all its connections
+    const deleteNode = useCallback(
+      async (nodeId: string) => {
+        try {
+          // Find all edges connected to this node
+          const connectedEdges = edges.filter(
+            (edge) => edge.source === nodeId || edge.target === nodeId
+          );
+
+          // Delete all connected edges
+          for (const edge of connectedEdges) {
+            await deleteEdge(edge.id);
+            
+            // If this node is the target of an edge, update the source node's references
+            if (edge.target === nodeId) {
+              const sourceNode = nodes.find((n) => n.id === edge.source);
+              const dummyTargetNode = { id: nodeId } as Node; // Just need the ID for the updateNodeRelationships function
+              
+              if (sourceNode) {
+                await updateNodeRelationships(
+                  sourceNode, 
+                  dummyTargetNode, 
+                  edge.sourceHandle || undefined, 
+                  true // isRemove = true
+                );
+              }
+            }
+          }
+
+          // Now delete the node itself
+          const { error } = await supabase
+            .from("nodes")
+            .delete()
+            .eq("id", nodeId);
+
+          if (error) {
+            console.error(`Error deleting node ${nodeId}:`, error);
+            return false;
+          }
+
+          // Update local state
+          setEdges(
+            edges.filter(
+              (edge) => edge.source !== nodeId && edge.target !== nodeId
+            )
+          );
+          setNodes(nodes.filter((node) => node.id !== nodeId));
+
+          // Clear selected node if it was the one deleted
+          if (selectedNode?.id === nodeId) {
+            setSelectedNode(null);
+          }
+
+          return true;
+        } catch (error) {
+          console.error("Error in deleteNode:", error);
+          return false;
+        }
+      },
+      [edges, nodes, selectedNode, supabase, deleteEdge, updateNodeRelationships]
+    );
+
+    const onNodesChangeCallback = useCallback(
+      async (changes: any) => {
+        // Check for deletion changes and handle them properly
+        const deletionChanges = changes.filter(
+          (change: any) => change.type === "remove"
+        );
+        const otherChanges = changes.filter(
+          (change: any) => change.type !== "remove"
+        );
+
+        // Handle explicit deletion requests (e.g., from a delete button)
+        for (const change of deletionChanges) {
+          const nodeId = change.id;
+          const confirmed = window.confirm(
+            `Are you sure you want to delete this node and all its connections?`
+          );
+
+          if (confirmed) {
+            await deleteNode(nodeId);
+          }
+        }
+
+        // Apply the non-deletion changes
+        const newNodes = applyNodeChanges(otherChanges, nodes);
+        setNodes(newNodes);
+
+        // Find position changes
+        const positionChanges = otherChanges.filter(
+          (change: any) => change.type === "position" && change.position
+        );
+
+        // Only update the database if there are position changes
+        if (positionChanges.length > 0) {
+          await updateGraphData(newNodes, edges);
+        }
+      },
+      [nodes, edges, updateGraphData, deleteNode]
     );
 
     const onConnect = useCallback(
@@ -273,83 +575,69 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const targetNode = nodes.find((node) => node.id === params.target);
 
         if (!sourceNode || !targetNode) return;
-
-        if (sourceNode.type === "analysis") {
-          const newEdges = edges.filter(
-            (edge) => edge.source !== sourceNode.id
-          );
-
-          const newEdge = {
-            id: `${sourceNode.id}-${targetNode.id}`,
-            source: sourceNode.id,
-            target: targetNode.id,
-          };
-
-          const updatedNodes = nodes.map((node) => {
-            if (node.id === sourceNode.id) {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  childId: targetNode.id,
-                },
-              };
-            }
-            return node;
-          });
-
-          setNodes(updatedNodes);
-          setEdges([...newEdges, newEdge]);
-          await updateGraphData(updatedNodes, [...newEdges, newEdge]);
-          return;
-        }
-
-        if (sourceNode.type === "conditional") {
-          const existingConnections = edges.filter(
-            (edge) => edge.source === params.source
-          );
-          if (existingConnections.length >= 2) {
-            return;
-          }
-
-          const existingHandleConnection = existingConnections.find(
-            (edge) => edge.sourceHandle === params.sourceHandle
-          );
-          if (existingHandleConnection) {
-            return;
-          }
-
-          const updatedNodes = nodes.map((node) => {
-            if (node.id === sourceNode.id) {
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  [params.sourceHandle === "true"
-                    ? "trueChildId"
-                    : "falseChildId"]: targetNode.id,
-                },
-              };
-            }
-            return node;
-          });
-          setNodes(updatedNodes);
-
-          const newEdge = {
-            ...params,
-            id: `${sourceNode.id}-${targetNode.id}-${params.sourceHandle}`,
-          };
-          const newEdges = addEdge(newEdge, edges);
-          setEdges(newEdges);
-          await updateGraphData(updatedNodes, newEdges);
-          return;
-        }
-
+        
+        // Prompt nodes can't have outgoing connections
         if (sourceNode.type === "prompt") {
           return;
         }
+
+        // For analysis nodes, only allow one outgoing connection
+        if (sourceNode.type === "analysis") {
+          // Remove any existing connections
+          const existingEdges = edges.filter(
+            (edge) => edge.source === sourceNode.id
+          );
+
+          // Delete existing edges
+          for (const edge of existingEdges) {
+            await deleteEdge(edge.id);
+          }
+        }
+        
+        // For conditional nodes, check if we already have connections for this handle
+        if (sourceNode.type === "conditional" && params.sourceHandle) {
+          const existingConnections = edges.filter(
+            (edge) =>
+              edge.source === params.source &&
+              edge.sourceHandle === params.sourceHandle
+          );
+
+          // Delete any existing connections for this handle
+          for (const edge of existingConnections) {
+            await deleteEdge(edge.id);
+          }
+        }
+
+        // Create the new edge
+        const newEdgeObj = await createEdge(
+          sourceNode.id, 
+          targetNode.id, 
+          params.sourceHandle
+        );
+        
+        if (newEdgeObj) {
+          // Update node relationships
+          await updateNodeRelationships(sourceNode, targetNode, params.sourceHandle);
+          
+          // Update edges state
+          setEdges((currentEdges) => {
+            // Remove any edges that would be replaced by this new connection
+            const filteredEdges = currentEdges.filter(edge => {
+              if (sourceNode.type === "analysis") {
+                return edge.source !== sourceNode.id;
+              }
+              if (sourceNode.type === "conditional" && params.sourceHandle) {
+                return !(edge.source === sourceNode.id && 
+                         edge.sourceHandle === params.sourceHandle);
+              }
+              return true;
+            });
+            
+            return [...filteredEdges, newEdgeObj];
+          });
+        }
       },
-      [nodes, edges, updateGraphData]
+      [nodes, edges, createEdge, deleteEdge, updateNodeRelationships]
     );
 
     const onNodeClick = useCallback((event: any, node: Node) => {
@@ -358,37 +646,116 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     }, []);
 
     const handleAddNode = useCallback(
-      (type: NodeType, label: string) => {
-        const newNodeId = String(Date.now());
-        const center = {
-          x: 500,
-          y: 300,
-        };
+      async (type: NodeType, label: string) => {
+        if (!graphId || !label || !type) {
+          console.error("Missing required fields for node creation");
+          return;
+        }
 
-        const newNode: Node = {
-          id: newNodeId,
-          position: center,
-          data: { label, type },
-          type,
-        };
-
-        const newNodes = [...nodes, newNode];
-        setNodes(newNodes);
-
-        if (selectedNode) {
-          const newEdge: Edge = {
-            id: `${selectedNode.id}-${newNodeId}`,
-            source: selectedNode.id,
-            target: newNodeId,
+        try {
+          const center = {
+            x: 500,
+            y: 300,
           };
-          const newEdges = [...edges, newEdge];
-          setEdges(newEdges);
-          updateGraphData(newNodes, newEdges);
-        } else {
-          updateGraphData(newNodes, edges);
+
+          // Create initial node data based on type
+          let nodeData: any = { type };
+          
+          // Add type-specific properties
+          if (type === "prompt") {
+            nodeData.prompt = "";
+          }
+
+          // Create the node in the database
+          const { data: createdNode, error: nodeError } = await supabase
+            .from("nodes")
+            .insert({
+              graph_id: graphId,
+              label,
+              position_x: center.x,
+              position_y: center.y,
+              data: nodeData
+            })
+            .select()
+            .single();
+
+          if (nodeError) {
+            console.error("Error creating node:", nodeError);
+            return;
+          }
+
+          if (!createdNode) {
+            console.error("No node was created");
+            return;
+          }
+
+          // Use the ID generated by the database
+          const newNodeId = createdNode.id;
+
+          // Create the node for React Flow
+          const newNode: Node = {
+            id: newNodeId,
+            position: center,
+            type,
+            data: {
+              label,
+              type,
+              ...(type === "prompt" && {
+                prompt: "",
+                onPromptChange: async (nodeId: string, newData: PromptNodeData) => {
+                  await updateNodeData(nodeId, { prompt: newData.prompt });
+                },
+              }),
+            },
+          };
+
+          // Update local state
+          setNodes([...nodes, newNode]);
+
+          // If a node is selected, create an edge connecting them
+          if (selectedNode) {
+            // Skip connection if source is a prompt node
+            if (selectedNode.type === "prompt") {
+              return;
+            }
+            
+            let sourceHandle: string | undefined = undefined;
+            
+            // For conditional nodes, determine which output to connect
+            if (selectedNode.type === "conditional") {
+              const hasTrueConnection = edges.some(
+                e => e.source === selectedNode.id && e.sourceHandle === "true"
+              );
+              
+              if (!hasTrueConnection) {
+                sourceHandle = "true";
+              } else {
+                const hasFalseConnection = edges.some(
+                  e => e.source === selectedNode.id && e.sourceHandle === "false"
+                );
+                
+                if (!hasFalseConnection) {
+                  sourceHandle = "false";
+                }
+              }
+            }
+            
+            // Create the edge
+            const newEdge = await createEdge(selectedNode.id, newNodeId, sourceHandle);
+            
+            if (newEdge) {
+              // Update the source node's relationships
+              await updateNodeRelationships(selectedNode, newNode, sourceHandle);
+              
+              // Update local state
+              setEdges(prev => [...prev, newEdge]);
+            }
+          }
+        } catch (error) {
+          console.error("Error in handleAddNode:", error);
         }
       },
-      [nodes, edges, selectedNode, updateGraphData]
+      [nodes, edges, selectedNode, graphId, supabase, createEdge, updateNodeRelationships, updateNodeData]
     );
 
     useImperativeHandle(ref, () => ({

@@ -40,7 +40,8 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase
+      // Create the graph first
+      const { data: graphData, error: graphError } = await supabase
         .from("graphs")
         .insert([
           {
@@ -51,10 +52,26 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
         .select()
         .single();
 
-      if (error) throw error;
+      if (graphError) throw graphError;
+
+      // Create an initial Analysis node
+      const { error: nodeError } = await supabase
+        .from("nodes")
+        .insert({
+          graph_id: graphData.id,
+          label: "Analysis",
+          position_x: 500, // Center position
+          position_y: 300,
+          data: { type: "analysis" }
+        });
+
+      if (nodeError) {
+        console.error("Error creating initial node:", nodeError);
+        // Continue even if initial node creation fails
+      }
 
       setOpen(false);
-      router.push(`/dashboard/graphs/${data.id}`);
+      router.push(`/dashboard/graphs/${graphData.id}`);
     } catch (error) {
       console.error("Failed to create graph:", error);
     } finally {

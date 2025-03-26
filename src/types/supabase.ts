@@ -229,7 +229,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      node_types: "ANALYSIS" | "CONDITIONAL" | "PROMPT"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
