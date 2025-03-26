@@ -142,16 +142,17 @@ function Flow({
 
 export const Graph = forwardRef<GraphRef, GraphProps>(
   ({ graphId, className, onUpdateStart, onUpdateEnd }, ref) => {
-    const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
     const { user } = useAuth();
     const supabase = createClient();
-    const positionUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const [isLoading, setIsLoading] = useState(true);
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
     const [isAddNodeDialogOpen, setIsAddNodeDialogOpen] = useState(false);
+
+    const positionUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
 
     const updateNodeData = useCallback(
       async (nodeId: string, newData: any) => {
