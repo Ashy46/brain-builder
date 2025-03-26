@@ -100,11 +100,13 @@ function Flow({
 }: FlowProps) {
   const { getViewport } = useReactFlow();
 
-  // Handle keyboard events for node deletion
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
-      if (selectedNode && (event.key === 'Delete' || event.key === 'Backspace')) {
-        const changes = [{ id: selectedNode.id, type: 'remove' as const }];
+      if (
+        selectedNode &&
+        (event.key === "Delete" || event.key === "Backspace")
+      ) {
+        const changes = [{ id: selectedNode.id, type: "remove" as const }];
         onNodesChange(changes);
       }
     },
@@ -151,33 +153,29 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
     const [isAddNodeDialogOpen, setIsAddNodeDialogOpen] = useState(false);
 
-    // Helper function to update node data
     const updateNodeData = useCallback(
       async (nodeId: string, newData: any) => {
-        // Update nodes state first (eager update)
         setNodes((currentNodes) =>
           currentNodes.map((node) =>
-            node.id === nodeId ? { ...node, data: { ...node.data, ...newData } } : node
+            node.id === nodeId
+              ? { ...node, data: { ...node.data, ...newData } }
+              : node
           )
         );
-        
-        // Then update the database
-        // First, retrieve the current node data
+
         const { data: currentNode, error: fetchError } = await supabase
           .from("nodes")
           .select("data")
           .eq("id", nodeId)
           .single();
-          
+
         if (fetchError) {
           console.error("Error fetching current node data:", fetchError);
           return false;
         }
-        
-        // Merge the existing data with the new data
+
         const mergedData = { ...currentNode.data, ...newData };
-        
-        // Update with the merged data
+
         const { error } = await supabase
           .from("nodes")
           .update({ data: mergedData })
@@ -193,11 +191,9 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       [supabase]
     );
 
-    // Helper function to create an edge
     const createEdge = useCallback(
       async (sourceId: string, targetId: string, sourceHandle?: string) => {
         try {
-          // Create the edge in the database - let Supabase generate the UUID
           const { data: newEdge, error } = await supabase
             .from("edges")
             .insert({
@@ -212,7 +208,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             return null;
           }
 
-          // Create the new edge object
           const newEdgeObj: Edge = {
             id: newEdge.id,
             source: sourceId,
@@ -229,10 +224,12 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       [supabase]
     );
 
-    // Helper function to delete an edge
     const deleteEdge = useCallback(
       async (edgeId: string) => {
-        const { error } = await supabase.from("edges").delete().eq("id", edgeId);
+        const { error } = await supabase
+          .from("edges")
+          .delete()
+          .eq("id", edgeId);
 
         if (error) {
           console.error(`Error deleting edge ${edgeId}:`, error);
@@ -244,9 +241,13 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       [supabase]
     );
 
-    // Helper function to update node relationships when an edge is created or deleted
     const updateNodeRelationships = useCallback(
-      async (sourceNode: Node, targetNode: Node, sourceHandle?: string, isRemove: boolean = false) => {
+      async (
+        sourceNode: Node,
+        targetNode: Node,
+        sourceHandle?: string,
+        isRemove: boolean = false
+      ) => {
         if (!sourceNode || !targetNode) return;
 
         try {
@@ -280,7 +281,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         setIsLoading(true);
 
         try {
-          // First, fetch the graph metadata
           const { data: graphData, error: graphError } = await supabase
             .from("graphs")
             .select("*")
@@ -298,7 +298,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             return;
           }
 
-          // Then fetch nodes for this graph
           const { data: nodesData, error: nodesError } = await supabase
             .from("nodes")
             .select("*")
@@ -309,7 +308,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             return;
           }
 
-          // Fetch edges
           const { data: edgesData, error: edgesError } = await supabase
             .from("edges")
             .select("*")
@@ -323,24 +321,25 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             return;
           }
 
-          // Transform nodes into React Flow format
           const flowNodes: Node[] = nodesData.map((node) => {
             const nodeData = node.data || {};
-            const nodeType = nodeData.type || "prompt"; // Default to prompt if not specified
+            const nodeType = nodeData.type || "prompt";
 
             const baseNodeData = {
               label: node.label,
               type: nodeType,
             };
 
-            // Add type-specific properties and callbacks
             let fullNodeData: any = { ...baseNodeData };
 
             if (nodeType === "prompt") {
               fullNodeData = {
                 ...baseNodeData,
                 prompt: nodeData.prompt || "",
-                onPromptChange: async (nodeId: string, newData: PromptNodeData) => {
+                onPromptChange: async (
+                  nodeId: string,
+                  newData: PromptNodeData
+                ) => {
                   await updateNodeData(nodeId, { prompt: newData.prompt });
                 },
               };
@@ -365,16 +364,16 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             };
           });
 
-          // Transform edges into React Flow format
           const flowEdges: Edge[] = edgesData.map((edge) => {
-            const sourceNode = nodesData.find(n => n.id === edge.source_node_id);
+            const sourceNode = nodesData.find(
+              (n) => n.id === edge.source_node_id
+            );
             let sourceHandle: string | undefined = undefined;
-            
+
             if (sourceNode?.data?.type === "conditional") {
-              // Handle potential null/undefined values with safe type checking
               const trueChildId = sourceNode.data?.trueChildId;
               const falseChildId = sourceNode.data?.falseChildId;
-              
+
               if (trueChildId && trueChildId === edge.target_node_id) {
                 sourceHandle = "true";
               } else if (falseChildId && falseChildId === edge.target_node_id) {
@@ -390,7 +389,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             };
           });
 
-          // Set state
           setNodes(flowNodes);
           setEdges(flowEdges);
           setIsLoading(false);
@@ -407,7 +405,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       async (newNodes: Node[], newEdges: Edge[]) => {
         onUpdateStart?.();
         try {
-          // Update node positions
           for (const node of newNodes) {
             const { error } = await supabase
               .from("nodes")
@@ -433,30 +430,25 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       [supabase, onUpdateStart, onUpdateEnd]
     );
 
-    // Debounced version of updateGraphData
     const debouncedUpdatePositions = useCallback(
       (newNodes: Node[], newEdges: Edge[]) => {
-        // Clear any existing timeout
         if (positionUpdateTimeoutRef.current) {
           clearTimeout(positionUpdateTimeoutRef.current);
         }
-        
-        // Set a new timeout
+
         positionUpdateTimeoutRef.current = setTimeout(() => {
           updateGraphData(newNodes, newEdges);
           positionUpdateTimeoutRef.current = null;
-        }, 500); // 500ms debounce time
+        }, 500);
       },
       [updateGraphData]
     );
 
     const onEdgesChangeCallback = useCallback(
       async (changes: any) => {
-        // Apply the changes to local state
         const newEdges = applyEdgeChanges(changes, edges);
         setEdges(newEdges);
 
-        // Handle edge deletions
         const removedEdges = changes.filter(
           (change: any) => change.type === "remove"
         );
@@ -464,21 +456,19 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         for (const change of removedEdges) {
           const edgeId = change.id;
           const edge = edges.find((e) => e.id === edgeId);
-          
+
           if (edge) {
-            // Delete edge from the database
             await deleteEdge(edgeId);
-            
-            // Update node relationships
+
             const sourceNode = nodes.find((n) => n.id === edge.source);
             const targetNode = nodes.find((n) => n.id === edge.target);
-            
+
             if (sourceNode && targetNode) {
               await updateNodeRelationships(
-                sourceNode, 
-                targetNode, 
-                edge.sourceHandle || undefined, 
-                true // isRemove = true
+                sourceNode,
+                targetNode,
+                edge.sourceHandle || undefined,
+                true
               );
             }
           }
@@ -487,11 +477,9 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       [edges, nodes, deleteEdge, updateNodeRelationships]
     );
 
-    // Function to safely delete a node and all its connections
     const deleteNode = useCallback(
       async (nodeId: string) => {
         try {
-          // Update local state first (eager update)
           setEdges(
             edges.filter(
               (edge) => edge.source !== nodeId && edge.target !== nodeId
@@ -499,37 +487,32 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           );
           setNodes(nodes.filter((node) => node.id !== nodeId));
 
-          // Clear selected node if it was the one deleted
           if (selectedNode?.id === nodeId) {
             setSelectedNode(null);
           }
 
-          // Find all edges connected to this node
           const connectedEdges = edges.filter(
             (edge) => edge.source === nodeId || edge.target === nodeId
           );
 
-          // Delete all connected edges
           for (const edge of connectedEdges) {
             await deleteEdge(edge.id);
-            
-            // If this node is the target of an edge, update the source node's references
+
             if (edge.target === nodeId) {
               const sourceNode = nodes.find((n) => n.id === edge.source);
-              const dummyTargetNode = { id: nodeId } as Node; // Just need the ID for the updateNodeRelationships function
-              
+              const dummyTargetNode = { id: nodeId } as Node;
+
               if (sourceNode) {
                 await updateNodeRelationships(
-                  sourceNode, 
-                  dummyTargetNode, 
-                  edge.sourceHandle || undefined, 
-                  true // isRemove = true
+                  sourceNode,
+                  dummyTargetNode,
+                  edge.sourceHandle || undefined,
+                  true
                 );
               }
             }
           }
 
-          // Now delete the node itself
           const { error } = await supabase
             .from("nodes")
             .delete()
@@ -546,12 +529,18 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           return false;
         }
       },
-      [edges, nodes, selectedNode, supabase, deleteEdge, updateNodeRelationships]
+      [
+        edges,
+        nodes,
+        selectedNode,
+        supabase,
+        deleteEdge,
+        updateNodeRelationships,
+      ]
     );
 
     const onNodesChangeCallback = useCallback(
       async (changes: any) => {
-        // Check for deletion changes and handle them properly
         const deletionChanges = changes.filter(
           (change: any) => change.type === "remove"
         );
@@ -559,22 +548,18 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           (change: any) => change.type !== "remove"
         );
 
-        // Handle deletion requests without confirmation
         for (const change of deletionChanges) {
           const nodeId = change.id;
           await deleteNode(nodeId);
         }
 
-        // Apply the non-deletion changes
         const newNodes = applyNodeChanges(otherChanges, nodes);
         setNodes(newNodes);
 
-        // Find position changes
         const positionChanges = otherChanges.filter(
           (change: any) => change.type === "position" && change.position
         );
 
-        // Only update the database if there are position changes, and use debouncing
         if (positionChanges.length > 0) {
           debouncedUpdatePositions(newNodes, edges);
         }
@@ -588,26 +573,21 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const targetNode = nodes.find((node) => node.id === params.target);
 
         if (!sourceNode || !targetNode) return;
-        
-        // Prompt nodes can't have outgoing connections
+
         if (sourceNode.type === "prompt") {
           return;
         }
 
-        // For analysis nodes, only allow one outgoing connection
         if (sourceNode.type === "analysis") {
-          // Remove any existing connections
           const existingEdges = edges.filter(
             (edge) => edge.source === sourceNode.id
           );
 
-          // Delete existing edges
           for (const edge of existingEdges) {
             await deleteEdge(edge.id);
           }
         }
-        
-        // For conditional nodes, check if we already have connections for this handle
+
         if (sourceNode.type === "conditional" && params.sourceHandle) {
           const existingConnections = edges.filter(
             (edge) =>
@@ -615,37 +595,38 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
               edge.sourceHandle === params.sourceHandle
           );
 
-          // Delete any existing connections for this handle
           for (const edge of existingConnections) {
             await deleteEdge(edge.id);
           }
         }
 
-        // Create the new edge
         const newEdgeObj = await createEdge(
-          sourceNode.id, 
-          targetNode.id, 
+          sourceNode.id,
+          targetNode.id,
           params.sourceHandle
         );
-        
+
         if (newEdgeObj) {
-          // Update node relationships
-          await updateNodeRelationships(sourceNode, targetNode, params.sourceHandle);
-          
-          // Update edges state
+          await updateNodeRelationships(
+            sourceNode,
+            targetNode,
+            params.sourceHandle
+          );
+
           setEdges((currentEdges) => {
-            // Remove any edges that would be replaced by this new connection
-            const filteredEdges = currentEdges.filter(edge => {
+            const filteredEdges = currentEdges.filter((edge) => {
               if (sourceNode.type === "analysis") {
                 return edge.source !== sourceNode.id;
               }
               if (sourceNode.type === "conditional" && params.sourceHandle) {
-                return !(edge.source === sourceNode.id && 
-                         edge.sourceHandle === params.sourceHandle);
+                return !(
+                  edge.source === sourceNode.id &&
+                  edge.sourceHandle === params.sourceHandle
+                );
               }
               return true;
             });
-            
+
             return [...filteredEdges, newEdgeObj];
           });
         }
@@ -671,15 +652,12 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             y: 300,
           };
 
-          // Create initial node data based on type
           let nodeData: any = { type };
-          
-          // Add type-specific properties
+
           if (type === "prompt") {
             nodeData.prompt = "";
           }
 
-          // Create the node in the database
           const { data: createdNode, error: nodeError } = await supabase
             .from("nodes")
             .insert({
@@ -687,7 +665,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
               label,
               position_x: center.x,
               position_y: center.y,
-              data: nodeData
+              data: nodeData,
             })
             .select()
             .single();
@@ -702,10 +680,8 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             return;
           }
 
-          // Use the ID generated by the database
           const newNodeId = createdNode.id;
 
-          // Create the node for React Flow
           const newNode: Node = {
             id: newNodeId,
             position: center,
@@ -715,60 +691,74 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
               type,
               ...(type === "prompt" && {
                 prompt: "",
-                onPromptChange: async (nodeId: string, newData: PromptNodeData) => {
+                onPromptChange: async (
+                  nodeId: string,
+                  newData: PromptNodeData
+                ) => {
                   await updateNodeData(nodeId, { prompt: newData.prompt });
                 },
               }),
             },
           };
 
-          // Update local state
           setNodes([...nodes, newNode]);
 
-          // If a node is selected, create an edge connecting them
           if (selectedNode) {
-            // Skip connection if source is a prompt node
             if (selectedNode.type === "prompt") {
               return;
             }
-            
+
             let sourceHandle: string | undefined = undefined;
-            
-            // For conditional nodes, determine which output to connect
+
             if (selectedNode.type === "conditional") {
               const hasTrueConnection = edges.some(
-                e => e.source === selectedNode.id && e.sourceHandle === "true"
+                (e) => e.source === selectedNode.id && e.sourceHandle === "true"
               );
-              
+
               if (!hasTrueConnection) {
                 sourceHandle = "true";
               } else {
                 const hasFalseConnection = edges.some(
-                  e => e.source === selectedNode.id && e.sourceHandle === "false"
+                  (e) =>
+                    e.source === selectedNode.id && e.sourceHandle === "false"
                 );
-                
+
                 if (!hasFalseConnection) {
                   sourceHandle = "false";
                 }
               }
             }
-            
-            // Create the edge
-            const newEdge = await createEdge(selectedNode.id, newNodeId, sourceHandle);
-            
+
+            const newEdge = await createEdge(
+              selectedNode.id,
+              newNodeId,
+              sourceHandle
+            );
+
             if (newEdge) {
-              // Update the source node's relationships
-              await updateNodeRelationships(selectedNode, newNode, sourceHandle);
-              
-              // Update local state
-              setEdges(prev => [...prev, newEdge]);
+              await updateNodeRelationships(
+                selectedNode,
+                newNode,
+                sourceHandle
+              );
+
+              setEdges((prev) => [...prev, newEdge]);
             }
           }
         } catch (error) {
           console.error("Error in handleAddNode:", error);
         }
       },
-      [nodes, edges, selectedNode, graphId, supabase, createEdge, updateNodeRelationships, updateNodeData]
+      [
+        nodes,
+        edges,
+        selectedNode,
+        graphId,
+        supabase,
+        createEdge,
+        updateNodeRelationships,
+        updateNodeData,
+      ]
     );
 
     useImperativeHandle(ref, () => ({
@@ -781,7 +771,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       selectedNode,
     }));
 
-    // Clean up the timeout when the component unmounts
     useEffect(() => {
       return () => {
         if (positionUpdateTimeoutRef.current) {
