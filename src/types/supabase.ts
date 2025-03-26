@@ -36,26 +36,32 @@ export type Database = {
     Tables: {
       graphs: {
         Row: {
+          analysis_methods: string[] | null
           created_at: string
           id: string
           name: string
           nodes: Json[]
+          patient_params: string[] | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          analysis_methods?: string[] | null
           created_at?: string
           id?: string
           name: string
           nodes?: Json[]
+          patient_params?: string[] | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          analysis_methods?: string[] | null
           created_at?: string
           id?: string
           name?: string
           nodes?: Json[]
+          patient_params?: string[] | null
           updated_at?: string
           user_id?: string
         }
