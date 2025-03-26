@@ -5,8 +5,10 @@ import { PromptNode, PromptNodeData } from "./prompt-node";
 export type NodeType = "analysis" | "conditional" | "prompt";
 
 export interface BaseNodeData {
+  id: string;
   label: string;
   type: NodeType;
+  graphId: string;
 }
 
 export type CustomNodeData =
