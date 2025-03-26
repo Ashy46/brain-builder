@@ -220,35 +220,18 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       async (newNodes: Node[], newEdges: Edge[]) => {
         onUpdateStart?.();
         try {
-          const graphNodes = newNodes.map((node) => {
-            const nodeData = node.data as unknown as CustomNodeData;
-            return {
-              id: node.id,
-              label: nodeData.label,
-              type: nodeData.type,
-              position: node.position,
-              trueChildId:
-                nodeData.type === "conditional"
-                  ? (nodeData as ConditionalNodeData).trueChildId
-                  : undefined,
-              falseChildId:
-                nodeData.type === "conditional"
-                  ? (nodeData as ConditionalNodeData).falseChildId
-                  : undefined,
-              childId:
-                nodeData.type === "analysis"
-                  ? (nodeData as AnalysisNodeData).childId
-                  : undefined,
-              prompt:
-                nodeData.type === "prompt"
-                  ? (nodeData as PromptNodeData).prompt
-                  : undefined,
-            };
-          });
-
+          // Save the full node data to the database
           const { error } = await supabase
             .from("graphs")
-            .update({ nodes: graphNodes })
+            .update({
+              nodes: newNodes.map((node) => ({
+                ...node,
+                data: {
+                  ...node.data,
+                  onNodeDataChange: undefined, // Remove the function before saving
+                },
+              })),
+            })
             .eq("id", graphId);
 
           if (error) {
@@ -289,7 +272,10 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           return node;
         });
         setNodes(newNodes);
-        await updateGraphData(newNodes, edges);
+        // Only update the database if it's not a prompt update
+        if (newData.type !== "prompt") {
+          await updateGraphData(newNodes, edges);
+        }
       },
       [nodes, edges, updateGraphData]
     );
