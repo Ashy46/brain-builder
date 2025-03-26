@@ -136,6 +136,11 @@ export function PromptNode({
     data.onPromptChange?.(id, newData);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Prevent deletion events from bubbling up when textarea is focused
+    e.stopPropagation();
+  };
+
   return (
     <div className="relative">
       <NodeTypeLabel type={data.type} />
@@ -157,6 +162,7 @@ export function PromptNode({
         <Textarea
           value={data.prompt ?? ""}
           onChange={handlePromptChange}
+          onKeyDown={handleKeyDown}
           placeholder="Enter your prompt here..."
           className="w-full text-sm bg-transparent border-green-500/20 text-green-400 placeholder:text-green-400/50"
         />

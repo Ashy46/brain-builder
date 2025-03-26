@@ -481,39 +481,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const deleteNode = useCallback(
       async (nodeId: string) => {
         try {
-          setEdges(
-            edges.filter(
-              (edge) => edge.source !== nodeId && edge.target !== nodeId
-            )
-          );
-          setNodes(nodes.filter((node) => node.id !== nodeId));
-
-          if (selectedNode?.id === nodeId) {
-            setSelectedNode(null);
-          }
-
-          const connectedEdges = edges.filter(
-            (edge) => edge.source === nodeId || edge.target === nodeId
-          );
-
-          for (const edge of connectedEdges) {
-            await deleteEdge(edge.id);
-
-            if (edge.target === nodeId) {
-              const sourceNode = nodes.find((n) => n.id === edge.source);
-              const dummyTargetNode = { id: nodeId } as Node;
-
-              if (sourceNode) {
-                await updateNodeRelationships(
-                  sourceNode,
-                  dummyTargetNode,
-                  edge.sourceHandle || undefined,
-                  true
-                );
-              }
-            }
-          }
-
           const { error } = await supabase
             .from("nodes")
             .delete()
@@ -524,20 +491,26 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             return false;
           }
 
+          setEdges((currentEdges) => 
+            currentEdges.filter(
+              (edge) => edge.source !== nodeId && edge.target !== nodeId
+            )
+          );
+          setNodes((currentNodes) => 
+            currentNodes.filter((node) => node.id !== nodeId)
+          );
+
+          if (selectedNode?.id === nodeId) {
+            setSelectedNode(null);
+          }
+
           return true;
         } catch (error) {
           console.error("Error in deleteNode:", error);
           return false;
         }
       },
-      [
-        edges,
-        nodes,
-        selectedNode,
-        supabase,
-        deleteEdge,
-        updateNodeRelationships,
-      ]
+      [selectedNode, supabase]
     );
 
     const onNodesChangeCallback = useCallback(
@@ -554,15 +527,17 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           await deleteNode(nodeId);
         }
 
-        const newNodes = applyNodeChanges(otherChanges, nodes);
-        setNodes(newNodes);
+        if (otherChanges.length > 0) {
+          const newNodes = applyNodeChanges(otherChanges, nodes);
+          setNodes(newNodes);
 
-        const positionChanges = otherChanges.filter(
-          (change: any) => change.type === "position" && change.position
-        );
+          const positionChanges = otherChanges.filter(
+            (change: any) => change.type === "position" && change.position
+          );
 
-        if (positionChanges.length > 0) {
-          debouncedUpdatePositions(newNodes, edges);
+          if (positionChanges.length > 0) {
+            debouncedUpdatePositions(newNodes, edges);
+          }
         }
       },
       [nodes, edges, deleteNode, debouncedUpdatePositions]
