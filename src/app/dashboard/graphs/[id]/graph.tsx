@@ -32,7 +32,7 @@ export interface GraphNode {
   id: string;
   label: string;
   position: { x: number; y: number };
-  parentId?: string;
+  children: string[];  // Array of child node IDs
 }
 
 const VERTICAL_SPACING = 100;
@@ -99,13 +99,14 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           type: "custom",
         }));
 
-        const flowEdges: Edge[] = graphNodes
-          .filter((node: GraphNode) => node.parentId)
-          .map((node: GraphNode) => ({
-            id: `${node.parentId}-${node.id}`,
-            source: node.parentId!,
-            target: node.id,
-          }));
+        // Create edges from children arrays
+        const flowEdges: Edge[] = graphNodes.flatMap((node: GraphNode) =>
+          node.children.map((childId) => ({
+            id: `${node.id}-${childId}`,
+            source: node.id,
+            target: childId,
+          }))
+        );
 
         setNodes(flowNodes);
         setEdges(flowEdges);
@@ -118,12 +119,14 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const updateGraphData = useCallback(async (newNodes: Node[], newEdges: Edge[]) => {
       onUpdateStart?.();
       try {
-        // Convert back to GraphNode format
+        // Convert back to GraphNode format with children arrays
         const graphNodes: GraphNode[] = newNodes.map(node => ({
           id: node.id,
           label: node.data.label as string,
           position: node.position,
-          parentId: newEdges.find(edge => edge.target === node.id)?.source,
+          children: newEdges
+            .filter(edge => edge.source === node.id)
+            .map(edge => edge.target),
         }));
 
         // Update database
