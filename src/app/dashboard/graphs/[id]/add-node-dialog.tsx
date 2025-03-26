@@ -1,17 +1,8 @@
 import { useState } from "react";
-
-import { Brain, GitBranch, MessageSquare } from "lucide-react";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import { NodeType } from "./nodes";
 
 interface AddNodeDialogProps {
@@ -19,7 +10,6 @@ interface AddNodeDialogProps {
   onOpenChange: (open: boolean) => void;
   onAddNode: (type: NodeType, label: string) => void;
   isRootNode: boolean;
-  hasAnalysisNode: boolean;
 }
 
 export function AddNodeDialog({
@@ -27,7 +17,6 @@ export function AddNodeDialog({
   onOpenChange,
   onAddNode,
   isRootNode,
-  hasAnalysisNode,
 }: AddNodeDialogProps) {
   const [label, setLabel] = useState("");
   const [selectedType, setSelectedType] = useState<NodeType>("analysis");
@@ -39,27 +28,6 @@ export function AddNodeDialog({
     setLabel("");
     onOpenChange(false);
   };
-
-  const nodeTypes = [
-    {
-      type: "analysis" as NodeType,
-      label: "Analysis",
-      icon: Brain,
-      disabled: hasAnalysisNode,
-    },
-    {
-      type: "conditional" as NodeType,
-      label: "Conditional",
-      icon: GitBranch,
-      disabled: false,
-    },
-    {
-      type: "prompt" as NodeType,
-      label: "Prompt",
-      icon: MessageSquare,
-      disabled: false,
-    },
-  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -80,20 +48,21 @@ export function AddNodeDialog({
           {!isRootNode && (
             <div className="space-y-2">
               <Label>Node Type</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {nodeTypes.map(({ type, label, icon: Icon, disabled }) => (
-                  <Button
-                    key={type}
-                    type="button"
-                    variant={selectedType === type ? "default" : "outline"}
-                    onClick={() => setSelectedType(type)}
-                    disabled={disabled}
-                    className="flex flex-col items-center gap-2 h-auto py-3"
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span className="text-xs">{label}</span>
-                  </Button>
-                ))}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={selectedType === "conditional" ? "default" : "outline"}
+                  onClick={() => setSelectedType("conditional")}
+                >
+                  Conditional
+                </Button>
+                <Button
+                  type="button"
+                  variant={selectedType === "prompt" ? "default" : "outline"}
+                  onClick={() => setSelectedType("prompt")}
+                >
+                  Prompt
+                </Button>
               </div>
             </div>
           )}
@@ -104,4 +73,4 @@ export function AddNodeDialog({
       </DialogContent>
     </Dialog>
   );
-}
+} 
