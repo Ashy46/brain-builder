@@ -117,6 +117,7 @@ function Flow({
         onOpenChange={setIsAddNodeDialogOpen}
         onAddNode={handleAddNode}
         isRootNode={isRootNode}
+        hasAnalysisNode={nodes.some(node => node.type === "analysis")}
       />
     </>
   );
