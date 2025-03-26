@@ -12,7 +12,6 @@ import {
   NodeTypeLabel,
   BaseNodeData,
 } from "./nodes";
-import { createClient } from "@/lib/supabase/client/client";
 
 export interface PromptNodeData extends BaseNodeData {
   type: "prompt";
@@ -26,75 +25,23 @@ export function PromptNode({
 }: NodeProps & { data: CustomNodeData; selected?: boolean }) {
   const [prompt, setPrompt] = useState((data as PromptNodeData).prompt);
 
-  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setPrompt(e.target.value);
-  };
-
+  // Update local state when data changes
   useEffect(() => {
-    async function updatePrompt() {
-      const supabase = createClient();
+    setPrompt((data as PromptNodeData).prompt);
+  }, [data]);
 
-      // Debug and validate data
-      console.log("Node data:", data);
-      if (!data.graphId) {
-        console.error("graphId is undefined in node data");
-        return;
-      }
-
-      const { data: graphData, error: fetchError } = await supabase
-        .from("graphs")
-        .select("nodes")
-        .eq("id", data.graphId)
-        .single();
-
-      if (fetchError) {
-        console.error("Error fetching graph:", fetchError);
-        return;
-      }
-
-      let nodes = graphData.nodes || [];
-      // Ensure nodes is an array
-      if (!Array.isArray(nodes)) {
-        nodes = [];
-      }
-
-      const nodeIndex = nodes.findIndex((node: any) => node.id === data.id);
-      
-      if (nodeIndex === -1) {
-        // If node doesn't exist, add it
-        nodes.push({
-          id: data.id,
-          type: data.type,
-          label: data.label,
-          position: data.position || { x: 0, y: 0 },
-          prompt: prompt
-        });
-      } else {
-        // Update existing node
-        nodes[nodeIndex] = {
-          ...nodes[nodeIndex],
-          prompt: prompt
-        };
-      }
-
-      const { error: updateError } = await supabase
-        .from("graphs")
-        .update({
-          nodes: nodes
-        })
-        .eq("id", data.graphId);
-
-      if (updateError) {
-        console.error("Error updating prompt:", updateError);
-      }
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newPrompt = e.target.value;
+    setPrompt(newPrompt);
+    
+    // Update the node data through the parent component
+    if (data.onNodeDataChange) {
+      data.onNodeDataChange(data.id, {
+        ...data,
+        prompt: newPrompt
+      });
     }
-
-    const debounceTimeout = setTimeout(() => {
-      updatePrompt();
-    }, 500); // Debounce updates to avoid too many database calls
-
-    return () => clearTimeout(debounceTimeout);
-  }, [prompt, data]);
+  };
 
   return (
     <div className="relative">

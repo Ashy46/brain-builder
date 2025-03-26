@@ -9,12 +9,15 @@ export interface BaseNodeData {
   label: string;
   type: NodeType;
   graphId: string;
+  onNodeDataChange?: (nodeId: string, newData: any) => void;
 }
 
 export type CustomNodeData =
   | AnalysisNodeData
   | ConditionalNodeData
   | PromptNodeData;
+
+export type { PromptNodeData, ConditionalNodeData, AnalysisNodeData };
 
 export interface CustomNode {
   id: string;

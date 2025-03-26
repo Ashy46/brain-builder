@@ -27,7 +27,14 @@ import { createClient } from "@/lib/supabase/client/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { cn } from "@/lib/utils";
 
-import { nodeTypes, NodeType } from "./nodes";
+import {
+  nodeTypes,
+  NodeType,
+  PromptNodeData,
+  CustomNodeData,
+  ConditionalNodeData,
+  AnalysisNodeData,
+} from "./nodes";
 import { Controls } from "./controls";
 import { AddNodeDialog } from "./add-node-dialog";
 
@@ -114,7 +121,6 @@ function Flow({
 
 export const Graph = forwardRef<GraphRef, GraphProps>(
   ({ graphId, className, onUpdateStart, onUpdateEnd }, ref) => {
-    const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
     const { user } = useAuth();
     const supabase = createClient();
 
@@ -123,6 +129,8 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const [edges, setEdges] = useState<Edge[]>([]);
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
     const [isAddNodeDialogOpen, setIsAddNodeDialogOpen] = useState(false);
+
+    const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
 
     useEffect(() => {
       async function fetchGraph() {
@@ -212,15 +220,31 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       async (newNodes: Node[], newEdges: Edge[]) => {
         onUpdateStart?.();
         try {
-          const graphNodes = newNodes.map((node) => ({
-            id: node.id,
-            label: node.data.label,
-            type: node.data.type,
-            position: node.position,
-            trueChildId: node.data.trueChildId,
-            falseChildId: node.data.falseChildId,
-            childId: node.data.childId,
-          }));
+          const graphNodes = newNodes.map((node) => {
+            const nodeData = node.data as unknown as CustomNodeData;
+            return {
+              id: node.id,
+              label: nodeData.label,
+              type: nodeData.type,
+              position: node.position,
+              trueChildId:
+                nodeData.type === "conditional"
+                  ? (nodeData as ConditionalNodeData).trueChildId
+                  : undefined,
+              falseChildId:
+                nodeData.type === "conditional"
+                  ? (nodeData as ConditionalNodeData).falseChildId
+                  : undefined,
+              childId:
+                nodeData.type === "analysis"
+                  ? (nodeData as AnalysisNodeData).childId
+                  : undefined,
+              prompt:
+                nodeData.type === "prompt"
+                  ? (nodeData as PromptNodeData).prompt
+                  : undefined,
+            };
+          });
 
           const { error } = await supabase
             .from("graphs")
@@ -245,6 +269,26 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const newNodes = applyNodeChanges(changes, nodes);
         setNodes(newNodes);
 
+        await updateGraphData(newNodes, edges);
+      },
+      [nodes, edges, updateGraphData]
+    );
+
+    const handleNodeDataChange = useCallback(
+      async (nodeId: string, newData: any) => {
+        const newNodes = nodes.map((node) => {
+          if (node.id === nodeId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                ...newData,
+              },
+            };
+          }
+          return node;
+        });
+        setNodes(newNodes);
         await updateGraphData(newNodes, edges);
       },
       [nodes, edges, updateGraphData]
@@ -361,7 +405,16 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const newNode: Node = {
           id: newNodeId,
           position: center,
-          data: { label, type, graphId },
+          data: {
+            id: newNodeId,
+            label,
+            type,
+            graphId,
+            onNodeDataChange: handleNodeDataChange,
+            ...(type === "prompt" && {
+              prompt: "Act like a helpful assistant...",
+            }),
+          },
           type,
         };
 
@@ -381,7 +434,14 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           updateGraphData(newNodes, edges);
         }
       },
-      [nodes, edges, selectedNode, updateGraphData, graphId]
+      [
+        nodes,
+        edges,
+        selectedNode,
+        updateGraphData,
+        graphId,
+        handleNodeDataChange,
+      ]
     );
 
     useImperativeHandle(ref, () => ({
