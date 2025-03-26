@@ -32,7 +32,7 @@ export interface GraphNode {
   id: string;
   label: string;
   position: { x: number; y: number };
-  children: string[];  // Array of child node IDs
+  children: string[];
 }
 
 const VERTICAL_SPACING = 100;
@@ -66,7 +66,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const [edges, setEdges] = useState<Edge[]>([]);
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
-    // Fetch graph data
     useEffect(() => {
       async function fetchGraph() {
         if (!user || !graphId) return;
@@ -91,7 +90,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
         const graphNodes = Array.isArray(data.nodes) ? data.nodes : [];
         
-        // Convert to ReactFlow nodes and edges
         const flowNodes: Node[] = graphNodes.map((node: GraphNode) => ({
           id: node.id,
           position: node.position,
@@ -99,7 +97,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           type: "custom",
         }));
 
-        // Create edges from children arrays
         const flowEdges: Edge[] = graphNodes.flatMap((node: GraphNode) =>
           node.children.map((childId) => ({
             id: `${node.id}-${childId}`,
@@ -119,7 +116,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const updateGraphData = useCallback(async (newNodes: Node[], newEdges: Edge[]) => {
       onUpdateStart?.();
       try {
-        // Convert back to GraphNode format with children arrays
         const graphNodes: GraphNode[] = newNodes.map(node => ({
           id: node.id,
           label: node.data.label as string,
@@ -129,7 +125,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             .map(edge => edge.target),
         }));
 
-        // Update database
         const { error } = await supabase
           .from("graphs")
           .update({ nodes: graphNodes })
@@ -151,7 +146,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const newNodes = applyNodeChanges(changes, nodes);
         setNodes(newNodes);
 
-        // Update database
         await updateGraphData(newNodes, edges);
       },
       [nodes, edges, updateGraphData]
@@ -162,7 +156,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const newEdges = applyEdgeChanges(changes, edges);
         setEdges(newEdges);
 
-        // Update database
         await updateGraphData(nodes, newEdges);
       },
       [nodes, edges, updateGraphData]
@@ -173,7 +166,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const newEdges = addEdge(params, edges);
         setEdges(newEdges);
 
-        // Update database
         await updateGraphData(nodes, newEdges);
       },
       [nodes, edges, updateGraphData]
@@ -200,7 +192,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const newNodes = [...nodes, newNode];
         setNodes(newNodes);
 
-        // If a node is selected, create an edge
         if (selectedNode) {
           const newEdge: Edge = {
             id: `${selectedNode.id}-${newNodeId}`,
