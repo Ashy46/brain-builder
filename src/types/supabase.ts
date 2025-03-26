@@ -34,6 +34,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      edges: {
+        Row: {
+          created_at: string
+          id: string
+          source_node_id: string
+          target_node_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          source_node_id: string
+          target_node_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          source_node_id?: string
+          target_node_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "edges_source_node_id_fkey"
+            columns: ["source_node_id"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "edges_target_node_id_fkey"
+            columns: ["target_node_id"]
+            isOneToOne: false
+            referencedRelation: "nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       graphs: {
         Row: {
           analysis_methods: string[] | null
@@ -75,6 +111,98 @@ export type Database = {
           },
         ]
       }
+      nodes: {
+        Row: {
+          created_at: string
+          data: Json | null
+          graph_id: string
+          id: string
+          label: string
+          position_x: number
+          position_y: number
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          graph_id: string
+          id?: string
+          label: string
+          position_x?: number
+          position_y?: number
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          graph_id?: string
+          id?: string
+          label?: string
+          position_x?: number
+          position_y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nodes_graph_id_fkey"
+            columns: ["graph_id"]
+            isOneToOne: false
+            referencedRelation: "graphs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string
@@ -101,7 +229,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      node_types: "ANALYSIS" | "CONDITIONAL" | "PROMPT"
     }
     CompositeTypes: {
       [_ in never]: never

@@ -1,5 +1,6 @@
 import { Handle, Position, NodeProps } from "@xyflow/react";
 import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/textarea";
 
 export type NodeType = "analysis" | "conditional" | "prompt";
 
@@ -21,6 +22,8 @@ export interface ConditionalNodeData extends BaseNodeData {
 
 export interface PromptNodeData extends BaseNodeData {
   type: "prompt";
+  prompt?: string;
+  onPromptChange?: (nodeId: string, newData: PromptNodeData) => void;
 }
 
 export type CustomNodeData =
@@ -123,7 +126,16 @@ export function PromptNode({
   data,
   isConnectable,
   selected,
-}: NodeProps & { data: CustomNodeData; selected?: boolean }) {
+  id,
+}: NodeProps & { data: PromptNodeData; selected?: boolean }) {
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newData = {
+      ...data,
+      prompt: e.target.value,
+    };
+    data.onPromptChange?.(id, newData);
+  };
+
   return (
     <div className="relative">
       <NodeTypeLabel type={data.type} />
@@ -141,7 +153,13 @@ export function PromptNode({
           className="!bg-green-400 !w-3 !h-3 !border-2 !border-background"
         />
 
-        <div className="text-sm text-center">{data.label}</div>
+        <div className="text-sm text-center mb-2">{data.label}</div>
+        <Textarea
+          value={data.prompt ?? ""}
+          onChange={handlePromptChange}
+          placeholder="Enter your prompt here..."
+          className="w-full text-sm bg-transparent border-green-500/20 text-green-400 placeholder:text-green-400/50"
+        />
       </div>
     </div>
   );
