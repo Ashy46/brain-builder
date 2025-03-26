@@ -19,28 +19,28 @@ import {
   Edge,
   ReactFlowInstance,
   XYPosition,
+  useReactFlow,
+  ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
 import { cn } from "@/lib/utils";
-import { Node as CustomNode } from "./nodes";
+import { nodeTypes, NodeType } from "./nodes";
 import { Controls } from "./controls";
+import { AddNodeDialog } from "./add-node-dialog";
 import { createClient } from "@/lib/supabase/client/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 export interface GraphNode {
   id: string;
   label: string;
+  type: NodeType;
   position: { x: number; y: number };
   children: string[];
 }
 
 const VERTICAL_SPACING = 100;
 const HORIZONTAL_SPACING = 200;
-
-const nodeTypes = {
-  custom: CustomNode,
-};
 
 export interface GraphRef {
   fitView: () => void;
@@ -55,6 +55,64 @@ interface GraphProps {
   onUpdateEnd?: () => void;
 }
 
+interface FlowProps {
+  nodes: Node[];
+  edges: Edge[];
+  onNodesChange: (changes: any) => void;
+  onEdgesChange: (changes: any) => void;
+  onConnect: (params: any) => void;
+  onNodeClick: (event: any, node: Node) => void;
+  onInit: (instance: ReactFlowInstance) => void;
+  selectedNode: Node | null;
+  setSelectedNode: (node: Node | null) => void;
+  handleAddNode: (type: NodeType, label: string) => void;
+  isAddNodeDialogOpen: boolean;
+  setIsAddNodeDialogOpen: (open: boolean) => void;
+  isRootNode: boolean;
+}
+
+function Flow({
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  onConnect,
+  onNodeClick,
+  onInit,
+  selectedNode,
+  setSelectedNode,
+  handleAddNode,
+  isAddNodeDialogOpen,
+  setIsAddNodeDialogOpen,
+  isRootNode,
+}: FlowProps) {
+  const { getViewport } = useReactFlow();
+
+  return (
+    <>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onNodeClick={onNodeClick}
+        nodeTypes={nodeTypes}
+        onInit={onInit}
+      >
+        <Background />
+        <Controls />
+      </ReactFlow>
+      <AddNodeDialog
+        open={isAddNodeDialogOpen}
+        onOpenChange={setIsAddNodeDialogOpen}
+        onAddNode={handleAddNode}
+        isRootNode={isRootNode}
+      />
+    </>
+  );
+}
+
 export const Graph = forwardRef<GraphRef, GraphProps>(
   ({ graphId, className, onUpdateStart, onUpdateEnd }, ref) => {
     const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
@@ -65,6 +123,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+    const [isAddNodeDialogOpen, setIsAddNodeDialogOpen] = useState(false);
 
     useEffect(() => {
       async function fetchGraph() {
@@ -93,8 +152,8 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const flowNodes: Node[] = graphNodes.map((node: GraphNode) => ({
           id: node.id,
           position: node.position,
-          data: { label: node.label },
-          type: "custom",
+          data: { label: node.label, type: node.type },
+          type: node.type,
         }));
 
         const flowEdges: Edge[] = graphNodes.flatMap((node: GraphNode) =>
@@ -119,6 +178,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const graphNodes: GraphNode[] = newNodes.map(node => ({
           id: node.id,
           label: node.data.label as string,
+          type: node.data.type as NodeType,
           position: node.position,
           children: newEdges
             .filter(edge => edge.source === node.id)
@@ -176,34 +236,43 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       setSelectedNode(node);
     }, []);
 
+    const handleAddNode = useCallback((type: NodeType, label: string) => {
+      const newNodeId = String(Date.now());
+      const center = {
+        x: 500,
+        y: 300,
+      };
+      
+      const newNode: Node = {
+        id: newNodeId,
+        position: center,
+        data: { label, type },
+        type,
+      };
+
+      const newNodes = [...nodes, newNode];
+      setNodes(newNodes);
+
+      if (selectedNode) {
+        const newEdge: Edge = {
+          id: `${selectedNode.id}-${newNodeId}`,
+          source: selectedNode.id,
+          target: newNodeId,
+        };
+        const newEdges = [...edges, newEdge];
+        setEdges(newEdges);
+        updateGraphData(newNodes, newEdges);
+      } else {
+        updateGraphData(newNodes, edges);
+      }
+    }, [nodes, edges, selectedNode, updateGraphData]);
+
     useImperativeHandle(ref, () => ({
       fitView: () => {
         reactFlowInstance.current?.fitView();
       },
       addNode: () => {
-        const newNodeId = String(Date.now());
-        const newNode: Node = {
-          id: newNodeId,
-          position: { x: 100, y: 100 },
-          data: { label: "New Node" },
-          type: "custom",
-        };
-
-        const newNodes = [...nodes, newNode];
-        setNodes(newNodes);
-
-        if (selectedNode) {
-          const newEdge: Edge = {
-            id: `${selectedNode.id}-${newNodeId}`,
-            source: selectedNode.id,
-            target: newNodeId,
-          };
-          const newEdges = [...edges, newEdge];
-          setEdges(newEdges);
-          updateGraphData(newNodes, newEdges);
-        } else {
-          updateGraphData(newNodes, edges);
-        }
+        setIsAddNodeDialogOpen(true);
       },
       selectedNode,
     }));
@@ -218,21 +287,25 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
     return (
       <div className={cn("h-screen w-screen", className)}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChangeCallback}
-          onEdgesChange={onEdgesChangeCallback}
-          onConnect={onConnect}
-          onNodeClick={onNodeClick}
-          nodeTypes={nodeTypes}
-          onInit={(instance) => {
-            reactFlowInstance.current = instance;
-          }}
-        >
-          <Background />
-          <Controls />
-        </ReactFlow>
+        <ReactFlowProvider>
+          <Flow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChangeCallback}
+            onEdgesChange={onEdgesChangeCallback}
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onInit={(instance) => {
+              reactFlowInstance.current = instance;
+            }}
+            selectedNode={selectedNode}
+            setSelectedNode={setSelectedNode}
+            handleAddNode={handleAddNode}
+            isAddNodeDialogOpen={isAddNodeDialogOpen}
+            setIsAddNodeDialogOpen={setIsAddNodeDialogOpen}
+            isRootNode={nodes.length === 0}
+          />
+        </ReactFlowProvider>
       </div>
     );
   }
