@@ -143,6 +143,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
     const { user } = useAuth();
     const supabase = createClient();
+    const positionUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const [isLoading, setIsLoading] = useState(true);
     const [nodes, setNodes] = useState<Node[]>([]);
@@ -153,6 +154,14 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     // Helper function to update node data
     const updateNodeData = useCallback(
       async (nodeId: string, newData: any) => {
+        // Update nodes state first (eager update)
+        setNodes((currentNodes) =>
+          currentNodes.map((node) =>
+            node.id === nodeId ? { ...node, data: { ...node.data, ...newData } } : node
+          )
+        );
+        
+        // Then update the database
         // First, retrieve the current node data
         const { data: currentNode, error: fetchError } = await supabase
           .from("nodes")
@@ -178,13 +187,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           console.error("Error updating node data:", error);
           return false;
         }
-
-        // Update nodes state
-        setNodes((currentNodes) =>
-          currentNodes.map((node) =>
-            node.id === nodeId ? { ...node, data: { ...node.data, ...newData } } : node
-          )
-        );
 
         return true;
       },
@@ -431,6 +433,23 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       [supabase, onUpdateStart, onUpdateEnd]
     );
 
+    // Debounced version of updateGraphData
+    const debouncedUpdatePositions = useCallback(
+      (newNodes: Node[], newEdges: Edge[]) => {
+        // Clear any existing timeout
+        if (positionUpdateTimeoutRef.current) {
+          clearTimeout(positionUpdateTimeoutRef.current);
+        }
+        
+        // Set a new timeout
+        positionUpdateTimeoutRef.current = setTimeout(() => {
+          updateGraphData(newNodes, newEdges);
+          positionUpdateTimeoutRef.current = null;
+        }, 500); // 500ms debounce time
+      },
+      [updateGraphData]
+    );
+
     const onEdgesChangeCallback = useCallback(
       async (changes: any) => {
         // Apply the changes to local state
@@ -472,6 +491,19 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const deleteNode = useCallback(
       async (nodeId: string) => {
         try {
+          // Update local state first (eager update)
+          setEdges(
+            edges.filter(
+              (edge) => edge.source !== nodeId && edge.target !== nodeId
+            )
+          );
+          setNodes(nodes.filter((node) => node.id !== nodeId));
+
+          // Clear selected node if it was the one deleted
+          if (selectedNode?.id === nodeId) {
+            setSelectedNode(null);
+          }
+
           // Find all edges connected to this node
           const connectedEdges = edges.filter(
             (edge) => edge.source === nodeId || edge.target === nodeId
@@ -508,19 +540,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             return false;
           }
 
-          // Update local state
-          setEdges(
-            edges.filter(
-              (edge) => edge.source !== nodeId && edge.target !== nodeId
-            )
-          );
-          setNodes(nodes.filter((node) => node.id !== nodeId));
-
-          // Clear selected node if it was the one deleted
-          if (selectedNode?.id === nodeId) {
-            setSelectedNode(null);
-          }
-
           return true;
         } catch (error) {
           console.error("Error in deleteNode:", error);
@@ -540,16 +559,10 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           (change: any) => change.type !== "remove"
         );
 
-        // Handle explicit deletion requests (e.g., from a delete button)
+        // Handle deletion requests without confirmation
         for (const change of deletionChanges) {
           const nodeId = change.id;
-          const confirmed = window.confirm(
-            `Are you sure you want to delete this node and all its connections?`
-          );
-
-          if (confirmed) {
-            await deleteNode(nodeId);
-          }
+          await deleteNode(nodeId);
         }
 
         // Apply the non-deletion changes
@@ -561,12 +574,12 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           (change: any) => change.type === "position" && change.position
         );
 
-        // Only update the database if there are position changes
+        // Only update the database if there are position changes, and use debouncing
         if (positionChanges.length > 0) {
-          await updateGraphData(newNodes, edges);
+          debouncedUpdatePositions(newNodes, edges);
         }
       },
-      [nodes, edges, updateGraphData, deleteNode]
+      [nodes, edges, deleteNode, debouncedUpdatePositions]
     );
 
     const onConnect = useCallback(
@@ -767,6 +780,15 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       },
       selectedNode,
     }));
+
+    // Clean up the timeout when the component unmounts
+    useEffect(() => {
+      return () => {
+        if (positionUpdateTimeoutRef.current) {
+          clearTimeout(positionUpdateTimeoutRef.current);
+        }
+      };
+    }, []);
 
     if (isLoading) {
       return (
