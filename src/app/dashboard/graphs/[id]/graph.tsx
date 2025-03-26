@@ -25,7 +25,14 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { cn } from "@/lib/utils";
-import { nodeTypes, NodeType, CustomNodeData, AnalysisNodeData, ConditionalNodeData, PromptNodeData } from "./nodes";
+import {
+  nodeTypes,
+  NodeType,
+  CustomNodeData,
+  AnalysisNodeData,
+  ConditionalNodeData,
+  PromptNodeData,
+} from "./nodes";
 import { Controls } from "./controls";
 import { AddNodeDialog } from "./add-node-dialog";
 import { createClient } from "@/lib/supabase/client/client";
@@ -120,7 +127,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
     const { user } = useAuth();
     const supabase = createClient();
-    
+
     const [isLoading, setIsLoading] = useState(true);
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<Edge[]>([]);
@@ -150,7 +157,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         }
 
         const graphNodes = Array.isArray(data.nodes) ? data.nodes : [];
-        
+
         const flowNodes: Node[] = graphNodes.map((node: GraphNode) => ({
           id: node.id,
           position: node.position,
@@ -170,7 +177,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
         const flowEdges: Edge[] = graphNodes.flatMap((node: GraphNode) => {
           const edges: Edge[] = [];
-          
+
           if (node.type === "conditional") {
             if (node.trueChildId) {
               edges.push({
@@ -195,7 +202,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
               target: node.childId,
             });
           }
-          
+
           return edges;
         });
 
@@ -207,34 +214,37 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       fetchGraph();
     }, [user, graphId, supabase]);
 
-    const updateGraphData = useCallback(async (newNodes: Node[], newEdges: Edge[]) => {
-      onUpdateStart?.();
-      try {
-        const graphNodes = newNodes.map(node => ({
-          id: node.id,
-          label: node.data.label,
-          type: node.data.type,
-          position: node.position,
-          trueChildId: node.data.trueChildId,
-          falseChildId: node.data.falseChildId,
-          childId: node.data.childId,
-        }));
+    const updateGraphData = useCallback(
+      async (newNodes: Node[], newEdges: Edge[]) => {
+        onUpdateStart?.();
+        try {
+          const graphNodes = newNodes.map((node) => ({
+            id: node.id,
+            label: node.data.label,
+            type: node.data.type,
+            position: node.position,
+            trueChildId: node.data.trueChildId,
+            falseChildId: node.data.falseChildId,
+            childId: node.data.childId,
+          }));
 
-        const { error } = await supabase
-          .from("graphs")
-          .update({ nodes: graphNodes })
-          .eq("id", graphId);
+          const { error } = await supabase
+            .from("graphs")
+            .update({ nodes: graphNodes })
+            .eq("id", graphId);
 
-        if (error) {
-          console.error("Error updating graph:", error);
-          return false;
+          if (error) {
+            console.error("Error updating graph:", error);
+            return false;
+          }
+
+          return true;
+        } finally {
+          onUpdateEnd?.();
         }
-
-        return true;
-      } finally {
-        onUpdateEnd?.();
-      }
-    }, [graphId, supabase, onUpdateStart, onUpdateEnd]);
+      },
+      [graphId, supabase, onUpdateStart, onUpdateEnd]
+    );
 
     const onNodesChangeCallback = useCallback(
       async (changes: any) => {
@@ -258,28 +268,30 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
     const onConnect = useCallback(
       async (params: any) => {
-        const sourceNode = nodes.find(node => node.id === params.source);
-        const targetNode = nodes.find(node => node.id === params.target);
+        const sourceNode = nodes.find((node) => node.id === params.source);
+        const targetNode = nodes.find((node) => node.id === params.target);
 
         if (!sourceNode || !targetNode) return;
 
         if (sourceNode.type === "analysis") {
-          const newEdges = edges.filter(edge => edge.source !== sourceNode.id);
-          
+          const newEdges = edges.filter(
+            (edge) => edge.source !== sourceNode.id
+          );
+
           const newEdge = {
             id: `${sourceNode.id}-${targetNode.id}`,
             source: sourceNode.id,
             target: targetNode.id,
           };
-          
-          const updatedNodes = nodes.map(node => {
+
+          const updatedNodes = nodes.map((node) => {
             if (node.id === sourceNode.id) {
               return {
                 ...node,
                 data: {
                   ...node.data,
-                  childId: targetNode.id
-                }
+                  childId: targetNode.id,
+                },
               };
             }
             return node;
@@ -292,26 +304,30 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         }
 
         if (sourceNode.type === "conditional") {
-          const existingConnections = edges.filter(edge => edge.source === params.source);
+          const existingConnections = edges.filter(
+            (edge) => edge.source === params.source
+          );
           if (existingConnections.length >= 2) {
             return;
           }
-          
+
           const existingHandleConnection = existingConnections.find(
-            edge => edge.sourceHandle === params.sourceHandle
+            (edge) => edge.sourceHandle === params.sourceHandle
           );
           if (existingHandleConnection) {
             return;
           }
 
-          const updatedNodes = nodes.map(node => {
+          const updatedNodes = nodes.map((node) => {
             if (node.id === sourceNode.id) {
               return {
                 ...node,
                 data: {
                   ...node.data,
-                  [params.sourceHandle === "true" ? "trueChildId" : "falseChildId"]: targetNode.id
-                }
+                  [params.sourceHandle === "true"
+                    ? "trueChildId"
+                    : "falseChildId"]: targetNode.id,
+                },
               };
             }
             return node;
@@ -340,36 +356,39 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       setSelectedNode(node);
     }, []);
 
-    const handleAddNode = useCallback((type: NodeType, label: string) => {
-      const newNodeId = String(Date.now());
-      const center = {
-        x: 500,
-        y: 300,
-      };
-      
-      const newNode: Node = {
-        id: newNodeId,
-        position: center,
-        data: { label, type },
-        type,
-      };
-
-      const newNodes = [...nodes, newNode];
-      setNodes(newNodes);
-
-      if (selectedNode) {
-        const newEdge: Edge = {
-          id: `${selectedNode.id}-${newNodeId}`,
-          source: selectedNode.id,
-          target: newNodeId,
+    const handleAddNode = useCallback(
+      (type: NodeType, label: string) => {
+        const newNodeId = String(Date.now());
+        const center = {
+          x: 500,
+          y: 300,
         };
-        const newEdges = [...edges, newEdge];
-        setEdges(newEdges);
-        updateGraphData(newNodes, newEdges);
-      } else {
-        updateGraphData(newNodes, edges);
-      }
-    }, [nodes, edges, selectedNode, updateGraphData]);
+
+        const newNode: Node = {
+          id: newNodeId,
+          position: center,
+          data: { label, type },
+          type,
+        };
+
+        const newNodes = [...nodes, newNode];
+        setNodes(newNodes);
+
+        if (selectedNode) {
+          const newEdge: Edge = {
+            id: `${selectedNode.id}-${newNodeId}`,
+            source: selectedNode.id,
+            target: newNodeId,
+          };
+          const newEdges = [...edges, newEdge];
+          setEdges(newEdges);
+          updateGraphData(newNodes, newEdges);
+        } else {
+          updateGraphData(newNodes, edges);
+        }
+      },
+      [nodes, edges, selectedNode, updateGraphData]
+    );
 
     useImperativeHandle(ref, () => ({
       fitView: () => {
