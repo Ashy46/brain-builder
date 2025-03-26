@@ -8,34 +8,41 @@ interface NodeData {
   type: NodeType;
 }
 
+function NodeTypeLabel({ type }: { type: NodeType }) {
+  return (
+    <div className="absolute -top-5 left-0 right-0 text-[10px] text-gray-400 text-center uppercase tracking-wider">
+      {type}
+    </div>
+  );
+}
+
+const baseNodeStyles =
+  "px-6 py-4 shadow-sm rounded-lg border min-w-[200px] min-h-[80px] backdrop-blur-[2px] bg-white/5";
+
 export function AnalysisNode({
   data,
   isConnectable,
   selected,
-}: NodeProps & {
-  data: NodeData;
-  isConnectable: boolean;
-}) {
+}: NodeProps<NodeData> & { selected?: boolean }) {
   return (
-    <div className={cn(
-      "px-4 py-2 shadow-lg rounded-lg border bg-blue-50 text-blue-900 min-w-[150px]",
-      selected && "border-2 border-blue-500"
-    )}>
-      <Handle
-        type="target"
-        position={Position.Top}
-        isConnectable={isConnectable}
-        className="!bg-blue-500 !w-3 !h-3 !border-2 !border-background"
-      />
+    <div className="relative">
+      <NodeTypeLabel type={data.type} />
+      <div
+        className={cn(
+          baseNodeStyles,
+          "text-blue-400 border-blue-500/20",
+          selected && "border-2 border-blue-400/50"
+        )}
+      >
+        <div className="text-sm text-center">{data.label}</div>
 
-      <div className="font-medium text-center">{data.label}</div>
-
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        isConnectable={isConnectable}
-        className="!bg-blue-500 !w-3 !h-3 !border-2 !border-background"
-      />
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          isConnectable={isConnectable}
+          className="!bg-blue-400 !w-3 !h-3 !border-2 !border-background"
+        />
+      </div>
     </div>
   );
 }
@@ -44,38 +51,41 @@ export function ConditionalNode({
   data,
   isConnectable,
   selected,
-}: NodeProps & {
-  data: NodeData;
-  isConnectable: boolean;
-}) {
+}: NodeProps<NodeData> & { selected?: boolean }) {
   return (
-    <div className={cn(
-      "px-4 py-2 shadow-lg rounded-lg border bg-yellow-50 text-yellow-900 min-w-[150px]",
-      selected && "border-2 border-yellow-500"
-    )}>
-      <Handle
-        type="target"
-        position={Position.Top}
-        isConnectable={isConnectable}
-        className="!bg-yellow-500 !w-3 !h-3 !border-2 !border-background"
-      />
+    <div className="relative">
+      <NodeTypeLabel type={data.type} />
+      <div
+        className={cn(
+          baseNodeStyles,
+          "text-yellow-400 border-yellow-500/20",
+          selected && "border-2 border-yellow-400/50"
+        )}
+      >
+        <Handle
+          type="target"
+          position={Position.Top}
+          isConnectable={isConnectable}
+          className="!bg-yellow-400 !w-3 !h-3 !border-2 !border-background"
+        />
 
-      <div className="font-medium text-center">{data.label}</div>
+        <div className="text-sm text-center">{data.label}</div>
 
-      <div className="flex justify-between mt-2">
         <Handle
           type="source"
           position={Position.Bottom}
           id="true"
           isConnectable={isConnectable}
-          className="!bg-green-500 !w-3 !h-3 !border-2 !border-background"
+          style={{ left: "30%" }}
+          className="!bg-green-400 !w-3 !h-3 !border-2 !border-background"
         />
         <Handle
           type="source"
           position={Position.Bottom}
           id="false"
           isConnectable={isConnectable}
-          className="!bg-red-500 !w-3 !h-3 !border-2 !border-background"
+          style={{ left: "70%" }}
+          className="!bg-red-400 !w-3 !h-3 !border-2 !border-background"
         />
       </div>
     </div>
@@ -86,23 +96,26 @@ export function PromptNode({
   data,
   isConnectable,
   selected,
-}: NodeProps & {
-  data: NodeData;
-  isConnectable: boolean;
-}) {
+}: NodeProps<NodeData> & { selected?: boolean }) {
   return (
-    <div className={cn(
-      "px-4 py-2 shadow-lg rounded-lg border bg-green-50 text-green-900 min-w-[150px]",
-      selected && "border-2 border-green-500"
-    )}>
-      <Handle
-        type="target"
-        position={Position.Top}
-        isConnectable={isConnectable}
-        className="!bg-green-500 !w-3 !h-3 !border-2 !border-background"
-      />
+    <div className="relative">
+      <NodeTypeLabel type={data.type} />
+      <div
+        className={cn(
+          baseNodeStyles,
+          "text-green-400 border-green-500/20",
+          selected && "border-2 border-green-400/50"
+        )}
+      >
+        <Handle
+          type="target"
+          position={Position.Top}
+          isConnectable={isConnectable}
+          className="!bg-green-400 !w-3 !h-3 !border-2 !border-background"
+        />
 
-      <div className="font-medium text-center">{data.label}</div>
+        <div className="text-sm text-center">{data.label}</div>
+      </div>
     </div>
   );
 }

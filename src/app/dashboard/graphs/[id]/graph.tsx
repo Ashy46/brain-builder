@@ -175,14 +175,14 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const updateGraphData = useCallback(async (newNodes: Node[], newEdges: Edge[]) => {
       onUpdateStart?.();
       try {
-        const graphNodes: GraphNode[] = newNodes.map(node => ({
+        const graphNodes = newNodes.map(node => ({
           id: node.id,
-          label: node.data.label as string,
-          type: node.data.type as NodeType,
+          label: node.data.label,
+          type: node.data.type,
           position: node.position,
-          children: newEdges
-            .filter(edge => edge.source === node.id)
-            .map(edge => edge.target),
+          trueChildId: node.data.trueChildId,
+          falseChildId: node.data.falseChildId,
+          childId: node.data.childId,
         }));
 
         const { error } = await supabase
@@ -223,6 +223,60 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
     const onConnect = useCallback(
       async (params: any) => {
+        // Get source and target nodes
+        const sourceNode = nodes.find(node => node.id === params.source);
+        const targetNode = nodes.find(node => node.id === params.target);
+
+        if (!sourceNode || !targetNode) return;
+
+        // Analysis nodes can only have one child
+        if (sourceNode.data.type === "analysis") {
+          const existingConnections = edges.filter(edge => edge.source === params.source);
+          if (existingConnections.length > 0) {
+            return;
+          }
+          // Analysis nodes can only connect to conditional nodes
+          if (targetNode.data.type !== "conditional") {
+            return;
+          }
+        }
+
+        // Conditional nodes can only have two children (true/false)
+        if (sourceNode.data.type === "conditional") {
+          const existingConnections = edges.filter(edge => edge.source === params.source);
+          if (existingConnections.length >= 2) {
+            return;
+          }
+          
+          // Check if this handle type (true/false) already has a connection
+          const existingHandleConnection = existingConnections.find(
+            edge => edge.sourceHandle === params.sourceHandle
+          );
+          if (existingHandleConnection) {
+            return;
+          }
+
+          // Update the node data with the appropriate child ID
+          const updatedNodes = nodes.map(node => {
+            if (node.id === sourceNode.id) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  [params.sourceHandle === "true" ? "trueChildId" : "falseChildId"]: targetNode.id
+                }
+              };
+            }
+            return node;
+          });
+          setNodes(updatedNodes);
+        }
+
+        // Prompt nodes cannot have children
+        if (sourceNode.data.type === "prompt") {
+          return;
+        }
+
         const newEdges = addEdge(params, edges);
         setEdges(newEdges);
 
