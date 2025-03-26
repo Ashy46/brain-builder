@@ -25,7 +25,7 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { cn } from "@/lib/utils";
-import { nodeTypes, NodeType } from "./nodes";
+import { nodeTypes, NodeType, CustomNodeData, AnalysisNodeData, ConditionalNodeData, PromptNodeData } from "./nodes";
 import { Controls } from "./controls";
 import { AddNodeDialog } from "./add-node-dialog";
 import { createClient } from "@/lib/supabase/client/client";
@@ -36,7 +36,9 @@ export interface GraphNode {
   label: string;
   type: NodeType;
   position: { x: number; y: number };
-  children: string[];
+  trueChildId?: string;
+  falseChildId?: string;
+  childId?: string;
 }
 
 const VERTICAL_SPACING = 100;
@@ -152,17 +154,50 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const flowNodes: Node[] = graphNodes.map((node: GraphNode) => ({
           id: node.id,
           position: node.position,
-          data: { label: node.label, type: node.type },
           type: node.type,
+          data: {
+            label: node.label,
+            type: node.type,
+            ...(node.type === "conditional" && {
+              trueChildId: node.trueChildId,
+              falseChildId: node.falseChildId,
+            }),
+            ...(node.type === "analysis" && {
+              childId: node.childId,
+            }),
+          },
         }));
 
-        const flowEdges: Edge[] = graphNodes.flatMap((node: GraphNode) =>
-          node.children.map((childId) => ({
-            id: `${node.id}-${childId}`,
-            source: node.id,
-            target: childId,
-          }))
-        );
+        const flowEdges: Edge[] = graphNodes.flatMap((node: GraphNode) => {
+          const edges: Edge[] = [];
+          
+          if (node.type === "conditional") {
+            if (node.trueChildId) {
+              edges.push({
+                id: `${node.id}-${node.trueChildId}-true`,
+                source: node.id,
+                target: node.trueChildId,
+                sourceHandle: "true",
+              });
+            }
+            if (node.falseChildId) {
+              edges.push({
+                id: `${node.id}-${node.falseChildId}-false`,
+                source: node.id,
+                target: node.falseChildId,
+                sourceHandle: "false",
+              });
+            }
+          } else if (node.type === "analysis" && node.childId) {
+            edges.push({
+              id: `${node.id}-${node.childId}`,
+              source: node.id,
+              target: node.childId,
+            });
+          }
+          
+          return edges;
+        });
 
         setNodes(flowNodes);
         setEdges(flowEdges);
@@ -230,25 +265,44 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         if (!sourceNode || !targetNode) return;
 
         // Analysis nodes can only have one child
-        if (sourceNode.data.type === "analysis") {
-          const existingConnections = edges.filter(edge => edge.source === params.source);
-          if (existingConnections.length > 0) {
-            return;
-          }
-          // Analysis nodes can only connect to conditional nodes
-          if (targetNode.data.type !== "conditional") {
-            return;
-          }
+        if (sourceNode.type === "analysis") {
+          // Remove any existing connections from this analysis node
+          const newEdges = edges.filter(edge => edge.source !== sourceNode.id);
+          
+          // Add the new connection
+          const newEdge = {
+            id: `${sourceNode.id}-${targetNode.id}`,
+            source: sourceNode.id,
+            target: targetNode.id,
+          };
+          
+          // Update the node data with the child ID
+          const updatedNodes = nodes.map(node => {
+            if (node.id === sourceNode.id) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  childId: targetNode.id
+                }
+              };
+            }
+            return node;
+          });
+
+          setNodes(updatedNodes);
+          setEdges([...newEdges, newEdge]);
+          await updateGraphData(updatedNodes, [...newEdges, newEdge]);
+          return;
         }
 
-        // Conditional nodes can only have two children (true/false)
-        if (sourceNode.data.type === "conditional") {
+        // Rest of the existing conditional node logic
+        if (sourceNode.type === "conditional") {
           const existingConnections = edges.filter(edge => edge.source === params.source);
           if (existingConnections.length >= 2) {
             return;
           }
           
-          // Check if this handle type (true/false) already has a connection
           const existingHandleConnection = existingConnections.find(
             edge => edge.sourceHandle === params.sourceHandle
           );
@@ -256,7 +310,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             return;
           }
 
-          // Update the node data with the appropriate child ID
           const updatedNodes = nodes.map(node => {
             if (node.id === sourceNode.id) {
               return {
@@ -270,17 +323,21 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             return node;
           });
           setNodes(updatedNodes);
-        }
 
-        // Prompt nodes cannot have children
-        if (sourceNode.data.type === "prompt") {
+          const newEdge = {
+            ...params,
+            id: `${sourceNode.id}-${targetNode.id}-${params.sourceHandle}`,
+          };
+          const newEdges = addEdge(newEdge, edges);
+          setEdges(newEdges);
+          await updateGraphData(updatedNodes, newEdges);
           return;
         }
 
-        const newEdges = addEdge(params, edges);
-        setEdges(newEdges);
-
-        await updateGraphData(nodes, newEdges);
+        // Prompt nodes cannot have children
+        if (sourceNode.type === "prompt") {
+          return;
+        }
       },
       [nodes, edges, updateGraphData]
     );

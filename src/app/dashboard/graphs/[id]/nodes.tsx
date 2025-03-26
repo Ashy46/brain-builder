@@ -3,8 +3,32 @@ import { cn } from "@/lib/utils";
 
 export type NodeType = "analysis" | "conditional" | "prompt";
 
-interface NodeData {
+export interface BaseNodeData {
   label: string;
+  type: NodeType;
+}
+
+export interface AnalysisNodeData extends BaseNodeData {
+  type: "analysis";
+  childId?: string;
+}
+
+export interface ConditionalNodeData extends BaseNodeData {
+  type: "conditional";
+  trueChildId?: string;
+  falseChildId?: string;
+}
+
+export interface PromptNodeData extends BaseNodeData {
+  type: "prompt";
+}
+
+export type CustomNodeData = AnalysisNodeData | ConditionalNodeData | PromptNodeData;
+
+export interface CustomNode {
+  id: string;
+  position: { x: number; y: number };
+  data: CustomNodeData;
   type: NodeType;
 }
 
@@ -23,7 +47,7 @@ export function AnalysisNode({
   data,
   isConnectable,
   selected,
-}: NodeProps<NodeData> & { selected?: boolean }) {
+}: NodeProps & { data: CustomNodeData; selected?: boolean }) {
   return (
     <div className="relative">
       <NodeTypeLabel type={data.type} />
@@ -51,7 +75,7 @@ export function ConditionalNode({
   data,
   isConnectable,
   selected,
-}: NodeProps<NodeData> & { selected?: boolean }) {
+}: NodeProps & { data: CustomNodeData; selected?: boolean }) {
   return (
     <div className="relative">
       <NodeTypeLabel type={data.type} />
@@ -96,7 +120,7 @@ export function PromptNode({
   data,
   isConnectable,
   selected,
-}: NodeProps<NodeData> & { selected?: boolean }) {
+}: NodeProps & { data: CustomNodeData; selected?: boolean }) {
   return (
     <div className="relative">
       <NodeTypeLabel type={data.type} />
