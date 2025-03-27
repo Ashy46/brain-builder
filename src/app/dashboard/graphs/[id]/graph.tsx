@@ -297,7 +297,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
               fullNodeData = {
                 ...baseNodeData,
                 childId: nodeData.childId,
-                selectedStates: [],
+                selectedStates: nodeData.selectedStates || [],
                 graphId,
                 onStatesChange: async (nodeId: string, stateIds: string[]) => {
                   await updateNodeData(nodeId, { selectedStates: stateIds });
