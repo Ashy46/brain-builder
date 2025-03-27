@@ -299,9 +299,13 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
                 ...baseNodeData,
                 childId: nodeData.childId,
                 selectedStates: nodeData.selectedStates || [],
+                prompt: nodeData.prompt || "",
                 graphId,
                 onStatesChange: async (nodeId: string, stateIds: string[]) => {
                   await updateNodeData(nodeId, { selectedStates: stateIds });
+                },
+                onPromptChange: async (nodeId: string, newData: AnalysisNodeData) => {
+                  await updateNodeData(nodeId, { prompt: newData.prompt });
                 },
               };
             } else if (nodeType === "conditional") {
@@ -580,6 +584,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             nodeData.prompt = "";
           } else if (type === "analysis") {
             nodeData.selectedStates = [];
+            nodeData.prompt = "";
           }
 
           const { data: createdNode, error: nodeError } = await supabase
@@ -624,9 +629,13 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
               }),
               ...(type === "analysis" && {
                 selectedStates: [],
+                prompt: "",
                 graphId,
                 onStatesChange: async (nodeId: string, stateIds: string[]) => {
                   await updateNodeData(nodeId, { selectedStates: stateIds });
+                },
+                onPromptChange: async (nodeId: string, newData: AnalysisNodeData) => {
+                  await updateNodeData(nodeId, { prompt: newData.prompt });
                 },
               }),
             },

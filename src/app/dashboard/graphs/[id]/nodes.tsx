@@ -12,6 +12,11 @@ import { Button } from "@/components/ui/button";
 
 export type NodeType = "analysis" | "conditional" | "prompt";
 
+interface CustomInfo {
+  id: string;
+  name: string;
+}
+
 export interface BaseNodeData {
   label: string;
   type: NodeType;
@@ -24,6 +29,8 @@ export interface AnalysisNodeData extends BaseNodeData {
   selectedStates: string[];
   onStatesChange?: (nodeId: string, stateIds: string[]) => void;
   graphId: string;
+  prompt?: string;
+  onPromptChange?: (nodeId: string, newData: AnalysisNodeData) => void;
 }
 
 export interface ConditionalNodeData extends BaseNodeData {
@@ -103,7 +110,20 @@ export function AnalysisNode({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newData = {
+      ...data,
+      prompt: e.target.value,
+    };
+    (data as AnalysisNodeData).onPromptChange?.(
+      id,
+      newData as AnalysisNodeData
+    );
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     e.stopPropagation();
   };
 
@@ -135,7 +155,7 @@ export function AnalysisNode({
           aria-label="Node label"
         />
 
-        <div className="flex items-center justify-center gap-2 mt-2 text-s">
+        <div className="flex items-center justify-center gap-2 mt-2 text-sm">
           <Button
             onClick={() => setIsSelectingStates(true)}
             variant="outline"
@@ -145,6 +165,14 @@ export function AnalysisNode({
             States: {selectedStatesCount} selected
           </Button>
         </div>
+
+        <Textarea
+          value={analysisData.prompt ?? ""}
+          onChange={handlePromptChange}
+          onKeyDown={handleKeyDown}
+          placeholder="Enter your analysis prompt here..."
+          className="w-full text-sm bg-transparent min-h-[100px] mt-2"
+        />
 
         <Handle
           type="source"
@@ -278,102 +306,6 @@ export function ConditionalNode({
   );
 }
 
-function EnhancedPromptTextarea({
-  value,
-  onChange,
-  onKeyDown,
-  graphId,
-}: {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  graphId: string;
-}) {
-  const [customInfos, setCustomInfos] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const supabase = createClient();
-
-  useEffect(() => {
-    async function fetchCustomInfos() {
-      const { data, error } = await supabase
-        .from("custom_info")
-        .select("id, name")
-        .eq("graph_id", graphId);
-
-      if (error) {
-        console.error("Error fetching custom infos:", error);
-        return;
-      }
-
-      setCustomInfos(data || []);
-    }
-
-    fetchCustomInfos();
-  }, [graphId]);
-
-  // Function to render custom info references as badges
-  const renderWithBadges = (text: string) => {
-    const parts = text.split(/(\{\{[^}]+\}\})/g);
-
-    return parts.map((part, index) => {
-      if (part.startsWith("{{") && part.endsWith("}}")) {
-        const name = part.slice(2, -2).trim();
-        const customInfo = customInfos.find((info) => info.name === name);
-
-        const badgeClass = customInfo
-          ? "bg-blue-500/20 text-blue-200 border border-blue-500/30"
-          : "bg-red-500/20 text-red-200 border border-red-500/30";
-
-        return (
-          <span
-            key={index}
-            className={cn("px-1 rounded text-sm font-medium", badgeClass)}
-          >
-            {part}
-          </span>
-        );
-      }
-      return <span key={index}>{part}</span>;
-    });
-  };
-
-  // Sync scroll between textarea and overlay
-  const handleScroll = () => {
-    if (textareaRef.current && overlayRef.current) {
-      overlayRef.current.scrollTop = textareaRef.current.scrollTop;
-      overlayRef.current.scrollLeft = textareaRef.current.scrollLeft;
-    }
-  };
-
-  return (
-    <div className="relative">
-      <Textarea
-        ref={textareaRef}
-        value={value}
-        onChange={onChange}
-        onKeyDown={onKeyDown}
-        onScroll={handleScroll}
-        placeholder="Enter your prompt here... Use {{name}} to reference custom info"
-        className={cn(
-          "w-full text-sm bg-transparent min-h-[100px] font-mono",
-          "placeholder:text-muted-foreground",
-          "text-[rgb(23,23,23)] caret-white"
-        )}
-      />
-      <div
-        ref={overlayRef}
-        aria-hidden="true"
-        className="absolute inset-0 pointer-events-none p-[9px] text-sm font-mono whitespace-pre-wrap break-words text-white"
-      >
-        {renderWithBadges(value)}
-      </div>
-    </div>
-  );
-}
-
 export function PromptNode({
   data,
   isConnectable,
@@ -394,7 +326,6 @@ export function PromptNode({
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newLabel = e.target.value;
     data.onLabelChange?.(id, newLabel);
-    // Update width based on content
     if (labelRef.current) {
       const tempSpan = document.createElement("span");
       tempSpan.style.visibility = "hidden";
@@ -403,7 +334,7 @@ export function PromptNode({
       tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
       tempSpan.textContent = newLabel;
       document.body.appendChild(tempSpan);
-      const newWidth = Math.max(200, tempSpan.offsetWidth + 40); // Add padding
+      const newWidth = Math.max(200, tempSpan.offsetWidth + 40);
       document.body.removeChild(tempSpan);
       setWidth(newWidth);
     }
@@ -442,11 +373,12 @@ export function PromptNode({
           className="w-full text-sm text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0 mb-2"
           aria-label="Node label"
         />
-        <EnhancedPromptTextarea
+        <Textarea
           value={data.prompt ?? ""}
           onChange={handlePromptChange}
           onKeyDown={handleKeyDown}
-          graphId={data.graphId}
+          placeholder="Enter your prompt here... Use {{name}} to reference custom info"
+          className="w-full text-sm bg-transparent min-h-[100px]"
         />
       </div>
     </div>

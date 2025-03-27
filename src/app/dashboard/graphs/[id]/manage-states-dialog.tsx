@@ -156,7 +156,7 @@ export function ManageStatesDialog({
   const fetchStates = async () => {
     try {
       const { data, error } = await supabase
-        .from("states")
+        .from("graph_states")
         .select("*")
         .eq("graph_id", graphId);
 
@@ -178,7 +178,7 @@ export function ManageStatesDialog({
 
     try {
       const { data, error } = await supabase
-        .from("states")
+        .from("graph_states")
         .insert({
           name: newStateName.trim(),
           graph_id: graphId,
@@ -211,7 +211,7 @@ export function ManageStatesDialog({
 
     try {
       const { error } = await supabase
-        .from("states")
+        .from("graph_states")
         .update(updates)
         .eq("id", stateId);
 
@@ -229,7 +229,7 @@ export function ManageStatesDialog({
 
     try {
       const { error } = await supabase
-        .from("states")
+        .from("graph_states")
         .delete()
         .eq("id", stateId);
 
