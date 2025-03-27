@@ -128,7 +128,7 @@ export function BuildConditionalDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="min-w-[800px] w-full max-w-[90vw]">
         <DialogHeader>
           <DialogTitle>Build Conditional</DialogTitle>
         </DialogHeader>
