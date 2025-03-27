@@ -29,9 +29,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CreateGraphDialog } from "../create-graph";
+import { CreateGraphDialog } from "../create-graph-dialog";
 
-const ITEMS_PER_PAGE = 10;
+const PAGE_SIZE = 10;
 
 export default function GraphsPage() {
   const { user } = useAuth();
@@ -44,15 +44,14 @@ export default function GraphsPage() {
   const [graphToDelete, setGraphToDelete] = useState<Tables<"graphs"> | null>(
     null
   );
-  const supabase = createClient();
 
   useEffect(() => {
     async function fetchGraphs() {
       if (!user) return;
       setIsLoading(true);
 
-      const start = (currentPage - 1) * ITEMS_PER_PAGE;
-      const end = start + ITEMS_PER_PAGE - 1;
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const end = start + PAGE_SIZE - 1;
 
       const { data, error, count } = await supabase
         .from("graphs")
@@ -68,32 +67,30 @@ export default function GraphsPage() {
 
       setGraphs(data || []);
       if (count) {
-        setTotalPages(Math.ceil(count / ITEMS_PER_PAGE));
+        setTotalPages(Math.ceil(count / PAGE_SIZE));
       }
       setIsLoading(false);
     }
 
     fetchGraphs();
-  }, [user, supabase, currentPage]);
+  }, [user, currentPage]);
 
   const handleDelete = async () => {
     if (!graphToDelete) return;
 
-    try {
-      const { error } = await supabase
-        .from("graphs")
-        .delete()
-        .eq("id", graphToDelete.id)
-        .eq("user_id", user?.id);
+    const supabase = createClient();
 
-      if (error) throw error;
+    const { error } = await supabase
+      .from("graphs")
+      .delete()
+      .eq("id", graphToDelete.id)
+      .eq("user_id", user?.id);
 
-      setGraphs((prev) => prev.filter((g) => g.id !== graphToDelete.id));
-      setDeleteDialogOpen(false);
-      setGraphToDelete(null);
-    } catch (error) {
-      console.error("Error deleting graph:", error);
-    }
+    if (error) console.error("Error deleting graph:", error);
+
+    setGraphs((prev) => prev.filter((g) => g.id !== graphToDelete.id));
+    setDeleteDialogOpen(false);
+    setGraphToDelete(null);
   };
 
   return isLoading ? (

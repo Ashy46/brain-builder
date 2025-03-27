@@ -40,7 +40,6 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
     setIsLoading(true);
 
     try {
-      // Create the graph first
       const { data: graphData, error: graphError } = await supabase
         .from("graphs")
         .insert([
@@ -54,14 +53,13 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
 
       if (graphError) throw graphError;
 
-      // Create an initial Analysis node
       const { error: nodeError } = await supabase
         .from("nodes")
         .insert({
           graph_id: graphData.id,
-          label: "Analysis",
-          position_x: 500, // Center position
-          position_y: 300,
+          label: "Lorem ipsum dolor sit amet",
+          position_x: 0,
+          position_y: 0,
           data: { 
             type: "analysis",
             selectedStates: []
@@ -70,7 +68,6 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
 
       if (nodeError) {
         console.error("Error creating initial node:", nodeError);
-        // Continue even if initial node creation fails
       }
 
       setOpen(false);
@@ -107,6 +104,7 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
               />
             </div>
           </div>
+
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? "Creating..." : "Create Graph"}
