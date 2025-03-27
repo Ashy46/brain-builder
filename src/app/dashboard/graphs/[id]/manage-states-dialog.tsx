@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 
 import { Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 import { createClient } from "@/lib/supabase/client/client";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -193,30 +194,31 @@ export function ManageStatesDialog({
               {states.map((state) => (
                 <div
                   key={state.id}
-                  className="flex flex-col gap-2 p-4 border rounded-lg"
+                  className="flex flex-col gap-4 p-6 border rounded-lg bg-card"
                 >
-                  <div className="flex flex-row gap-2">
-                    <Input
-                      className="h-10"
-                      value={state.name}
-                      onChange={(e) =>
-                        updateState(state.id, { name: e.target.value })
-                      }
-                    />
-                    <span className="text-sm text-gray-500 min-w-[80px]">
-                      ({state.type})
-                    </span>
+                  <div className="flex flex-row items-center gap-4">
+                    <div className="flex-1">
+                      <Label className="mb-2">Name</Label>
+                      <Input
+                        className="h-10"
+                        value={state.name}
+                        onChange={(e) =>
+                          updateState(state.id, { name: e.target.value })
+                        }
+                      />
+                    </div>
                     <Button
                       variant="destructive"
                       size="icon"
-                      className="h-10 w-10"
+                      className="h-8 w-8"
                       onClick={() => deleteState(state.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
 
-                  <div className="flex flex-row gap-2">
+                  <div>
+                    <Label className="mb-2">Starting Value</Label>
                     <Input
                       className="h-10"
                       placeholder={`Starting ${
@@ -237,15 +239,34 @@ export function ManageStatesDialog({
                         });
                       }}
                     />
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        checked={state.persistent}
-                        onCheckedChange={(checked) =>
-                          updateState(state.id, { persistent: checked })
-                        }
-                      />
-                      <Label>Persistent</Label>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-2">
+                      <Label>Persistence</Label>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={state.persistent}
+                          onCheckedChange={(checked) =>
+                            updateState(state.id, { persistent: checked })
+                          }
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          Keep state between sessions
+                        </span>
+                      </div>
                     </div>
+                    <span
+                      className={cn(
+                        "px-2.5 py-0.5 rounded-full text-xs font-medium self-end",
+                        state.type === "number"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                          : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
+                      )}
+                    >
+                      {state.type.charAt(0).toUpperCase() +
+                        state.type.slice(1)}
+                    </span>
                   </div>
                 </div>
               ))}
