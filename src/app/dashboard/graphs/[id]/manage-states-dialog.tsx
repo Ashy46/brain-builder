@@ -46,6 +46,17 @@ function EditStateDialog({
   onUpdate: (id: string, updates: Partial<State>) => void;
   onDelete: (id: string) => void;
 }) {
+  const [name, setName] = useState(state.name);
+  const [startingValue, setStartingValue] = useState(
+    state.starting_value || ""
+  );
+  const [isPersistent, setIsPersistent] = useState(state.persistent);
+
+  // Update parent component when values change
+  const handleUpdate = (updates: Partial<State>) => {
+    onUpdate(state.id, updates);
+  };
+
   return (
     <Dialog open={true} onOpenChange={() => onClose()}>
       <DialogContent className="sm:max-w-[500px]">
@@ -55,26 +66,32 @@ function EditStateDialog({
 
         <div className="space-y-4">
           <div>
-            <Label className="mb-2">Name</Label>
+            <Label>Name</Label>
             <Input
-              value={state.name}
-              onChange={(e) => onUpdate(state.id, { name: e.target.value })}
+              className="h-10 mt-2"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                handleUpdate({ name: e.target.value });
+              }}
             />
           </div>
 
           <div>
-            <Label className="mb-2">Starting Value</Label>
+            <Label>Starting Value</Label>
             <Input
+              className="h-10 mt-2"
               placeholder={`Starting ${
                 state.type === "number" ? "number" : "text"
               }`}
               type={state.type === "number" ? "number" : "text"}
-              value={state.starting_value || ""}
+              value={startingValue}
               onChange={(e) => {
                 const value = e.target.value;
                 if (state.type === "number" && value && isNaN(Number(value)))
                   return;
-                onUpdate(state.id, { starting_value: value || null });
+                setStartingValue(value);
+                handleUpdate({ starting_value: value || null });
               }}
             />
           </div>
@@ -83,10 +100,11 @@ function EditStateDialog({
             <Label>Persistence</Label>
             <div className="flex items-center gap-2">
               <Switch
-                checked={state.persistent}
-                onCheckedChange={(checked) =>
-                  onUpdate(state.id, { persistent: checked })
-                }
+                checked={isPersistent}
+                onCheckedChange={(checked) => {
+                  setIsPersistent(checked);
+                  handleUpdate({ persistent: checked });
+                }}
               />
               <span className="text-sm text-muted-foreground">
                 Keep state between sessions
