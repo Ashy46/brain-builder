@@ -50,7 +50,7 @@ export function SelectStatesDialog({
   const fetchStates = async () => {
     try {
       const { data, error } = await supabase
-        .from("states")
+        .from("graph_states")
         .select("*")
         .eq("graph_id", graphId);
 
@@ -83,13 +83,19 @@ export function SelectStatesDialog({
     (currentPage + 1) * STATES_PER_PAGE
   );
 
-  const dialogHeight = states.length <= 1 ? "auto" : 
-                      states.length <= 5 ? `${Math.min(states.length * 60 + 120, 300)}px` : 
-                      "400px";
+  const dialogHeight =
+    states.length <= 1
+      ? "auto"
+      : states.length <= 5
+      ? `${Math.min(states.length * 60 + 120, 300)}px`
+      : "400px";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]" style={{ minHeight: dialogHeight }}>
+      <DialogContent
+        className="sm:max-w-[425px]"
+        style={{ minHeight: dialogHeight }}
+      >
         <DialogHeader>
           <DialogTitle>Select States to Update</DialogTitle>
         </DialogHeader>
@@ -97,10 +103,7 @@ export function SelectStatesDialog({
         <ScrollArea className={states.length > 1 ? "h-[300px] pr-4" : "pr-4"}>
           <div className="space-y-4">
             {paginatedStates.map((state) => (
-              <div
-                key={state.id}
-                className="flex items-center space-x-2"
-              >
+              <div key={state.id} className="flex items-center space-x-2">
                 <Checkbox
                   id={state.id}
                   checked={selectedIds.includes(state.id)}
@@ -134,7 +137,9 @@ export function SelectStatesDialog({
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
+                }
                 disabled={currentPage === totalPages - 1}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -151,4 +156,4 @@ export function SelectStatesDialog({
       </DialogContent>
     </Dialog>
   );
-} 
+}
