@@ -47,7 +47,7 @@ function NodeTypeLabel({ type }: { type: NodeType }) {
 }
 
 const baseNodeStyles =
-  "px-6 py-4 shadow-sm rounded-lg border min-w-[200px] min-h-[80px] backdrop-blur-[2px] bg-white/5";
+  "px-6 py-4 shadow-sm rounded-lg border min-w-[200px] min-h-[80px] backdrop-blur-[4px] bg-white/5";
 
 export function AnalysisNode({
   data,
