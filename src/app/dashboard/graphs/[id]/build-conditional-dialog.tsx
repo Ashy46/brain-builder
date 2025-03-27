@@ -64,7 +64,7 @@ export function BuildConditionalDialog({
   const fetchStates = async () => {
     try {
       const { data, error } = await supabase
-        .from("states")
+        .from("graph_states")
         .select("*")
         .eq("graph_id", graphId);
 

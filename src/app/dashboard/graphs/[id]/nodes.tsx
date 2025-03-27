@@ -10,7 +10,7 @@ import { SelectStatesDialog } from "./select-states-dialog";
 import { BuildConditionalDialog } from "./build-conditional-dialog";
 import { Button } from "@/components/ui/button";
 
-export type NodeType = "analysis" | "conditional" | "prompt";
+export type NodeType = "analysis" | "conditional" | "prompt" | "note";
 
 interface CustomInfo {
   id: string;
@@ -60,10 +60,18 @@ export interface PromptNodeData extends BaseNodeData {
   onPromptChange?: (nodeId: string, newData: PromptNodeData) => void;
 }
 
+export interface NoteNodeData extends BaseNodeData {
+  type: "note";
+  content?: string;
+  onContentChange?: (nodeId: string, newContent: string) => void;
+  graphId: string;
+}
+
 export type CustomNodeData =
   | AnalysisNodeData
   | ConditionalNodeData
-  | PromptNodeData;
+  | PromptNodeData
+  | NoteNodeData;
 
 export interface CustomNode {
   id: string;
@@ -92,6 +100,21 @@ export function AnalysisNode({
   const labelRef = useRef<HTMLInputElement>(null);
   const [width, setWidth] = useState(200);
   const [isSelectingStates, setIsSelectingStates] = useState(false);
+
+  useEffect(() => {
+    if (labelRef.current) {
+      const tempSpan = document.createElement("span");
+      tempSpan.style.visibility = "hidden";
+      tempSpan.style.position = "absolute";
+      tempSpan.style.whiteSpace = "pre";
+      tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
+      tempSpan.textContent = data.label;
+      document.body.appendChild(tempSpan);
+      const newWidth = Math.max(200, tempSpan.offsetWidth + 40);
+      document.body.removeChild(tempSpan);
+      setWidth(newWidth);
+    }
+  }, []); // Run once on mount
 
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newLabel = e.target.value;
@@ -202,6 +225,21 @@ export function ConditionalNode({
   const labelRef = useRef<HTMLInputElement>(null);
   const [width, setWidth] = useState(200);
   const [isBuildingConditional, setIsBuildingConditional] = useState(false);
+
+  useEffect(() => {
+    if (labelRef.current) {
+      const tempSpan = document.createElement("span");
+      tempSpan.style.visibility = "hidden";
+      tempSpan.style.position = "absolute";
+      tempSpan.style.whiteSpace = "pre";
+      tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
+      tempSpan.textContent = data.label;
+      document.body.appendChild(tempSpan);
+      const newWidth = Math.max(200, tempSpan.offsetWidth + 40);
+      document.body.removeChild(tempSpan);
+      setWidth(newWidth);
+    }
+  }, []); // Run once on mount
 
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newLabel = e.target.value;
@@ -315,6 +353,21 @@ export function PromptNode({
   const labelRef = useRef<HTMLInputElement>(null);
   const [width, setWidth] = useState(200);
 
+  useEffect(() => {
+    if (labelRef.current) {
+      const tempSpan = document.createElement("span");
+      tempSpan.style.visibility = "hidden";
+      tempSpan.style.position = "absolute";
+      tempSpan.style.whiteSpace = "pre";
+      tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
+      tempSpan.textContent = data.label;
+      document.body.appendChild(tempSpan);
+      const newWidth = Math.max(200, tempSpan.offsetWidth + 40);
+      document.body.removeChild(tempSpan);
+      setWidth(newWidth);
+    }
+  }, []); // Run once on mount
+
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newData = {
       ...data,
@@ -377,7 +430,90 @@ export function PromptNode({
           value={data.prompt ?? ""}
           onChange={handlePromptChange}
           onKeyDown={handleKeyDown}
-          placeholder="Enter your prompt here... Use {{name}} to reference custom info"
+          placeholder="Enter your prompt here..."
+          className="w-full text-sm bg-transparent min-h-[100px]"
+        />
+      </div>
+    </div>
+  );
+}
+
+export function NoteNode({
+  data,
+  selected,
+  id,
+}: NodeProps & { data: NoteNodeData; selected?: boolean }) {
+  const labelRef = useRef<HTMLInputElement>(null);
+  const [width, setWidth] = useState(200);
+
+  useEffect(() => {
+    if (labelRef.current) {
+      const tempSpan = document.createElement("span");
+      tempSpan.style.visibility = "hidden";
+      tempSpan.style.position = "absolute";
+      tempSpan.style.whiteSpace = "pre";
+      tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
+      tempSpan.textContent = data.label;
+      document.body.appendChild(tempSpan);
+      const newWidth = Math.max(200, tempSpan.offsetWidth + 40);
+      document.body.removeChild(tempSpan);
+      setWidth(newWidth);
+    }
+  }, []); // Run once on mount
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    data.onContentChange?.(id, newContent);
+  };
+
+  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newLabel = e.target.value;
+    data.onLabelChange?.(id, newLabel);
+    if (labelRef.current) {
+      const tempSpan = document.createElement("span");
+      tempSpan.style.visibility = "hidden";
+      tempSpan.style.position = "absolute";
+      tempSpan.style.whiteSpace = "pre";
+      tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
+      tempSpan.textContent = newLabel;
+      document.body.appendChild(tempSpan);
+      const newWidth = Math.max(200, tempSpan.offsetWidth + 40);
+      document.body.removeChild(tempSpan);
+      setWidth(newWidth);
+    }
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => {
+    e.stopPropagation();
+  };
+
+  return (
+    <div className="relative">
+      <NodeTypeLabel type={data.type} />
+      <div
+        className={cn(
+          baseNodeStyles,
+          "border-purple-500/20",
+          selected && "border-2 border-purple-400/50"
+        )}
+        style={{ width: `${width}px` }}
+      >
+        <input
+          ref={labelRef}
+          type="text"
+          value={data.label}
+          onChange={handleLabelChange}
+          onKeyDown={handleKeyDown}
+          className="w-full text-sm text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0 mb-2"
+          aria-label="Node label"
+        />
+        <Textarea
+          value={data.content ?? ""}
+          onChange={handleContentChange}
+          onKeyDown={handleKeyDown}
+          placeholder="Enter your note here..."
           className="w-full text-sm bg-transparent min-h-[100px]"
         />
       </div>
@@ -389,4 +525,5 @@ export const nodeTypes = {
   analysis: AnalysisNode,
   conditional: ConditionalNode,
   prompt: PromptNode,
+  note: NoteNode,
 };
