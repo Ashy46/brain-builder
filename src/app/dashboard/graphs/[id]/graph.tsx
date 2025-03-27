@@ -530,6 +530,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           id: "",
           source: params.source,
           target: params.target,
+          sourceHandle: params.sourceHandle,
         };
 
         const newEdges = [...edges, newEdge];
