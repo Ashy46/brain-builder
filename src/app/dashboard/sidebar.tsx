@@ -39,7 +39,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <Link href={"/dashboard"} passHref legacyBehavior>
               <SidebarMenuButton className="bg-secondary text-foreground py-6 px-4 text-lg transition-all duration-150 cursor-pointer">
-                <BrainCircuit className="h-4 w-4" />
+                <BrainCircuit className="size-5" />
                 <span className="text-base font-semibold">BrainBuider</span>
               </SidebarMenuButton>
             </Link>
