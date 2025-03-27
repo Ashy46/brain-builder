@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 import { Textarea } from "@/components/ui/textarea";
+import { SelectStatesDialog } from "./select-states-dialog";
 
 export type NodeType = "analysis" | "conditional" | "prompt";
 
@@ -16,6 +17,9 @@ export interface BaseNodeData {
 export interface AnalysisNodeData extends BaseNodeData {
   type: "analysis";
   childId?: string;
+  selectedStates: string[];
+  onStatesChange?: (nodeId: string, stateIds: string[]) => void;
+  graphId: string;
 }
 
 export interface ConditionalNodeData extends BaseNodeData {
@@ -61,6 +65,7 @@ export function AnalysisNode({
 }: NodeProps & { data: CustomNodeData; selected?: boolean }) {
   const labelRef = useRef<HTMLInputElement>(null);
   const [width, setWidth] = useState(200);
+  const [isSelectingStates, setIsSelectingStates] = useState(false);
 
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newLabel = e.target.value;
@@ -84,6 +89,13 @@ export function AnalysisNode({
     e.stopPropagation();
   };
 
+  const analysisData = data as AnalysisNodeData;
+  const selectedStatesCount = analysisData.selectedStates?.length || 0;
+
+  const handleStatesChange = (stateIds: string[]) => {
+    analysisData.onStatesChange?.(id, stateIds);
+  };
+
   return (
     <div className="relative">
       <NodeTypeLabel type={data.type} />
@@ -105,6 +117,28 @@ export function AnalysisNode({
           aria-label="Node label"
         />
 
+        <div className="flex items-center justify-center gap-2 mt-2 text-sm text-gray-400">
+          <button
+            onClick={() => setIsSelectingStates(true)}
+            className="flex items-center gap-1 px-2 py-1 text-xs rounded hover:bg-white/5"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+              />
+            </svg>
+            States: {selectedStatesCount} selected
+          </button>
+        </div>
+
         <Handle
           type="source"
           position={Position.Bottom}
@@ -112,6 +146,14 @@ export function AnalysisNode({
           className="!bg-blue-400 !w-3 !h-3 !border-2 !border-background"
         />
       </div>
+
+      <SelectStatesDialog
+        open={isSelectingStates}
+        onOpenChange={setIsSelectingStates}
+        graphId={analysisData.graphId}
+        selectedStateIds={analysisData.selectedStates || []}
+        onStatesChange={handleStatesChange}
+      />
     </div>
   );
 }

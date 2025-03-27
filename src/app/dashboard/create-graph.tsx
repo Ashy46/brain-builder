@@ -62,7 +62,10 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
           label: "Analysis",
           position_x: 500, // Center position
           position_y: 300,
-          data: { type: "analysis" }
+          data: { 
+            type: "analysis",
+            selectedStates: []
+          }
         });
 
       if (nodeError) {
