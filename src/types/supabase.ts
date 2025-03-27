@@ -34,45 +34,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      custom_info: {
-        Row: {
-          created_at: string
-          data: string | null
-          graph_id: string | null
-          id: string
-          name: string
-          type: Database["public"]["Enums"]["custom_info_type"]
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          data?: string | null
-          graph_id?: string | null
-          id?: string
-          name: string
-          type: Database["public"]["Enums"]["custom_info_type"]
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          data?: string | null
-          graph_id?: string | null
-          id?: string
-          name?: string
-          type?: Database["public"]["Enums"]["custom_info_type"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "custom_info_graph_id_fkey"
-            columns: ["graph_id"]
-            isOneToOne: false
-            referencedRelation: "graphs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      edges: {
+      graph_node_edges: {
         Row: {
           created_at: string
           id: string
@@ -96,14 +58,93 @@ export type Database = {
             foreignKeyName: "edges_source_node_id_fkey"
             columns: ["source_node_id"]
             isOneToOne: false
-            referencedRelation: "nodes"
+            referencedRelation: "graph_nodes"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "edges_target_node_id_fkey"
             columns: ["target_node_id"]
             isOneToOne: false
-            referencedRelation: "nodes"
+            referencedRelation: "graph_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      graph_nodes: {
+        Row: {
+          created_at: string
+          data: Json | null
+          graph_id: string
+          id: string
+          label: string
+          position_x: number
+          position_y: number
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          graph_id: string
+          id?: string
+          label: string
+          position_x?: number
+          position_y?: number
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          graph_id?: string
+          id?: string
+          label?: string
+          position_x?: number
+          position_y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nodes_graph_id_fkey"
+            columns: ["graph_id"]
+            isOneToOne: false
+            referencedRelation: "graphs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      graph_states: {
+        Row: {
+          created_at: string
+          graph_id: string
+          id: string
+          name: string
+          persistent: boolean
+          starting_value: string | null
+          type: Database["public"]["Enums"]["state_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          graph_id: string
+          id?: string
+          name: string
+          persistent?: boolean
+          starting_value?: string | null
+          type: Database["public"]["Enums"]["state_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          graph_id?: string
+          id?: string
+          name?: string
+          persistent?: boolean
+          starting_value?: string | null
+          type?: Database["public"]["Enums"]["state_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "states_graph_id_fkey"
+            columns: ["graph_id"]
+            isOneToOne: false
+            referencedRelation: "graphs"
             referencedColumns: ["id"]
           },
         ]
@@ -149,44 +190,6 @@ export type Database = {
           },
         ]
       }
-      nodes: {
-        Row: {
-          created_at: string
-          data: Json | null
-          graph_id: string
-          id: string
-          label: string
-          position_x: number
-          position_y: number
-        }
-        Insert: {
-          created_at?: string
-          data?: Json | null
-          graph_id: string
-          id?: string
-          label: string
-          position_x?: number
-          position_y?: number
-        }
-        Update: {
-          created_at?: string
-          data?: Json | null
-          graph_id?: string
-          id?: string
-          label?: string
-          position_x?: number
-          position_y?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nodes_graph_id_fkey"
-            columns: ["graph_id"]
-            isOneToOne: false
-            referencedRelation: "graphs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       roles: {
         Row: {
           created_at: string
@@ -204,47 +207,6 @@ export type Database = {
           name?: string
         }
         Relationships: []
-      }
-      states: {
-        Row: {
-          created_at: string
-          graph_id: string
-          id: string
-          name: string
-          persistent: boolean
-          starting_value: string | null
-          type: Database["public"]["Enums"]["state_type"]
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          graph_id: string
-          id?: string
-          name: string
-          persistent?: boolean
-          starting_value?: string | null
-          type: Database["public"]["Enums"]["state_type"]
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          graph_id?: string
-          id?: string
-          name?: string
-          persistent?: boolean
-          starting_value?: string | null
-          type?: Database["public"]["Enums"]["state_type"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "states_graph_id_fkey"
-            columns: ["graph_id"]
-            isOneToOne: false
-            referencedRelation: "graphs"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_roles: {
         Row: {

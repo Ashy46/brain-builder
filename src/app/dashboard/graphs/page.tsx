@@ -48,10 +48,13 @@ export default function GraphsPage() {
   useEffect(() => {
     async function fetchGraphs() {
       if (!user) return;
+
       setIsLoading(true);
 
       const start = (currentPage - 1) * PAGE_SIZE;
       const end = start + PAGE_SIZE - 1;
+
+      const supabase = createClient();
 
       const { data, error, count } = await supabase
         .from("graphs")

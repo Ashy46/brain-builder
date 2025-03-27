@@ -4,7 +4,6 @@ import { useRef, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { ChevronLeft, Loader2, Plus, Settings, Info } from "lucide-react";
-import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -13,19 +12,13 @@ import { Button } from "@/components/ui/button";
 
 import { Graph, GraphRef } from "@/app/dashboard/graphs/[id]/graph";
 import { ManageStatesDialog } from "@/app/dashboard/graphs/[id]/manage-states-dialog";
-import { ManageCustomInfoDialog } from "@/app/dashboard/graphs/[id]/manage-custom-info-dialog";
 
 export default function GraphPage() {
   const router = useRouter();
   const { id } = useParams();
 
-  const { user } = useAuth();
-
-  const supabase = createClient();
-
   const [isUpdating, setIsUpdating] = useState(false);
   const [isManageStatesOpen, setIsManageStatesOpen] = useState(false);
-  const [isManageCustomInfoOpen, setIsManageCustomInfoOpen] = useState(false);
 
   const graphRef = useRef<GraphRef>(null);
 
@@ -39,6 +32,7 @@ export default function GraphPage() {
         <Button
           onClick={() => graphRef.current?.addNode()}
           title="Add a new node to the graph"
+          variant="outline"
         >
           <Plus className="h-4 w-4" />
           Add Node
@@ -46,10 +40,6 @@ export default function GraphPage() {
         <Button variant="outline" onClick={() => setIsManageStatesOpen(true)}>
           <Settings className="h-4 w-4" />
           Manage States
-        </Button>
-        <Button variant="outline" onClick={() => setIsManageCustomInfoOpen(true)}>
-          <Info className="h-4 w-4" />
-          Manage Custom Info
         </Button>
       </div>
 
@@ -69,12 +59,6 @@ export default function GraphPage() {
       <ManageStatesDialog
         open={isManageStatesOpen}
         onOpenChange={setIsManageStatesOpen}
-        graphId={id as string}
-      />
-
-      <ManageCustomInfoDialog
-        open={isManageCustomInfoOpen}
-        onOpenChange={setIsManageCustomInfoOpen}
         graphId={id as string}
       />
     </>

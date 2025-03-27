@@ -289,7 +289,9 @@ function EnhancedPromptTextarea({
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   graphId: string;
 }) {
-  const [customInfos, setCustomInfos] = useState<Array<{ id: string; name: string }>>([]);
+  const [customInfos, setCustomInfos] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -315,23 +317,20 @@ function EnhancedPromptTextarea({
   // Function to render custom info references as badges
   const renderWithBadges = (text: string) => {
     const parts = text.split(/(\{\{[^}]+\}\})/g);
-    
+
     return parts.map((part, index) => {
       if (part.startsWith("{{") && part.endsWith("}}")) {
         const name = part.slice(2, -2).trim();
-        const customInfo = customInfos.find(info => info.name === name);
-        
-        const badgeClass = customInfo 
-          ? "bg-blue-500/20 text-blue-200 border border-blue-500/30" 
+        const customInfo = customInfos.find((info) => info.name === name);
+
+        const badgeClass = customInfo
+          ? "bg-blue-500/20 text-blue-200 border border-blue-500/30"
           : "bg-red-500/20 text-red-200 border border-red-500/30";
-        
+
         return (
           <span
             key={index}
-            className={cn(
-              "px-1 rounded text-sm font-medium",
-              badgeClass
-            )}
+            className={cn("px-1 rounded text-sm font-medium", badgeClass)}
           >
             {part}
           </span>
@@ -351,12 +350,6 @@ function EnhancedPromptTextarea({
 
   return (
     <div className="relative">
-      <style jsx>{`
-        textarea::selection {
-          background: rgba(255, 255, 255, 0.2);
-          color: transparent;
-        }
-      `}</style>
       <Textarea
         ref={textareaRef}
         value={value}
@@ -367,7 +360,7 @@ function EnhancedPromptTextarea({
         className={cn(
           "w-full text-sm bg-transparent min-h-[100px] font-mono",
           "placeholder:text-muted-foreground",
-          value && "text-transparent caret-white selection:text-transparent"
+          "text-[rgb(23,23,23)] caret-white"
         )}
       />
       <div

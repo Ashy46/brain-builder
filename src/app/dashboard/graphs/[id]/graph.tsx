@@ -108,7 +108,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         );
 
         const { data: currentNode, error: fetchError } = await supabase
-          .from("nodes")
+          .from("graph_nodes")
           .select("data, label")
           .eq("id", nodeId)
           .single();
@@ -121,7 +121,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const mergedData = { ...currentNode.data, ...newData };
 
         const { error } = await supabase
-          .from("nodes")
+          .from("graph_nodes")
           .update({
             data: mergedData,
             ...(newData.label && { label: newData.label }),
@@ -142,7 +142,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       async (sourceId: string, targetId: string, sourceHandle?: string) => {
         try {
           const { data: newEdge, error } = await supabase
-            .from("edges")
+            .from("graph_node_edges")
             .insert({
               source_node_id: sourceId,
               target_node_id: targetId,
@@ -174,7 +174,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     const deleteEdge = useCallback(
       async (edgeId: string) => {
         const { error } = await supabase
-          .from("edges")
+          .from("graph_node_edges")
           .delete()
           .eq("id", edgeId);
 
@@ -246,7 +246,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           }
 
           const { data: nodesData, error: nodesError } = await supabase
-            .from("nodes")
+            .from("graph_nodes")
             .select("*")
             .eq("graph_id", graphId);
 
@@ -256,7 +256,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           }
 
           const { data: edgesData, error: edgesError } = await supabase
-            .from("edges")
+            .from("graph_node_edges")
             .select("*")
             .in(
               "source_node_id",
@@ -312,7 +312,10 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
                 conditions: nodeData.conditions || [],
                 operator: nodeData.operator || "and",
                 graphId,
-                onConditionalChange: async (nodeId: string, newData: ConditionalNodeData) => {
+                onConditionalChange: async (
+                  nodeId: string,
+                  newData: ConditionalNodeData
+                ) => {
                   await updateNodeData(nodeId, {
                     conditions: newData.conditions,
                     operator: newData.operator,
@@ -373,7 +376,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         try {
           for (const node of newNodes) {
             const { error } = await supabase
-              .from("nodes")
+              .from("graph_nodes")
               .update({
                 position_x: node.position.x,
                 position_y: node.position.y,
@@ -447,7 +450,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       async (nodeId: string) => {
         try {
           const { error } = await supabase
-            .from("nodes")
+            .from("graph_nodes")
             .delete()
             .eq("id", nodeId);
 
@@ -510,14 +513,13 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
     const onConnect = useCallback(
       async (params: any) => {
-        // Check if an edge with the same source and target already exists
         const edgeExists = edges.some(
           (edge) =>
             edge.source === params.source && edge.target === params.target
         );
 
         if (edgeExists) {
-          return; // Don't create duplicate edges
+          return;
         }
 
         const newEdge: Edge = {
@@ -530,7 +532,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         setEdges(newEdges);
 
         const { data: createdEdge, error } = await supabase
-          .from("edges")
+          .from("graph_node_edges")
           .insert({
             source_node_id: params.source,
             target_node_id: params.target,
@@ -581,7 +583,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           }
 
           const { data: createdNode, error: nodeError } = await supabase
-            .from("nodes")
+            .from("graph_nodes")
             .insert({
               graph_id: graphId,
               label,
