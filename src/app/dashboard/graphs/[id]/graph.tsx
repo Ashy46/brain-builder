@@ -83,63 +83,6 @@ interface FlowProps {
   isRootNode: boolean;
 }
 
-function Flow({
-  nodes,
-  edges,
-  onNodesChange,
-  onEdgesChange,
-  onConnect,
-  onNodeClick,
-  onInit,
-  selectedNode,
-  setSelectedNode,
-  handleAddNode,
-  isAddNodeDialogOpen,
-  setIsAddNodeDialogOpen,
-  isRootNode,
-}: FlowProps) {
-  const { getViewport } = useReactFlow();
-
-  const onKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      if (
-        selectedNode &&
-        (event.key === "Delete" || event.key === "Backspace")
-      ) {
-        const changes = [{ id: selectedNode.id, type: "remove" as const }];
-        onNodesChange(changes);
-      }
-    },
-    [selectedNode, onNodesChange]
-  );
-
-  return (
-    <>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={onNodeClick}
-        nodeTypes={nodeTypes}
-        onInit={onInit}
-        onKeyDown={onKeyDown}
-      >
-        <Background />
-        <Controls />
-      </ReactFlow>
-      <AddNodeDialog
-        open={isAddNodeDialogOpen}
-        onOpenChange={setIsAddNodeDialogOpen}
-        onAddNode={handleAddNode}
-        isRootNode={isRootNode}
-        hasAnalysisNode={nodes.some((node) => node.type === "analysis")}
-      />
-    </>
-  );
-}
-
 export const Graph = forwardRef<GraphRef, GraphProps>(
   ({ graphId, className, onUpdateStart, onUpdateEnd }, ref) => {
     const { user } = useAuth();
@@ -399,6 +342,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           setNodes(flowNodes);
           setEdges(flowEdges);
           setIsLoading(false);
+          reactFlowInstance.current?.fitView();
         } catch (error) {
           console.error("Error in fetchGraph:", error);
           setIsLoading(false);
@@ -722,24 +666,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       ]
     );
 
-    useImperativeHandle(ref, () => ({
-      fitView: () => {
-        reactFlowInstance.current?.fitView();
-      },
-      addNode: () => {
-        setIsAddNodeDialogOpen(true);
-      },
-      selectedNode,
-    }));
-
-    useEffect(() => {
-      return () => {
-        if (positionUpdateTimeoutRef.current) {
-          clearTimeout(positionUpdateTimeoutRef.current);
-        }
-      };
-    }, []);
-
     if (isLoading) {
       return (
         <div className="h-screen w-screen flex items-center justify-center">
@@ -751,7 +677,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
     return (
       <div className={cn("h-screen w-screen", className)}>
         <ReactFlowProvider>
-          <Flow
+          <GraphContent
             nodes={nodes}
             edges={edges}
             onNodesChange={onNodesChangeCallback}
@@ -767,11 +693,72 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             isAddNodeDialogOpen={isAddNodeDialogOpen}
             setIsAddNodeDialogOpen={setIsAddNodeDialogOpen}
             isRootNode={nodes.length === 0}
+            ref={ref}
           />
         </ReactFlowProvider>
       </div>
     );
   }
 );
+
+const GraphContent = forwardRef<GraphRef, FlowProps>(
+  (
+    {
+      nodes,
+      edges,
+      onNodesChange,
+      onEdgesChange,
+      onConnect,
+      onNodeClick,
+      onInit,
+      selectedNode,
+      setSelectedNode,
+      handleAddNode,
+      isAddNodeDialogOpen,
+      setIsAddNodeDialogOpen,
+      isRootNode,
+    },
+    ref
+  ) => {
+    const { fitView } = useReactFlow();
+
+    useImperativeHandle(ref, () => ({
+      fitView: () => {
+        fitView();
+      },
+      addNode: () => {
+        setIsAddNodeDialogOpen(true);
+      },
+      selectedNode,
+    }));
+
+    return (
+      <>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={onNodeClick}
+          nodeTypes={nodeTypes}
+          onInit={onInit}
+        >
+          <Background />
+          <Controls />
+        </ReactFlow>
+        <AddNodeDialog
+          open={isAddNodeDialogOpen}
+          onOpenChange={setIsAddNodeDialogOpen}
+          onAddNode={handleAddNode}
+          isRootNode={isRootNode}
+          hasAnalysisNode={nodes.some((node) => node.type === "analysis")}
+        />
+      </>
+    );
+  }
+);
+
+GraphContent.displayName = "GraphContent";
 
 Graph.displayName = "Graph";

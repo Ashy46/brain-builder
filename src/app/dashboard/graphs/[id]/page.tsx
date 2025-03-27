@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import { ChevronLeft, Loader2, Plus } from "lucide-react";
+import { ChevronLeft, Loader2, Plus, Settings } from "lucide-react";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client/client";
@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 
 import { Graph, GraphRef } from "@/app/dashboard/graphs/[id]/graph";
+import { ManageStatesDialog } from "@/app/dashboard/graphs/[id]/manage-states-dialog";
 
 export default function GraphPage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function GraphPage() {
   const supabase = createClient();
 
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isManageStatesOpen, setIsManageStatesOpen] = useState(false);
 
   const graphRef = useRef<GraphRef>(null);
 
@@ -39,6 +41,10 @@ export default function GraphPage() {
           <Plus className="h-4 w-4" />
           Add Node
         </Button>
+        <Button variant="outline" onClick={() => setIsManageStatesOpen(true)}>
+          <Settings className="h-4 w-4" />
+          Manage States
+        </Button>
       </div>
 
       {isUpdating && (
@@ -52,6 +58,12 @@ export default function GraphPage() {
         graphId={id as string}
         onUpdateStart={() => setIsUpdating(true)}
         onUpdateEnd={() => setIsUpdating(false)}
+      />
+
+      <ManageStatesDialog
+        open={isManageStatesOpen}
+        onOpenChange={setIsManageStatesOpen}
+        graphId={id as string}
       />
     </>
   );

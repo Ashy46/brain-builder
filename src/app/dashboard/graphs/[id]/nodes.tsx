@@ -1,4 +1,5 @@
 import { Handle, Position, NodeProps } from "@xyflow/react";
+import { useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -50,7 +51,7 @@ function NodeTypeLabel({ type }: { type: NodeType }) {
 }
 
 const baseNodeStyles =
-  "p-3 shadow-sm rounded-lg border min-w-[200px] backdrop-blur-[4px] bg-white/5";
+  "p-3 shadow-sm rounded-lg border backdrop-blur-[4px] bg-white/5";
 
 export function AnalysisNode({
   data,
@@ -58,9 +59,25 @@ export function AnalysisNode({
   selected,
   id,
 }: NodeProps & { data: CustomNodeData; selected?: boolean }) {
+  const labelRef = useRef<HTMLInputElement>(null);
+  const [width, setWidth] = useState(200);
+
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newLabel = e.target.value;
     data.onLabelChange?.(id, newLabel);
+    // Update width based on content
+    if (labelRef.current) {
+      const tempSpan = document.createElement('span');
+      tempSpan.style.visibility = 'hidden';
+      tempSpan.style.position = 'absolute';
+      tempSpan.style.whiteSpace = 'pre';
+      tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
+      tempSpan.textContent = newLabel;
+      document.body.appendChild(tempSpan);
+      const newWidth = Math.max(200, tempSpan.offsetWidth + 40); // Add padding
+      document.body.removeChild(tempSpan);
+      setWidth(newWidth);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -76,8 +93,10 @@ export function AnalysisNode({
           "border-blue-500/20",
           selected && "border-2 border-blue-400/50"
         )}
+        style={{ width: `${width}px` }}
       >
         <input
+          ref={labelRef}
           type="text"
           value={data.label}
           onChange={handleLabelChange}
@@ -103,9 +122,25 @@ export function ConditionalNode({
   selected,
   id,
 }: NodeProps & { data: CustomNodeData; selected?: boolean }) {
+  const labelRef = useRef<HTMLInputElement>(null);
+  const [width, setWidth] = useState(200);
+
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newLabel = e.target.value;
     data.onLabelChange?.(id, newLabel);
+    // Update width based on content
+    if (labelRef.current) {
+      const tempSpan = document.createElement('span');
+      tempSpan.style.visibility = 'hidden';
+      tempSpan.style.position = 'absolute';
+      tempSpan.style.whiteSpace = 'pre';
+      tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
+      tempSpan.textContent = newLabel;
+      document.body.appendChild(tempSpan);
+      const newWidth = Math.max(200, tempSpan.offsetWidth + 40); // Add padding
+      document.body.removeChild(tempSpan);
+      setWidth(newWidth);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -121,6 +156,7 @@ export function ConditionalNode({
           "border-yellow-500/20",
           selected && "border-2 border-yellow-400/50"
         )}
+        style={{ width: `${width}px` }}
       >
         <Handle
           type="target"
@@ -130,6 +166,7 @@ export function ConditionalNode({
         />
 
         <input
+          ref={labelRef}
           type="text"
           value={data.label}
           onChange={handleLabelChange}
@@ -165,6 +202,9 @@ export function PromptNode({
   selected,
   id,
 }: NodeProps & { data: PromptNodeData; selected?: boolean }) {
+  const labelRef = useRef<HTMLInputElement>(null);
+  const [width, setWidth] = useState(200);
+
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newData = {
       ...data,
@@ -176,6 +216,19 @@ export function PromptNode({
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newLabel = e.target.value;
     data.onLabelChange?.(id, newLabel);
+    // Update width based on content
+    if (labelRef.current) {
+      const tempSpan = document.createElement('span');
+      tempSpan.style.visibility = 'hidden';
+      tempSpan.style.position = 'absolute';
+      tempSpan.style.whiteSpace = 'pre';
+      tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
+      tempSpan.textContent = newLabel;
+      document.body.appendChild(tempSpan);
+      const newWidth = Math.max(200, tempSpan.offsetWidth + 40); // Add padding
+      document.body.removeChild(tempSpan);
+      setWidth(newWidth);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
@@ -188,9 +241,10 @@ export function PromptNode({
       <div
         className={cn(
           baseNodeStyles,
-          " border-green-500/20",
+          "border-green-500/20",
           selected && "border-2 border-green-400/50"
         )}
+        style={{ width: `${width}px` }}
       >
         <Handle
           type="target"
@@ -200,6 +254,7 @@ export function PromptNode({
         />
 
         <input
+          ref={labelRef}
           type="text"
           value={data.label}
           onChange={handleLabelChange}

@@ -167,6 +167,44 @@ export type Database = {
         }
         Relationships: []
       }
+      states: {
+        Row: {
+          created_at: string
+          graph_id: string
+          id: string
+          name: string
+          persistent: boolean
+          starting_value: string | null
+          type: Database["public"]["Enums"]["state_type"]
+        }
+        Insert: {
+          created_at?: string
+          graph_id: string
+          id?: string
+          name: string
+          persistent?: boolean
+          starting_value?: string | null
+          type: Database["public"]["Enums"]["state_type"]
+        }
+        Update: {
+          created_at?: string
+          graph_id?: string
+          id?: string
+          name?: string
+          persistent?: boolean
+          starting_value?: string | null
+          type?: Database["public"]["Enums"]["state_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "states_graph_id_fkey"
+            columns: ["graph_id"]
+            isOneToOne: false
+            referencedRelation: "graphs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -229,7 +267,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      state_type: "number" | "text"
     }
     CompositeTypes: {
       [_ in never]: never
