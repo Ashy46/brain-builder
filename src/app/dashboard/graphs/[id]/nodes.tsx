@@ -1,5 +1,7 @@
 import { Handle, Position, NodeProps } from "@xyflow/react";
+
 import { cn } from "@/lib/utils";
+
 import { Textarea } from "@/components/ui/textarea";
 
 export type NodeType = "analysis" | "conditional" | "prompt";
@@ -47,7 +49,7 @@ function NodeTypeLabel({ type }: { type: NodeType }) {
 }
 
 const baseNodeStyles =
-  "px-6 py-4 shadow-sm rounded-lg border min-w-[200px] min-h-[80px] backdrop-blur-[4px] bg-white/5";
+  "p-3 shadow-sm rounded-lg border min-w-[200px] backdrop-blur-[4px] bg-white/5";
 
 export function AnalysisNode({
   data,
@@ -164,7 +166,7 @@ export function PromptNode({
           onChange={handlePromptChange}
           onKeyDown={handleKeyDown}
           placeholder="Enter your prompt here..."
-          className="w-full text-sm bg-transparent border-green-500/20"
+          className="w-full text-sm bg-transparent"
         />
       </div>
     </div>
