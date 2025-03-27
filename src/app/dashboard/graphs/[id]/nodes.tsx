@@ -1,8 +1,9 @@
 import { Handle, Position, NodeProps } from "@xyflow/react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { ArrowLeftRight } from "lucide-react";
 
 import { cn } from "@/lib/utils/tailwind";
+import { createClient } from "@/lib/supabase/client";
 
 import { Textarea } from "@/components/ui/textarea";
 import { SelectStatesDialog } from "./select-states-dialog";
@@ -48,6 +49,7 @@ export interface ConditionalNodeData extends BaseNodeData {
 export interface PromptNodeData extends BaseNodeData {
   type: "prompt";
   prompt?: string;
+  graphId: string;
   onPromptChange?: (nodeId: string, newData: PromptNodeData) => void;
 }
 
@@ -276,6 +278,109 @@ export function ConditionalNode({
   );
 }
 
+function EnhancedPromptTextarea({
+  value,
+  onChange,
+  onKeyDown,
+  graphId,
+}: {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  graphId: string;
+}) {
+  const [customInfos, setCustomInfos] = useState<Array<{ id: string; name: string }>>([]);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function fetchCustomInfos() {
+      const { data, error } = await supabase
+        .from("custom_info")
+        .select("id, name")
+        .eq("graph_id", graphId);
+
+      if (error) {
+        console.error("Error fetching custom infos:", error);
+        return;
+      }
+
+      setCustomInfos(data || []);
+    }
+
+    fetchCustomInfos();
+  }, [graphId]);
+
+  // Function to render custom info references as badges
+  const renderWithBadges = (text: string) => {
+    const parts = text.split(/(\{\{[^}]+\}\})/g);
+    
+    return parts.map((part, index) => {
+      if (part.startsWith("{{") && part.endsWith("}}")) {
+        const name = part.slice(2, -2).trim();
+        const customInfo = customInfos.find(info => info.name === name);
+        
+        const badgeClass = customInfo 
+          ? "bg-blue-500/20 text-blue-200 border border-blue-500/30" 
+          : "bg-red-500/20 text-red-200 border border-red-500/30";
+        
+        return (
+          <span
+            key={index}
+            className={cn(
+              "px-1 rounded text-sm font-medium",
+              badgeClass
+            )}
+          >
+            {part}
+          </span>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
+  // Sync scroll between textarea and overlay
+  const handleScroll = () => {
+    if (textareaRef.current && overlayRef.current) {
+      overlayRef.current.scrollTop = textareaRef.current.scrollTop;
+      overlayRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    }
+  };
+
+  return (
+    <div className="relative">
+      <style jsx>{`
+        textarea::selection {
+          background: rgba(255, 255, 255, 0.2);
+          color: transparent;
+        }
+      `}</style>
+      <Textarea
+        ref={textareaRef}
+        value={value}
+        onChange={onChange}
+        onKeyDown={onKeyDown}
+        onScroll={handleScroll}
+        placeholder="Enter your prompt here... Use {{name}} to reference custom info"
+        className={cn(
+          "w-full text-sm bg-transparent min-h-[100px] font-mono",
+          "placeholder:text-muted-foreground",
+          value && "text-transparent caret-white selection:text-transparent"
+        )}
+      />
+      <div
+        ref={overlayRef}
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none p-[9px] text-sm font-mono whitespace-pre-wrap break-words text-white"
+      >
+        {renderWithBadges(value)}
+      </div>
+    </div>
+  );
+}
+
 export function PromptNode({
   data,
   isConnectable,
@@ -344,12 +449,11 @@ export function PromptNode({
           className="w-full text-sm text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0 mb-2"
           aria-label="Node label"
         />
-        <Textarea
+        <EnhancedPromptTextarea
           value={data.prompt ?? ""}
           onChange={handlePromptChange}
           onKeyDown={handleKeyDown}
-          placeholder="Enter your prompt here..."
-          className="w-full text-sm bg-transparent"
+          graphId={data.graphId}
         />
       </div>
     </div>

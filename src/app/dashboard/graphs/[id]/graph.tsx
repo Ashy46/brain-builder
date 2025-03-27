@@ -286,6 +286,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
               fullNodeData = {
                 ...baseNodeData,
                 prompt: nodeData.prompt || "",
+                graphId,
                 onPromptChange: async (
                   nodeId: string,
                   newData: PromptNodeData

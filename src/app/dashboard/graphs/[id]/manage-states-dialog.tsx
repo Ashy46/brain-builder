@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Loader2, Settings2 } from "lucide-react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils/tailwind";
+import { Plus, Loader2, Settings2 } from "lucide-react";
 
+import { toast } from "sonner";
+
+import { cn } from "@/lib/utils/tailwind";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 
@@ -52,7 +53,6 @@ function EditStateDialog({
   );
   const [isPersistent, setIsPersistent] = useState(state.persistent);
 
-  // Update parent component when values change
   const handleUpdate = (updates: Partial<State>) => {
     onUpdate(state.id, updates);
   };
