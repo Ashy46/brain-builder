@@ -166,7 +166,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
         const { data: currentNode, error: fetchError } = await supabase
           .from("nodes")
-          .select("data")
+          .select("data, label")
           .eq("id", nodeId)
           .single();
 
@@ -179,7 +179,10 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
         const { error } = await supabase
           .from("nodes")
-          .update({ data: mergedData })
+          .update({
+            data: mergedData,
+            ...(newData.label && { label: newData.label }),
+          })
           .eq("id", nodeId);
 
         if (error) {
@@ -329,6 +332,9 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             const baseNodeData = {
               label: node.label,
               type: nodeType,
+              onLabelChange: async (nodeId: string, newLabel: string) => {
+                await updateNodeData(nodeId, { label: newLabel });
+              },
             };
 
             let fullNodeData: any = { ...baseNodeData };
@@ -547,7 +553,8 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       async (params: any) => {
         // Check if an edge with the same source and target already exists
         const edgeExists = edges.some(
-          edge => edge.source === params.source && edge.target === params.target
+          (edge) =>
+            edge.source === params.source && edge.target === params.target
         );
 
         if (edgeExists) {
@@ -577,9 +584,11 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           return;
         }
 
-        setEdges(prev => prev.map(edge =>
-          edge.id === newEdge.id ? { ...edge, id: createdEdge.id } : edge
-        ));
+        setEdges((prev) =>
+          prev.map((edge) =>
+            edge.id === newEdge.id ? { ...edge, id: createdEdge.id } : edge
+          )
+        );
 
         await updateGraphData(nodes, newEdges);
       },

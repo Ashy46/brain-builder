@@ -9,6 +9,7 @@ export type NodeType = "analysis" | "conditional" | "prompt";
 export interface BaseNodeData {
   label: string;
   type: NodeType;
+  onLabelChange?: (nodeId: string, newLabel: string) => void;
 }
 
 export interface AnalysisNodeData extends BaseNodeData {
@@ -55,7 +56,17 @@ export function AnalysisNode({
   data,
   isConnectable,
   selected,
+  id,
 }: NodeProps & { data: CustomNodeData; selected?: boolean }) {
+  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newLabel = e.target.value;
+    data.onLabelChange?.(id, newLabel);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+  };
+
   return (
     <div className="relative">
       <NodeTypeLabel type={data.type} />
@@ -66,7 +77,14 @@ export function AnalysisNode({
           selected && "border-2 border-blue-400/50"
         )}
       >
-        <div className="text-sm text-center">{data.label}</div>
+        <input
+          type="text"
+          value={data.label}
+          onChange={handleLabelChange}
+          onKeyDown={handleKeyDown}
+          className="w-full text-sm text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0"
+          aria-label="Node label"
+        />
 
         <Handle
           type="source"
@@ -83,7 +101,17 @@ export function ConditionalNode({
   data,
   isConnectable,
   selected,
+  id,
 }: NodeProps & { data: CustomNodeData; selected?: boolean }) {
+  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newLabel = e.target.value;
+    data.onLabelChange?.(id, newLabel);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+  };
+
   return (
     <div className="relative">
       <NodeTypeLabel type={data.type} />
@@ -101,7 +129,14 @@ export function ConditionalNode({
           className="!bg-yellow-400 !w-3 !h-3 !border-2 !border-background"
         />
 
-        <div className="text-sm text-center">{data.label}</div>
+        <input
+          type="text"
+          value={data.label}
+          onChange={handleLabelChange}
+          onKeyDown={handleKeyDown}
+          className="w-full text-sm text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0"
+          aria-label="Node label"
+        />
 
         <Handle
           type="source"
@@ -138,8 +173,12 @@ export function PromptNode({
     data.onPromptChange?.(id, newData);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Prevent deletion events from bubbling up when textarea is focused
+  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newLabel = e.target.value;
+    data.onLabelChange?.(id, newLabel);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     e.stopPropagation();
   };
 
@@ -160,7 +199,14 @@ export function PromptNode({
           className="!bg-green-400 !w-3 !h-3 !border-2 !border-background"
         />
 
-        <div className="text-sm text-center mb-2">{data.label}</div>
+        <input
+          type="text"
+          value={data.label}
+          onChange={handleLabelChange}
+          onKeyDown={handleKeyDown}
+          className="w-full text-sm text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0 mb-2"
+          aria-label="Node label"
+        />
         <Textarea
           value={data.prompt ?? ""}
           onChange={handlePromptChange}
