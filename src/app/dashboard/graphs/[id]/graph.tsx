@@ -308,6 +308,15 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
                 ...baseNodeData,
                 trueChildId: nodeData.trueChildId,
                 falseChildId: nodeData.falseChildId,
+                conditions: nodeData.conditions || [],
+                operator: nodeData.operator || "and",
+                graphId,
+                onConditionalChange: async (nodeId: string, newData: ConditionalNodeData) => {
+                  await updateNodeData(nodeId, {
+                    conditions: newData.conditions,
+                    operator: newData.operator,
+                  });
+                },
               };
             }
 

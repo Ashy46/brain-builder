@@ -1,10 +1,13 @@
 import { Handle, Position, NodeProps } from "@xyflow/react";
 import { useRef, useState } from "react";
+import { ArrowLeftRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 import { Textarea } from "@/components/ui/textarea";
 import { SelectStatesDialog } from "./select-states-dialog";
+import { BuildConditionalDialog } from "./build-conditional-dialog";
+import { Button } from "@/components/ui/button";
 
 export type NodeType = "analysis" | "conditional" | "prompt";
 
@@ -26,6 +29,20 @@ export interface ConditionalNodeData extends BaseNodeData {
   type: "conditional";
   trueChildId?: string;
   falseChildId?: string;
+  conditions?: {
+    stateId: string;
+    operator:
+      | "equals"
+      | "notEquals"
+      | "greaterThan"
+      | "lessThan"
+      | "contains"
+      | "notContains";
+    value: string;
+  }[];
+  operator?: "and" | "or";
+  onConditionalChange?: (nodeId: string, data: ConditionalNodeData) => void;
+  graphId: string;
 }
 
 export interface PromptNodeData extends BaseNodeData {
@@ -70,12 +87,11 @@ export function AnalysisNode({
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newLabel = e.target.value;
     data.onLabelChange?.(id, newLabel);
-    // Update width based on content
     if (labelRef.current) {
-      const tempSpan = document.createElement('span');
-      tempSpan.style.visibility = 'hidden';
-      tempSpan.style.position = 'absolute';
-      tempSpan.style.whiteSpace = 'pre';
+      const tempSpan = document.createElement("span");
+      tempSpan.style.visibility = "hidden";
+      tempSpan.style.position = "absolute";
+      tempSpan.style.whiteSpace = "pre";
       tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
       tempSpan.textContent = newLabel;
       document.body.appendChild(tempSpan);
@@ -117,26 +133,15 @@ export function AnalysisNode({
           aria-label="Node label"
         />
 
-        <div className="flex items-center justify-center gap-2 mt-2 text-sm text-gray-400">
-          <button
+        <div className="flex items-center justify-center gap-2 mt-2 text-s">
+          <Button
             onClick={() => setIsSelectingStates(true)}
-            className="flex items-center gap-1 px-2 py-1 text-xs rounded hover:bg-white/5"
+            variant="outline"
+            size="sm"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-              />
-            </svg>
+            <ArrowLeftRight className="h-4 w-4" />
             States: {selectedStatesCount} selected
-          </button>
+          </Button>
         </div>
 
         <Handle
@@ -166,20 +171,20 @@ export function ConditionalNode({
 }: NodeProps & { data: CustomNodeData; selected?: boolean }) {
   const labelRef = useRef<HTMLInputElement>(null);
   const [width, setWidth] = useState(200);
+  const [isBuildingConditional, setIsBuildingConditional] = useState(false);
 
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newLabel = e.target.value;
     data.onLabelChange?.(id, newLabel);
-    // Update width based on content
     if (labelRef.current) {
-      const tempSpan = document.createElement('span');
-      tempSpan.style.visibility = 'hidden';
-      tempSpan.style.position = 'absolute';
-      tempSpan.style.whiteSpace = 'pre';
+      const tempSpan = document.createElement("span");
+      tempSpan.style.visibility = "hidden";
+      tempSpan.style.position = "absolute";
+      tempSpan.style.whiteSpace = "pre";
       tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
       tempSpan.textContent = newLabel;
       document.body.appendChild(tempSpan);
-      const newWidth = Math.max(200, tempSpan.offsetWidth + 40); // Add padding
+      const newWidth = Math.max(200, tempSpan.offsetWidth + 40);
       document.body.removeChild(tempSpan);
       setWidth(newWidth);
     }
@@ -187,6 +192,13 @@ export function ConditionalNode({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     e.stopPropagation();
+  };
+
+  const conditionalData = data as ConditionalNodeData;
+  const conditionsCount = conditionalData.conditions?.length || 0;
+
+  const handleConditionalChange = (newData: ConditionalNodeData) => {
+    conditionalData.onConditionalChange?.(id, newData);
   };
 
   return (
@@ -217,6 +229,17 @@ export function ConditionalNode({
           aria-label="Node label"
         />
 
+        <div className="flex items-center justify-center gap-2 mt-2 text-sm">
+          <Button
+            onClick={() => setIsBuildingConditional(true)}
+            variant="outline"
+            size="sm"
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+            Conditions: {conditionsCount} set
+          </Button>
+        </div>
+
         <Handle
           type="source"
           position={Position.Bottom}
@@ -234,6 +257,21 @@ export function ConditionalNode({
           className="!bg-red-400 !w-3 !h-3 !border-2 !border-background"
         />
       </div>
+
+      <BuildConditionalDialog
+        open={isBuildingConditional}
+        onOpenChange={setIsBuildingConditional}
+        graphId={conditionalData.graphId}
+        data={{
+          type: "conditional",
+          label: conditionalData.label,
+          conditions: conditionalData.conditions || [],
+          operator: conditionalData.operator || "and",
+          graphId: conditionalData.graphId,
+          onConditionalChange: conditionalData.onConditionalChange,
+        }}
+        onConditionalChange={handleConditionalChange}
+      />
     </div>
   );
 }
@@ -260,10 +298,10 @@ export function PromptNode({
     data.onLabelChange?.(id, newLabel);
     // Update width based on content
     if (labelRef.current) {
-      const tempSpan = document.createElement('span');
-      tempSpan.style.visibility = 'hidden';
-      tempSpan.style.position = 'absolute';
-      tempSpan.style.whiteSpace = 'pre';
+      const tempSpan = document.createElement("span");
+      tempSpan.style.visibility = "hidden";
+      tempSpan.style.position = "absolute";
+      tempSpan.style.whiteSpace = "pre";
       tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
       tempSpan.textContent = newLabel;
       document.body.appendChild(tempSpan);
@@ -273,7 +311,9 @@ export function PromptNode({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => {
     e.stopPropagation();
   };
 
