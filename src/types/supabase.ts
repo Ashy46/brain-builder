@@ -34,6 +34,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      custom_info: {
+        Row: {
+          created_at: string
+          data: string | null
+          graph_id: string | null
+          id: string
+          name: string
+          type: Database["public"]["Enums"]["custom_info_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data?: string | null
+          graph_id?: string | null
+          id?: string
+          name: string
+          type: Database["public"]["Enums"]["custom_info_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string | null
+          graph_id?: string | null
+          id?: string
+          name?: string
+          type?: Database["public"]["Enums"]["custom_info_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_info_graph_id_fkey"
+            columns: ["graph_id"]
+            isOneToOne: false
+            referencedRelation: "graphs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       edges: {
         Row: {
           created_at: string
@@ -176,6 +214,7 @@ export type Database = {
           persistent: boolean
           starting_value: string | null
           type: Database["public"]["Enums"]["state_type"]
+          updated_at: string
         }
         Insert: {
           created_at?: string
@@ -185,6 +224,7 @@ export type Database = {
           persistent?: boolean
           starting_value?: string | null
           type: Database["public"]["Enums"]["state_type"]
+          updated_at?: string
         }
         Update: {
           created_at?: string
@@ -194,6 +234,7 @@ export type Database = {
           persistent?: boolean
           starting_value?: string | null
           type?: Database["public"]["Enums"]["state_type"]
+          updated_at?: string
         }
         Relationships: [
           {
@@ -267,6 +308,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      custom_info_type: "number" | "text" | "json" | "boolean"
       state_type: "number" | "text"
     }
     CompositeTypes: {

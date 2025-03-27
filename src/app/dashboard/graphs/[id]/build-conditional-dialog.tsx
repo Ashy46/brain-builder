@@ -114,7 +114,9 @@ export function BuildConditionalDialog({
         { value: "equals", label: "Equals" },
         { value: "notEquals", label: "Not Equals" },
         { value: "greaterThan", label: "Greater Than" },
+        { value: "greaterThanOrEqual", label: "Greater Than or Equal To" },
         { value: "lessThan", label: "Less Than" },
+        { value: "lessThanOrEqual", label: "Less Than or Equal To" },
       ];
     } else {
       return [
