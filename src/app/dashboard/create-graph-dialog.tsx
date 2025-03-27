@@ -54,7 +54,7 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
       if (graphError) throw graphError;
 
       const { error: nodeError } = await supabase
-        .from("nodes")
+        .from("graph_nodes")
         .insert({
           graph_id: graphData.id,
           label: "Lorem ipsum dolor sit amet",

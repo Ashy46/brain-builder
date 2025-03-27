@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { Brain, GitBranch, MessageSquare } from "lucide-react";
 
@@ -30,12 +30,21 @@ export function AddNodeDialog({
   hasAnalysisNode,
 }: AddNodeDialogProps) {
   const [label, setLabel] = useState("");
-  const [selectedType, setSelectedType] = useState<NodeType>("analysis");
+  const [selectedType, setSelectedType] = useState<NodeType | null>(
+    isRootNode ? "analysis" : null
+  );
+
+  useEffect(() => {
+    if (open) {
+      setSelectedType(isRootNode ? "analysis" : null);
+      setLabel("");
+    }
+  }, [open, isRootNode]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!label.trim()) return;
-    onAddNode(selectedType, label.trim());
+    if (!label.trim() || (!isRootNode && !selectedType)) return;
+    onAddNode(isRootNode ? "analysis" : selectedType!, label.trim());
     setLabel("");
     onOpenChange(false);
   };
@@ -97,7 +106,11 @@ export function AddNodeDialog({
               </div>
             </div>
           )}
-          <Button type="submit" className="w-full">
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={!label.trim() || (!isRootNode && !selectedType)}
+          >
             Add Node
           </Button>
         </form>
