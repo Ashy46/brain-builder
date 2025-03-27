@@ -123,7 +123,7 @@ export default function DashboardPage() {
                           {new Date(graph.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <Link href={`/graphs/${graph.id}`}>
+                      <Link href={`/dashboard/graphs/${graph.id}`}>
                         <Button variant="outline">View Graph</Button>
                       </Link>
                     </div>

@@ -491,12 +491,12 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
             return false;
           }
 
-          setEdges((currentEdges) => 
+          setEdges((currentEdges) =>
             currentEdges.filter(
               (edge) => edge.source !== nodeId && edge.target !== nodeId
             )
           );
-          setNodes((currentNodes) => 
+          setNodes((currentNodes) =>
             currentNodes.filter((node) => node.id !== nodeId)
           );
 
@@ -545,69 +545,45 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
     const onConnect = useCallback(
       async (params: any) => {
-        const sourceNode = nodes.find((node) => node.id === params.source);
-        const targetNode = nodes.find((node) => node.id === params.target);
+        // Check if an edge with the same source and target already exists
+        const edgeExists = edges.some(
+          edge => edge.source === params.source && edge.target === params.target
+        );
 
-        if (!sourceNode || !targetNode) return;
+        if (edgeExists) {
+          return; // Don't create duplicate edges
+        }
 
-        if (sourceNode.type === "prompt") {
+        const newEdge: Edge = {
+          id: "",
+          source: params.source,
+          target: params.target,
+        };
+
+        const newEdges = [...edges, newEdge];
+        setEdges(newEdges);
+
+        const { data: createdEdge, error } = await supabase
+          .from("edges")
+          .insert({
+            source_node_id: params.source,
+            target_node_id: params.target,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error creating edge:", error);
           return;
         }
 
-        if (sourceNode.type === "analysis") {
-          const existingEdges = edges.filter(
-            (edge) => edge.source === sourceNode.id
-          );
+        setEdges(prev => prev.map(edge =>
+          edge.id === newEdge.id ? { ...edge, id: createdEdge.id } : edge
+        ));
 
-          for (const edge of existingEdges) {
-            await deleteEdge(edge.id);
-          }
-        }
-
-        if (sourceNode.type === "conditional" && params.sourceHandle) {
-          const existingConnections = edges.filter(
-            (edge) =>
-              edge.source === params.source &&
-              edge.sourceHandle === params.sourceHandle
-          );
-
-          for (const edge of existingConnections) {
-            await deleteEdge(edge.id);
-          }
-        }
-
-        const newEdgeObj = await createEdge(
-          sourceNode.id,
-          targetNode.id,
-          params.sourceHandle
-        );
-
-        if (newEdgeObj) {
-          await updateNodeRelationships(
-            sourceNode,
-            targetNode,
-            params.sourceHandle
-          );
-
-          setEdges((currentEdges) => {
-            const filteredEdges = currentEdges.filter((edge) => {
-              if (sourceNode.type === "analysis") {
-                return edge.source !== sourceNode.id;
-              }
-              if (sourceNode.type === "conditional" && params.sourceHandle) {
-                return !(
-                  edge.source === sourceNode.id &&
-                  edge.sourceHandle === params.sourceHandle
-                );
-              }
-              return true;
-            });
-
-            return [...filteredEdges, newEdgeObj];
-          });
-        }
+        await updateGraphData(nodes, newEdges);
       },
-      [nodes, edges, createEdge, deleteEdge, updateNodeRelationships]
+      [nodes, edges, updateGraphData]
     );
 
     const onNodeClick = useCallback((event: any, node: Node) => {
