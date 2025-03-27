@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { X, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 
-import { createClient } from "@/lib/supabase/client/client";
+import { createClient } from "@/lib/supabase/client";
 
 import {
   Dialog,

@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { User as AuthUser } from "@supabase/supabase-js";
 
-import { createClient } from "@/lib/supabase/client/client";
+import { createClient } from "@/lib/supabase/client";
 
 import { Database } from "@/types/supabase";
 

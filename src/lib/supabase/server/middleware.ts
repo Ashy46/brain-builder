@@ -1,30 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createServerClient } from "@supabase/ssr";
-import { SupabaseClient } from "@supabase/supabase-js";
 
-import { checkAllRoles, checkAuth, checkRole } from "./auth";
-
-async function protectPath(
-  supabase: SupabaseClient,
-  roles: string[],
-  allRequired: boolean = false,
-  unauthorizedPath: string = "/unauthorized"
-) {
-  let authorized = false;
-
-  if (allRequired) {
-    authorized = await checkAllRoles(supabase, roles);
-  } else {
-    authorized = await checkRole(supabase, roles);
-  }
-
-  if (!authorized) {
-    return unauthorizedPath;
-  }
-
-  return null;
-}
+import { checkAuth } from "./auth";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -57,7 +35,6 @@ export async function updateSession(request: NextRequest) {
   );
 
   const isAuthenticated = await checkAuth(supabase);
-  const url = request.nextUrl.clone();
 
   if (request.nextUrl.pathname.startsWith("/dashboard")) {
     if (!isAuthenticated) {

@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Loader2, Plus, Settings } from "lucide-react";
 import { toast } from "sonner";
 
-import { createClient } from "@/lib/supabase/client/client";
+import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 import { Button } from "@/components/ui/button";

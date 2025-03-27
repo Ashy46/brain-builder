@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { BrainCircuit, PlusCircle, Loader2, Trash2 } from "lucide-react";
 
-import { createClient } from "@/lib/supabase/client/client";
+import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 import { Tables } from "@/types/supabase";

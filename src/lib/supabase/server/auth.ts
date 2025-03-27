@@ -3,8 +3,6 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { getUserId } from "./server";
 
 export async function checkAuth(supabase: SupabaseClient): Promise<boolean> {
-  console.log("Checking auth...");
-
   const {
     data: { session },
     error,
@@ -14,12 +12,6 @@ export async function checkAuth(supabase: SupabaseClient): Promise<boolean> {
     console.error("Error checking auth:", error.message);
     return false;
   }
-
-  console.log("Session state:", {
-    hasSession: !!session,
-    sessionExpiresAt: session?.expires_at,
-    sessionUser: session?.user?.email,
-  });
 
   return !!session;
 }
