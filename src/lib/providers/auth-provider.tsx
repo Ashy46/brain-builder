@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { User as AuthUser } from "@supabase/supabase-js";
 
@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client/client";
 
 import { Database } from "@/types/supabase";
 
-export const AuthContext = React.createContext<
+export const AuthContext = createContext<
   | {
       authUser: AuthUser | undefined;
       user: Database["public"]["Tables"]["users"]["Row"] | undefined;
@@ -24,7 +24,7 @@ export const AuthContext = React.createContext<
 >(undefined);
 
 export function useAuth() {
-  const context = React.useContext(AuthContext);
+  const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
@@ -32,14 +32,12 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [authUser, setAuthUser] = React.useState<AuthUser | undefined>(
-    undefined
-  );
-  const [user, setUser] = React.useState<
+  const [authUser, setAuthUser] = useState<AuthUser | undefined>(undefined);
+  const [user, setUser] = useState<
     Database["public"]["Tables"]["users"]["Row"] | undefined
   >(undefined);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const initAuthUser = async () => {
     try {
@@ -97,11 +95,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     initAuthUser();
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!authUser) {
       setUser(undefined);
       return;
@@ -110,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fetchUser();
   }, [authUser]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const supabase = createClient();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
@@ -200,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAuthenticated = !!authUser;
 
-  const value = React.useMemo(
+  const value = useMemo(
     () => ({
       authUser,
       user,

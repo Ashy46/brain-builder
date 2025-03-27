@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Loader2, Settings2 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/tailwind";
 
 import { createClient } from "@/lib/supabase/client/client";
 import { useAuth } from "@/lib/hooks/use-auth";

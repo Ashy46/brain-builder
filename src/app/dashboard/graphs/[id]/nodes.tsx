@@ -2,7 +2,7 @@ import { Handle, Position, NodeProps } from "@xyflow/react";
 import { useRef, useState } from "react";
 import { ArrowLeftRight } from "lucide-react";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/tailwind";
 
 import { Textarea } from "@/components/ui/textarea";
 import { SelectStatesDialog } from "./select-states-dialog";
