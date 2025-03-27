@@ -556,9 +556,17 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           )
         );
 
+        // Update the source node's data with the handle information
+        const sourceNode = nodes.find((n) => n.id === params.source);
+        if (sourceNode && sourceNode.type === "conditional" && params.sourceHandle) {
+          await updateNodeData(sourceNode.id, {
+            [params.sourceHandle === "true" ? "trueChildId" : "falseChildId"]: params.target,
+          });
+        }
+
         await updateGraphData(nodes, newEdges);
       },
-      [nodes, edges, updateGraphData]
+      [nodes, edges, updateGraphData, updateNodeData]
     );
 
     const onNodeClick = useCallback((event: any, node: Node) => {
