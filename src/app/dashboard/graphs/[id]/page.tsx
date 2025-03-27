@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client/client";
@@ -29,13 +29,14 @@ export default function GraphPage() {
     <>
       <div className="absolute top-4 left-4 z-10 flex gap-2">
         <Button variant="outline" onClick={() => router.back()}>
-          <ChevronLeft className="h-4 w-4 mr-2" />
+          <ChevronLeft className="h-4 w-4" />
           Back
         </Button>
         <Button
           onClick={() => graphRef.current?.addNode()}
           title="Add a new node to the graph"
         >
+          <Plus className="h-4 w-4" />
           Add Node
         </Button>
       </div>
