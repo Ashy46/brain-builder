@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
-import { getUserId } from "./server";
+import { getUserId } from "./client";
 
 export async function checkAuth(supabase: SupabaseClient): Promise<boolean> {
   const {
