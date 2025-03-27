@@ -60,7 +60,7 @@ export function AnalysisNode({
       <div
         className={cn(
           baseNodeStyles,
-          "text-blue-400 border-blue-500/20",
+          "border-blue-500/20",
           selected && "border-2 border-blue-400/50"
         )}
       >
@@ -88,7 +88,7 @@ export function ConditionalNode({
       <div
         className={cn(
           baseNodeStyles,
-          "text-yellow-400 border-yellow-500/20",
+          "border-yellow-500/20",
           selected && "border-2 border-yellow-400/50"
         )}
       >
@@ -147,7 +147,7 @@ export function PromptNode({
       <div
         className={cn(
           baseNodeStyles,
-          "text-green-400 border-green-500/20",
+          " border-green-500/20",
           selected && "border-2 border-green-400/50"
         )}
       >
@@ -164,7 +164,7 @@ export function PromptNode({
           onChange={handlePromptChange}
           onKeyDown={handleKeyDown}
           placeholder="Enter your prompt here..."
-          className="w-full text-sm bg-transparent border-green-500/20 text-green-400 placeholder:text-green-400/50"
+          className="w-full text-sm bg-transparent border-green-500/20"
         />
       </div>
     </div>
