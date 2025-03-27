@@ -555,7 +555,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         }
 
         const newEdge: Edge = {
-          id: `${params.source}-${params.target}`,
+          id: "",
           source: params.source,
           target: params.target,
         };
@@ -563,7 +563,24 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         const newEdges = [...edges, newEdge];
         setEdges(newEdges);
 
-        // Update database
+        const { data: createdEdge, error } = await supabase
+          .from("edges")
+          .insert({
+            source_node_id: params.source,
+            target_node_id: params.target,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error creating edge:", error);
+          return;
+        }
+
+        setEdges(prev => prev.map(edge =>
+          edge.id === newEdge.id ? { ...edge, id: createdEdge.id } : edge
+        ));
+
         await updateGraphData(nodes, newEdges);
       },
       [nodes, edges, updateGraphData]
