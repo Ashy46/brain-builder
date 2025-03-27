@@ -31,7 +31,7 @@ function FeatureCard({
 
 export function Features() {
   return (
-    <section id="features" className="bg-secondary/10">
+    <section id="features" className="bg-secondary/50">
       <div className="container mx-auto h-screen flex flex-col items-center justify-center">
         <h2 className="text-3xl font-bold text-center mb-12">
           Why Choose Brain Builder?
