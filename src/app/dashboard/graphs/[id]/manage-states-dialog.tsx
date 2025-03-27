@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface State {
   id: string;
@@ -33,6 +33,82 @@ interface State {
   starting_value: string | null;
   persistent: boolean;
   type: "number" | "text";
+}
+
+function EditStateDialog({
+  state,
+  onClose,
+  onUpdate,
+  onDelete,
+}: {
+  state: State;
+  onClose: () => void;
+  onUpdate: (id: string, updates: Partial<State>) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <Dialog open={true} onOpenChange={() => onClose()}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Edit State</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div>
+            <Label className="mb-2">Name</Label>
+            <Input
+              value={state.name}
+              onChange={(e) => onUpdate(state.id, { name: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <Label className="mb-2">Starting Value</Label>
+            <Input
+              placeholder={`Starting ${
+                state.type === "number" ? "number" : "text"
+              }`}
+              type={state.type === "number" ? "number" : "text"}
+              value={state.starting_value || ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (state.type === "number" && value && isNaN(Number(value)))
+                  return;
+                onUpdate(state.id, { starting_value: value || null });
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label>Persistence</Label>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={state.persistent}
+                onCheckedChange={(checked) =>
+                  onUpdate(state.id, { persistent: checked })
+                }
+              />
+              <span className="text-sm text-muted-foreground">
+                Keep state between sessions
+              </span>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="destructive"
+              onClick={() => {
+                onDelete(state.id);
+                onClose();
+              }}
+            >
+              Delete State
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function ManageStatesDialog({
@@ -51,6 +127,7 @@ export function ManageStatesDialog({
   const [isLoading, setIsLoading] = useState(true);
   const [newStateName, setNewStateName] = useState("");
   const [newStateType, setNewStateType] = useState<"number" | "text">("text");
+  const [editingState, setEditingState] = useState<State | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -123,10 +200,9 @@ export function ManageStatesDialog({
       if (error) throw error;
       toast.success("State updated successfully");
     } catch (error) {
-      // Revert on error
       console.error("Error updating state:", error);
       toast.error("Failed to update state");
-      await fetchStates(); // Refresh to get correct state
+      await fetchStates();
     }
   };
 
@@ -149,131 +225,91 @@ export function ManageStatesDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader className="space-y-2">
-          <DialogTitle>Manage States</DialogTitle>
-
-          <div className="flex gap-2">
-            <Input
-              className="h-10"
-              placeholder="New state name"
-              value={newStateName}
-              onChange={(e) => setNewStateName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  createState();
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Manage States</DialogTitle>
+            <div className="flex gap-2">
+              <Input
+                placeholder="New state name"
+                value={newStateName}
+                onChange={(e) => setNewStateName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    createState();
+                  }
+                }}
+                className="h-10"
+              />
+              <Select
+                value={newStateType}
+                onValueChange={(value: "number" | "text") =>
+                  setNewStateType(value)
                 }
-              }}
-            />
-            <Select
-              value={newStateType}
-              onValueChange={(value: "number" | "text") =>
-                setNewStateType(value)
-              }
-            >
-              <SelectTrigger className="w-[120px] h-10">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">Text</SelectItem>
-                <SelectItem value="number">Number</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button className="h-10" onClick={createState}>
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </DialogHeader>
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={createState} className="h-10">
+                <Plus className="size-4" />
+              </Button>
+            </div>
+          </DialogHeader>
 
-        <div className="space-y-4">
-          {isLoading ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            <div className="space-y-4">
-              {states.map((state) => (
-                <div
-                  key={state.id}
-                  className="flex flex-col gap-4 p-6 border rounded-lg bg-card"
-                >
-                  <div className="flex flex-row items-center gap-4">
-                    <div className="flex-1">
-                      <Label className="mb-2">Name</Label>
-                      <Input
-                        className="h-10"
-                        value={state.name}
-                        onChange={(e) =>
-                          updateState(state.id, { name: e.target.value })
-                        }
-                      />
+          <ScrollArea className="h-[300px]">
+            <div className="space-y-2">
+              {isLoading ? (
+                <div className="flex justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : (
+                states.map((state) => (
+                  <div
+                    key={state.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium">{state.name}</span>
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-full text-xs font-medium",
+                          state.type === "number"
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                            : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
+                        )}
+                      >
+                        {state.type}
+                      </span>
                     </div>
                     <Button
-                      variant="destructive"
+                      variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
-                      onClick={() => deleteState(state.id)}
+                      onClick={() => setEditingState(state)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Settings2 className="h-4 w-4" />
                     </Button>
                   </div>
-
-                  <div>
-                    <Label className="mb-2">Starting Value</Label>
-                    <Input
-                      className="h-10"
-                      placeholder={`Starting ${
-                        state.type === "number" ? "number" : "text"
-                      }`}
-                      type={state.type === "number" ? "number" : "text"}
-                      value={state.starting_value || ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (
-                          state.type === "number" &&
-                          value &&
-                          isNaN(Number(value))
-                        )
-                          return;
-                        updateState(state.id, {
-                          starting_value: value || null,
-                        });
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col gap-2">
-                      <Label>Persistence</Label>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={state.persistent}
-                          onCheckedChange={(checked) =>
-                            updateState(state.id, { persistent: checked })
-                          }
-                        />
-                        <span className="text-sm text-muted-foreground">
-                          Keep state between sessions
-                        </span>
-                      </div>
-                    </div>
-                    <span
-                      className={cn(
-                        "px-2.5 py-0.5 rounded-full text-xs font-medium self-end",
-                        state.type === "number"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
-                          : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
-                      )}
-                    >
-                      {state.type.charAt(0).toUpperCase() +
-                        state.type.slice(1)}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {editingState && (
+        <EditStateDialog
+          state={editingState}
+          onClose={() => setEditingState(null)}
+          onUpdate={updateState}
+          onDelete={deleteState}
+        />
+      )}
+    </>
   );
 }
