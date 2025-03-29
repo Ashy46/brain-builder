@@ -18,3 +18,21 @@ export function encrypt(text: string) {
     tag: tag.toString("base64"),
   };
 }
+
+export function decrypt(encryptedData: {
+  iv: string;
+  content: string;
+  tag: string;
+}) {
+  const decipher = crypto.createDecipheriv(
+    algorithm,
+    key,
+    Buffer.from(encryptedData.iv, "base64")
+  );
+  decipher.setAuthTag(Buffer.from(encryptedData.tag, "base64"));
+
+  let decrypted = decipher.update(encryptedData.content, "base64", "utf8");
+  decrypted += decipher.final("utf8");
+
+  return decrypted;
+}
