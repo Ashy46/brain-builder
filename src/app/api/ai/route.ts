@@ -68,6 +68,8 @@ export async function POST(request: Request) {
       temperature: temperature,
     });
 
+    console.log(apiKey);
+
     const messages = [new HumanMessage(prompt)];
 
     const response = await chat.invoke(messages);
