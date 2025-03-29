@@ -2,42 +2,37 @@ import { NextResponse } from "next/server";
 
 import { encrypt } from "@/lib/utils/encryption";
 import { createClientFromJwt, getUser } from "@/lib/supabase/server/client";
+import {
+  AuthenticationError,
+  ValidationError,
+  handleApiError,
+} from "@/lib/utils/errors";
 
 export async function POST(request: Request) {
   try {
     const authHeader = request.headers.get("authorization");
 
     if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { error: "Missing or invalid authorization header" },
-        { status: 401 }
-      );
+      throw new AuthenticationError("Missing or invalid authorization header");
     }
 
     const jwt = authHeader.split(" ")[1];
     const supabase = await createClientFromJwt(jwt);
-    
+
     if (!supabase) {
-      return NextResponse.json(
-        { error: "Failed to create Supabase client" },
-        { status: 500 }
-      );
+      throw new Error("Failed to create Supabase client");
     }
 
     const user = await getUser(supabase);
+
     if (!user) {
-      return NextResponse.json(
-        { error: "Invalid or expired token" },
-        { status: 401 }
-      );
+      throw new AuthenticationError("Invalid or expired token");
     }
 
     const { apiKey } = await request.json();
+
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "API key is required" },
-        { status: 400 }
-      );
+      throw new ValidationError("API key is required");
     }
 
     const encryptedKey = encrypt(apiKey);
@@ -52,18 +47,12 @@ export async function POST(request: Request) {
 
     if (updateError) {
       console.error("Error updating user:", updateError);
-      return NextResponse.json(
-        { error: "Failed to update API key" },
-        { status: 500 }
-      );
+      throw new Error("Failed to update API key");
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error in API key update:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    const { error: errorMessage, status, code } = handleApiError(error);
+    return NextResponse.json({ error: errorMessage, code }, { status });
   }
 }

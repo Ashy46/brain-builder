@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { LayoutDashboard, LucideGitGraph, BrainCircuit } from "lucide-react";
+import { LayoutDashboard, LucideGitGraph, BrainCircuit, Settings } from "lucide-react";
 
 import {
   Sidebar,
@@ -27,6 +27,11 @@ const items = [
     title: "Graphs",
     url: "/dashboard/graphs",
     icon: LucideGitGraph,
+  },
+  {
+    title: "Settings",
+    url: "/dashboard/settings",
+    icon: Settings,
   },
 ];
 
