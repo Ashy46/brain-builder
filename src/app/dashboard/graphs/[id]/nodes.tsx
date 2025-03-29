@@ -266,12 +266,32 @@ export function AnalysisNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `Generate a detailed analysis prompt for a node labeled "${data.label}". This prompt should help analyze the selected states and provide meaningful insights. Make it specific and actionable.`
+                    `You are an AI agent that will assist in writing analysis prompts. You are telling another AI how that AI is supposed to analyze a patient's behaviour, in a clinical session. Generate a detailed analysis prompt for a node labeled "${data.label}". This prompt should help analyze the selected states and provide meaningful insights. Make it specific and actionable.`
                   )
                 }
               >
                 <Wand2 className="h-4 w-4 mr-2" />
                 Fix & Improve
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  handleGeneratePrompt(
+                    `You are an AI agent that will assist in writing analysis prompts. You are telling another AI how that AI is supposed to analyze a patient's behaviour, in a clinical session. Make the following prompt shorter and more concise while maintaining its core message: "${analysisData.prompt}"`
+                  )
+                }
+              >
+                <ArrowLeftRight className="h-4 w-4 mr-2" />
+                Make Shorter
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  handleGeneratePrompt(
+                    `You are an AI agent that will assist in writing analysis prompts. You are telling another AI how that AI is supposed to analyze a patient's behaviour, in a clinical session. Expand and elaborate on the following prompt to make it more detailed and comprehensive: "${analysisData.prompt}"`
+                  )
+                }
+              >
+                <ArrowLeftRight className="h-4 w-4 mr-2" />
+                Make Longer
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setIsCustomPromptOpen(true)}>
                 <MessageSquare className="h-4 w-4 mr-2" />
@@ -599,12 +619,32 @@ export function PromptNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `Generate a detailed prompt for a node labeled "${data.label}". This prompt should be clear, specific, and help guide the user's input. Make it engaging and actionable.`
+                    `You are an AI agent that will assist in writing prompts for a patient (which is an AI) in a clinical session. Generate a detailed prompt for a node labeled "${data.label}". This prompt should be clear, specific, and help guide the patient's responses. Make it engaging and actionable.`
                   )
                 }
               >
                 <Wand2 className="h-4 w-4 mr-2" />
                 Fix & Improve
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  handleGeneratePrompt(
+                    `You are an AI agent that will assist in writing prompts for a patient (which is an AI) in a clinical session. Make the following prompt shorter and more concise while maintaining its core message: "${data.prompt}"`
+                  )
+                }
+              >
+                <ArrowLeftRight className="h-4 w-4 mr-2" />
+                Make Shorter
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  handleGeneratePrompt(
+                    `You are an AI agent that will assist in writing prompts for a patient (which is an AI) in a clinical session. Expand and elaborate on the following prompt to make it more detailed and comprehensive: "${data.prompt}"`
+                  )
+                }
+              >
+                <ArrowLeftRight className="h-4 w-4 mr-2" />
+                Make Longer
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setIsCustomPromptOpen(true)}>
                 <MessageSquare className="h-4 w-4 mr-2" />
