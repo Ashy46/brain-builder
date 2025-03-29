@@ -266,7 +266,7 @@ export function AnalysisNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `In this clinical simulation, I need you to write instructions for how to ROLEPLAY this emotional state: "${data.prompt}". Do NOT write advice about handling emotions professionally. Instead, write specific instructions for how someone should act, speak, and behave when experiencing this emotion. For example, if the instruction is "you're angry with your therapist", write how to express that anger through tone, words, body language, etc. as if you were method acting this role.`
+                    `Write brief, direct instructions for roleplaying: "${data.prompt}". No professional advice - just raw emotional expression. Keep it under 3 sentences. Example for "angry at therapist": Glare intensely. Use short, snappy responses. Cross arms and lean back defensively.`
                   )
                 }
               >
@@ -276,7 +276,7 @@ export function AnalysisNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `In this clinical simulation, I need you to write BRIEF instructions for how to ROLEPLAY this emotional state: "${data.prompt}". Do NOT write advice about handling emotions professionally. Focus only on the essential behaviors, reactions, and expressions needed to convincingly portray this emotional state.`
+                    `Write 1-2 sentences max for roleplaying: "${data.prompt}". Focus only on the key actions and reactions needed to show this emotional state. No professional advice.`
                   )
                 }
               >
@@ -286,7 +286,7 @@ export function AnalysisNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `In this clinical simulation, I need you to write DETAILED instructions for how to ROLEPLAY this emotional state: "${data.prompt}". Do NOT write advice about handling emotions professionally. Focus on creating rich, nuanced instructions for portraying this emotion through specific verbal responses, tone variations, physical gestures, facial expressions, and thought patterns. Be thorough in describing how to realistically embody this emotional state.`
+                    `Write detailed roleplay instructions for: "${data.prompt}". Include specific verbal responses, tone variations, gestures, expressions, and thought patterns. No professional advice - focus on raw emotional expression and method acting this state.`
                   )
                 }
               >
@@ -619,7 +619,7 @@ export function PromptNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `In this clinical simulation, I need you to write instructions for how to ROLEPLAY this emotional state: "${data.prompt}". Do NOT write advice about handling emotions professionally. Instead, write specific instructions for how someone should act, speak, and behave when experiencing this emotion. For example, if the instruction is "you're angry with your therapist", write how to express that anger through tone, words, body language, etc. as if you were method acting this role.`
+                    `Write brief, direct instructions for roleplaying: "${data.prompt}". No professional advice - just raw emotional expression. Keep it under 3 sentences. Example for "angry at therapist": Glare intensely. Use short, snappy responses. Cross arms and lean back defensively.`
                   )
                 }
               >
@@ -629,7 +629,7 @@ export function PromptNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `In this clinical simulation, I need you to write BRIEF instructions for how to ROLEPLAY this emotional state: "${data.prompt}". Do NOT write advice about handling emotions professionally. Focus only on the essential behaviors, reactions, and expressions needed to convincingly portray this emotional state.`
+                    `Write 1-2 sentences max for roleplaying: "${data.prompt}". Focus only on the key actions and reactions needed to show this emotional state. No professional advice.`
                   )
                 }
               >
@@ -639,7 +639,7 @@ export function PromptNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `In this clinical simulation, I need you to write DETAILED instructions for how to ROLEPLAY this emotional state: "${data.prompt}". Do NOT write advice about handling emotions professionally. Focus on creating rich, nuanced instructions for portraying this emotion through specific verbal responses, tone variations, physical gestures, facial expressions, and thought patterns. Be thorough in describing how to realistically embody this emotional state.`
+                    `Write detailed roleplay instructions for: "${data.prompt}". Include specific verbal responses, tone variations, gestures, expressions, and thought patterns. No professional advice - focus on raw emotional expression and method acting this state.`
                   )
                 }
               >
