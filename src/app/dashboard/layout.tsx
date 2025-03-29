@@ -23,7 +23,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  
+
   const pathSegments = pathname.split("/").filter(Boolean);
   const isGraphDetailPage =
     pathname.includes("/graphs/") && pathSegments.length === 3;
@@ -81,7 +81,8 @@ export default function DashboardLayout({
               </div>
             </div>
           </div>
-          <Toaster />
+
+          <Toaster position="bottom-right" />
         </SidebarProvider>
       )}
     </ThemeProvider>

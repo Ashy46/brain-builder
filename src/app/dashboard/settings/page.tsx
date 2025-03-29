@@ -1,47 +1,75 @@
-import { createClient } from "@/lib/supabase/server/client";
+"use client";
 
-export default async function SettingsPage() {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const jwt = session?.access_token;
+import { useState } from "react";
+
+import { PencilIcon } from "lucide-react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+import { DeveloperSettings } from "./developer-settings";
+import { OpenAISettings } from "./openai-settings";
+
+export function SettingsItem({
+  title,
+  description,
+  icon,
+  dialogContent,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  dialogContent: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Settings</h1>
-      </div>
-
-      <div className="rounded-lg border p-4">
-        <h2 className="mb-2 text-lg font-semibold">Testing Information</h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          This section is for testing purposes only. Your JWT token is displayed
-          below.
-        </p>
-
-        <div className="space-y-2">
-          <div>
-            <label className="text-sm font-medium">JWT Token</label>
-            <div className="mt-1 rounded-md bg-muted p-2">
-              <code className="text-sm break-all">
-                {jwt || "No token found"}
-              </code>
-            </div>
+      <Card
+        onClick={() => setOpen(true)}
+        className="cursor-pointer animate-in fade-in zoom-in-95"
+      >
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            {icon}
+            <CardTitle>{title}</CardTitle>
           </div>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+      </Card>
 
-          <div className="mt-4">
-            <p className="text-sm text-muted-foreground">
-              To use this token in API requests, include it in the Authorization
-              header:
-            </p>
-            <div className="mt-1 rounded-md bg-muted p-2">
-              <code className="text-sm">
-                Authorization: Bearer {jwt || "your-token-here"}
-              </code>
-            </div>
-          </div>
-        </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
+          {dialogContent}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <>
+      <h1 className="text-4xl font-bold">Settings</h1>
+      
+      <div className="grid grid-cols-3 gap-4">
+        <OpenAISettings />
+        <DeveloperSettings />
       </div>
     </>
   );
