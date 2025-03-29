@@ -266,7 +266,7 @@ export function AnalysisNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `You are an AI agent that will assist in writing analysis prompts. You are telling another AI how that AI is supposed to analyze a patient's behaviour, in a clinical session. Generate a detailed analysis prompt for a node labeled "${data.label}". This prompt should help analyze the selected states and provide meaningful insights. Make it specific and actionable.`
+                    `You are an AI agent that will assist in writing analysis prompts. You are telling another AI how that AI is supposed to analyze a patient's behaviour, in a clinical session. This analysis will help therapists understand patterns in patient responses and improve their therapeutic approach. Generate a detailed analysis prompt for a node labeled "${data.label}". This prompt should help analyze the selected states and provide meaningful insights. Make it specific and actionable.`
                   )
                 }
               >
@@ -276,7 +276,17 @@ export function AnalysisNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `You are an AI agent that will assist in writing analysis prompts. You are telling another AI how that AI is supposed to analyze a patient's behaviour, in a clinical session. Make the following prompt shorter and more concise while maintaining its core message: "${analysisData.prompt}"`
+                    `You are an AI agent that will assist in writing instructions for an LLM about how to behave in a clinical training scenario. The goal is to help train therapists by having them interact with an LLM that responds based on specific conditions. Generate detailed instructions for a node labeled "${data.label}" that will tell the LLM how to behave and respond. These instructions should create realistic and educational scenarios for therapist training. Make it specific to the therapeutic context and focused on creating meaningful learning experiences. Remember: You are writing instructions for an LLM about how to behave in a scenario, not instructions for an AI patient or responses from a patient.`
+                  )
+                }
+              >
+                <Wand2 className="h-4 w-4 mr-2" />
+                Fix & Improve
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  handleGeneratePrompt(
+                    `You are an AI agent that will assist in writing instructions for an LLM about how to behave in a clinical training scenario. The goal is to help train therapists by having them interact with an LLM that responds based on specific conditions. Make the following instructions shorter and more concise while maintaining their core message: "${data.prompt}" Remember: You are writing instructions for an LLM about how to behave in a scenario, not instructions for an AI patient or responses from a patient.`
                   )
                 }
               >
@@ -286,7 +296,7 @@ export function AnalysisNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `You are an AI agent that will assist in writing analysis prompts. You are telling another AI how that AI is supposed to analyze a patient's behaviour, in a clinical session. Expand and elaborate on the following prompt to make it more detailed and comprehensive: "${analysisData.prompt}"`
+                    `You are an AI agent that will assist in writing instructions for an LLM about how to behave in a clinical training scenario. The goal is to help train therapists by having them interact with an LLM that responds based on specific conditions. Expand and elaborate on the following instructions to make them more detailed and comprehensive, ensuring they create rich, educational scenarios for therapist training: "${data.prompt}" Remember: You are writing instructions for an LLM about how to behave in a scenario, not instructions for an AI patient or responses from a patient.`
                   )
                 }
               >
@@ -619,7 +629,7 @@ export function PromptNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `You are an AI agent that will assist in writing prompts for a patient (which is an AI) in a clinical session. Generate a detailed prompt for a node labeled "${data.label}". This prompt should be clear, specific, and help guide the patient's responses. Make it engaging and actionable.`
+                    `You are an AI agent that will assist in writing instructions for an LLM about how to behave in a clinical training scenario. The goal is to help train therapists by having them interact with an LLM that responds based on specific conditions. Generate detailed instructions for a node labeled "${data.label}" that will tell the LLM how to behave and respond. These instructions should create realistic and educational scenarios for therapist training. Make it specific to the therapeutic context and focused on creating meaningful learning experiences. Remember: You are writing instructions for an LLM about how to behave in a scenario, not instructions for an AI patient or responses from a patient.`
                   )
                 }
               >
@@ -629,7 +639,7 @@ export function PromptNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `You are an AI agent that will assist in writing prompts for a patient (which is an AI) in a clinical session. Make the following prompt shorter and more concise while maintaining its core message: "${data.prompt}"`
+                    `You are an AI agent that will assist in writing instructions for an LLM about how to behave in a clinical training scenario. The goal is to help train therapists by having them interact with an LLM that responds based on specific conditions. Make the following instructions shorter and more concise while maintaining their core message: "${data.prompt}" Remember: You are writing instructions for an LLM about how to behave in a scenario, not instructions for an AI patient or responses from a patient.`
                   )
                 }
               >
@@ -639,7 +649,7 @@ export function PromptNode({
               <DropdownMenuItem
                 onClick={() =>
                   handleGeneratePrompt(
-                    `You are an AI agent that will assist in writing prompts for a patient (which is an AI) in a clinical session. Expand and elaborate on the following prompt to make it more detailed and comprehensive: "${data.prompt}"`
+                    `You are an AI agent that will assist in writing instructions for an LLM about how to behave in a clinical training scenario. The goal is to help train therapists by having them interact with an LLM that responds based on specific conditions. Expand and elaborate on the following instructions to make them more detailed and comprehensive, ensuring they create rich, educational scenarios for therapist training: "${data.prompt}" Remember: You are writing instructions for an LLM about how to behave in a scenario, not instructions for an AI patient or responses from a patient.`
                   )
                 }
               >
