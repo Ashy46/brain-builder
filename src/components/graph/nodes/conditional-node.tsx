@@ -1,11 +1,12 @@
 import { Handle, Position } from "@xyflow/react";
-import { useRef, useState } from "react";
-import { ArrowLeftRight } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeftRight, Pencil } from "lucide-react";
 
 import { cn } from "@/lib/utils/tailwind";
 
 import { Button } from "@/components/ui/button";
 import { BuildConditionalDialog } from "@/components/graph/dialogs";
+import { EditNodeDialog } from "@/components/graph/dialogs/edit-node-dialog";
 import { NodePropsWithData, ConditionalNodeData } from "./types";
 
 function NodeTypeLabel({ type }: { type: string }) {
@@ -25,30 +26,9 @@ export function ConditionalNode({
   selected,
   id,
 }: NodePropsWithData) {
-  const labelRef = useRef<HTMLInputElement>(null);
-  const [width, setWidth] = useState(200);
+  const [width] = useState(200);
   const [isBuildingConditional, setIsBuildingConditional] = useState(false);
-
-  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newLabel = e.target.value;
-    data.onLabelChange?.(id, newLabel);
-    if (labelRef.current) {
-      const tempSpan = document.createElement("span");
-      tempSpan.style.visibility = "hidden";
-      tempSpan.style.position = "absolute";
-      tempSpan.style.whiteSpace = "pre";
-      tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
-      tempSpan.textContent = newLabel;
-      document.body.appendChild(tempSpan);
-      const newWidth = Math.max(200, tempSpan.offsetWidth + 40);
-      document.body.removeChild(tempSpan);
-      setWidth(newWidth);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-  };
+  const [isEditing, setIsEditing] = useState(false);
 
   const conditionalData = data as ConditionalNodeData;
   const conditionsCount = conditionalData.conditions?.length || 0;
@@ -75,15 +55,19 @@ export function ConditionalNode({
           className="!bg-yellow-400 !w-3 !h-3 !border-2 !border-background"
         />
 
-        <input
-          ref={labelRef}
-          type="text"
-          value={data.label}
-          onChange={handleLabelChange}
-          onKeyDown={handleKeyDown}
-          className="w-full text-sm text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0"
-          aria-label="Node label"
-        />
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-center w-full">
+            {data.label}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditing(true)}
+            className="h-6 w-6 p-0"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        </div>
 
         <div className="flex items-center justify-center gap-2 mt-2 text-sm">
           <Button
@@ -127,6 +111,16 @@ export function ConditionalNode({
           onConditionalChange: conditionalData.onConditionalChange,
         }}
         onConditionalChange={handleConditionalChange}
+      />
+
+      <EditNodeDialog
+        open={isEditing}
+        onOpenChange={setIsEditing}
+        nodeId={id}
+        nodeLabel={data.label}
+        nodeType="Conditional"
+        onLabelChange={data.onLabelChange || (() => {})}
+        onPromptChange={() => {}}
       />
     </div>
   );

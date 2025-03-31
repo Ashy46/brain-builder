@@ -39,13 +39,17 @@ export function EditNodeDialog({
 
   const handleSave = () => {
     onLabelChange(nodeId, label);
-    onPromptChange(nodeId, { prompt });
+    if (nodeType !== "Conditional") {
+      onPromptChange(nodeId, { prompt });
+    }
     onOpenChange(false);
   };
 
   const handleAIPromptChange = (nodeId: string, newPrompt: string) => {
     setPrompt(newPrompt);
   };
+
+  const showPromptSection = nodeType !== "Conditional";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -62,23 +66,25 @@ export function EditNodeDialog({
               placeholder="Enter node label..."
             />
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Prompt</label>
-              <AIPromptFeatures
-                nodeId={nodeId}
-                nodeLabel={label}
-                currentPrompt={prompt}
-                onPromptChange={handleAIPromptChange}
+          {showPromptSection && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Prompt</label>
+                <AIPromptFeatures
+                  nodeId={nodeId}
+                  nodeLabel={label}
+                  currentPrompt={prompt}
+                  onPromptChange={handleAIPromptChange}
+                />
+              </div>
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Enter your prompt here..."
+                className="min-h-[200px] resize-none"
               />
             </div>
-            <Textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Enter your prompt here..."
-              className="min-h-[200px] resize-none"
-            />
-          </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

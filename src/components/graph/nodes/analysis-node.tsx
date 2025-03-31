@@ -76,22 +76,16 @@ export function AnalysisNode({
         style={{ width: `${width}px` }}
       >
         <div className="flex items-center justify-between">
-          <input
-            ref={labelRef}
-            type="text"
-            value={data.label}
-            onChange={handleLabelChange}
-            onKeyDown={handleKeyDown}
-            className="w-full text-sm text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0"
-            aria-label="Node label"
-          />
+          <span className="text-sm text-center w-full">
+            {data.label}
+          </span>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => setIsEditing(true)}
             className="h-6 w-6 p-0"
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-3.5 w-3.5" />
           </Button>
         </div>
 
