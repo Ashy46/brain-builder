@@ -53,11 +53,11 @@ export function PromptNode({
           </span>
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={() => setIsEditing(true)}
-            className="h-6 w-6 p-0"
+            className="size-7"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="size-4" />
           </Button>
         </div>
       </div>
