@@ -24,7 +24,7 @@ export function Hero() {
         <p className="max-w-2xl mx-auto mb-8 text-xl text-muted-foreground">
           Create powerful AI agents through an intuitive visual interface.
           Design complex behaviors, define custom workflows, and bring your
-          automation ideas to life - no coding required.
+          automation ideas to life - no coding required. BrainBuilder.
         </p>
 
         <div className="flex flex-col gap-4 sm:flex-row justify-center">
