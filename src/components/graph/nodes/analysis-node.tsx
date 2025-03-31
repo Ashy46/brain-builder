@@ -2,36 +2,15 @@ import { Handle, Position } from "@xyflow/react";
 import { useRef, useState } from "react";
 import {
   ArrowLeftRight,
-  Sparkles,
-  Loader2,
-  Wand2,
-  MessageSquare,
+  Pencil,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import { cn } from "@/lib/utils/tailwind";
-import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/lib/hooks/use-auth";
 
-import { Textarea } from "@/components/ui/textarea";
 import { SelectStatesDialog } from "@/components/graph/dialogs";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { NodePropsWithData, AnalysisNodeData } from "./types";
-import { AIPromptFeatures } from "./ai-prompt-features";
+import { EditNodeDialog } from "@/components/graph/dialogs/edit-node-dialog";
 
 function NodeTypeLabel({ type }: { type: string }) {
   return (
@@ -53,10 +32,7 @@ export function AnalysisNode({
   const labelRef = useRef<HTMLInputElement>(null);
   const [width, setWidth] = useState(200);
   const [isSelectingStates, setIsSelectingStates] = useState(false);
-  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
-  const [isCustomPromptOpen, setIsCustomPromptOpen] = useState(false);
-  const [customPrompt, setCustomPrompt] = useState("");
-  const { user } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newLabel = e.target.value;
@@ -75,19 +51,8 @@ export function AnalysisNode({
     }
   };
 
-  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newData = {
-      ...data,
-      prompt: e.target.value,
-    };
-    (data as AnalysisNodeData).onPromptChange?.(
-      id,
-      newData as AnalysisNodeData
-    );
-  };
-
   const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.KeyboardEvent<HTMLInputElement>
   ) => {
     e.stopPropagation();
   };
@@ -97,71 +62,6 @@ export function AnalysisNode({
 
   const handleStatesChange = (stateIds: string[]) => {
     analysisData.onStatesChange?.(id, stateIds);
-  };
-
-  const handleAIPromptChange = (nodeId: string, newPrompt: string) => {
-    const newData = {
-      ...data,
-      prompt: newPrompt,
-    };
-    analysisData.onPromptChange?.(nodeId, newData as AnalysisNodeData);
-  };
-
-  const handleGeneratePrompt = async (prompt: string) => {
-    if (!user?.openai_api_key) {
-      toast.error(
-        "Please set your OpenAI API key in settings to use AI features"
-      );
-      return;
-    }
-
-    setIsGeneratingPrompt(true);
-    try {
-      const supabase = createClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        throw new Error("No access token");
-      }
-
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          prompt,
-          temperature: 0.7,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate prompt");
-      }
-
-      const { response: generatedPrompt } = await response.json();
-      const newData = {
-        ...data,
-        prompt: generatedPrompt,
-      };
-      (data as AnalysisNodeData).onPromptChange?.(
-        id,
-        newData as AnalysisNodeData
-      );
-    } catch (error) {
-      console.error("Error generating prompt:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to generate prompt"
-      );
-    } finally {
-      setIsGeneratingPrompt(false);
-      setIsCustomPromptOpen(false);
-      setCustomPrompt("");
-    }
   };
 
   return (
@@ -175,15 +75,25 @@ export function AnalysisNode({
         )}
         style={{ width: `${width}px` }}
       >
-        <input
-          ref={labelRef}
-          type="text"
-          value={data.label}
-          onChange={handleLabelChange}
-          onKeyDown={handleKeyDown}
-          className="w-full text-sm text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0"
-          aria-label="Node label"
-        />
+        <div className="flex items-center justify-between">
+          <input
+            ref={labelRef}
+            type="text"
+            value={data.label}
+            onChange={handleLabelChange}
+            onKeyDown={handleKeyDown}
+            className="w-full text-sm text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0"
+            aria-label="Node label"
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsEditing(true)}
+            className="h-6 w-6 p-0"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </div>
 
         <div className="flex items-center justify-center gap-2 mt-2 text-sm">
           <Button
@@ -194,21 +104,7 @@ export function AnalysisNode({
             <ArrowLeftRight className="h-4 w-4" />
             States: {selectedStatesCount} selected
           </Button>
-          <AIPromptFeatures
-            nodeId={id}
-            nodeLabel={data.label}
-            currentPrompt={analysisData.prompt}
-            onPromptChange={handleAIPromptChange}
-          />
         </div>
-
-        <Textarea
-          value={analysisData.prompt ?? ""}
-          onChange={handlePromptChange}
-          onKeyDown={handleKeyDown}
-          placeholder="Enter your analysis prompt here..."
-          className="w-full text-sm bg-transparent min-h-[100px] mt-2 resize-none"
-        />
 
         <Handle
           type="source"
@@ -226,38 +122,16 @@ export function AnalysisNode({
         onStatesChange={handleStatesChange}
       />
 
-      <Dialog open={isCustomPromptOpen} onOpenChange={setIsCustomPromptOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Custom AI Prompt</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <Input
-              placeholder="Tell the AI what you want to change or improve..."
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsCustomPromptOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() =>
-                handleGeneratePrompt(
-                  `For a node labeled "${data.label}", ${customPrompt}`
-                )
-              }
-              disabled={!customPrompt.trim()}
-            >
-              Generate
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <EditNodeDialog
+        open={isEditing}
+        onOpenChange={setIsEditing}
+        nodeId={id}
+        nodeLabel={data.label}
+        nodePrompt={analysisData.prompt}
+        nodeType="Analysis"
+        onLabelChange={data.onLabelChange || (() => {})}
+        onPromptChange={analysisData.onPromptChange || (() => {})}
+      />
     </div>
   );
 } 
