@@ -1,17 +1,14 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import { ChevronLeft, Loader2, Plus, Settings, Info } from "lucide-react";
-
-import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/lib/hooks/use-auth";
+import { ChevronLeft, Loader2, Plus, Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
-import { Graph, GraphRef } from "@/app/dashboard/graphs/[id]/graph";
+import { Graph } from "@/components/graph/graph";
 import { ManageStatesDialog } from "@/components/graph/dialogs";
+import { GraphRef } from "@/components/graph/types";
 
 export default function GraphPage() {
   const router = useRouter();
