@@ -61,7 +61,8 @@ export function AIPromptFeatures({
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
-        throw new Error("No access token");
+        toast.error("Your session has expired. Please log in again.");
+        return;
       }
 
       const response = await fetch("/api/ai", {
@@ -76,18 +77,34 @@ export function AIPromptFeatures({
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to generate prompt");
+        if (response.status === 401) {
+          toast.error("Authentication failed. Please log in again.");
+          return;
+        }
+        if (response.status === 400) {
+          toast.error(data.error || "Invalid request. Please check your input.");
+          return;
+        }
+        if (response.status === 500) {
+          toast.error("Server error. Please try again later.");
+          return;
+        }
+        throw new Error(data.error || "Failed to generate prompt");
       }
 
-      const { response: generatedPrompt } = await response.json();
-      onPromptChange(nodeId, generatedPrompt);
+      onPromptChange(nodeId, data.response);
     } catch (error) {
       console.error("Error generating prompt:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to generate prompt"
-      );
+      if (error instanceof SyntaxError) {
+        toast.error("Invalid response from server. Please try again.");
+      } else {
+        toast.error(
+          error instanceof Error ? error.message : "Failed to generate prompt"
+        );
+      }
     } finally {
       setIsGeneratingPrompt(false);
       setIsCustomPromptOpen(false);

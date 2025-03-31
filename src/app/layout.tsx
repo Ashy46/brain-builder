@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
+import { Toaster } from "sonner";
 
 import { ThemeProvider } from "@/lib/providers/theme-provider";
 import { AuthProvider } from "@/lib/providers/auth-provider";
@@ -33,6 +34,8 @@ export default function RootLayout({
               {children}
             </ThemeProvider>
           </AuthProvider>
+
+          <Toaster invert position="bottom-right" />
         </body>
       </html>
     </>
