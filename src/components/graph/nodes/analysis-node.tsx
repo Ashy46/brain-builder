@@ -14,7 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 import { Textarea } from "@/components/ui/textarea";
-import { SelectStatesDialog } from "@/components/graph/dialogs/select-states-dialog";
+import { SelectStatesDialog } from "@/components/graph/dialogs";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
