@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 
 import { Graph, GraphRef } from "@/app/dashboard/graphs/[id]/graph";
-import { ManageStatesDialog } from "@/app/dashboard/graphs/[id]/manage-states-dialog";
+import { ManageStatesDialog } from "@/components/graph/dialog/manage-states-dialog";
 
 export default function GraphPage() {
   const router = useRouter();

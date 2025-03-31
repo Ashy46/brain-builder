@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 
-import { ConditionalNodeData } from "./nodes";
+import { ConditionalNodeData } from "../../../app/dashboard/graphs/[id]/nodes";
 
 interface State {
   id: string;
