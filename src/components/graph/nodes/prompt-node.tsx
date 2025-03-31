@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { NodePropsWithData, PromptNodeData } from "./types";
+import { AIPromptFeatures } from "./ai-prompt-features";
 
 function NodeTypeLabel({ type }: { type: string }) {
   return (
@@ -54,13 +55,14 @@ export function PromptNode({
   const [isCustomPromptOpen, setIsCustomPromptOpen] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const { user } = useAuth();
+  const promptData = data as PromptNodeData;
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newData = {
       ...data,
       prompt: e.target.value,
     };
-    (data as PromptNodeData).onPromptChange?.(id, newData as PromptNodeData);
+    promptData.onPromptChange?.(id, newData as PromptNodeData);
   };
 
   const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,6 +86,14 @@ export function PromptNode({
     e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>
   ) => {
     e.stopPropagation();
+  };
+
+  const handleAIPromptChange = (nodeId: string, newPrompt: string) => {
+    const newData = {
+      ...data,
+      prompt: newPrompt,
+    };
+    promptData.onPromptChange?.(nodeId, newData as PromptNodeData);
   };
 
   const handleGeneratePrompt = async (prompt: string) => {
@@ -127,7 +137,7 @@ export function PromptNode({
         ...data,
         prompt: generatedPrompt,
       };
-      (data as PromptNodeData).onPromptChange?.(id, newData as PromptNodeData);
+      promptData.onPromptChange?.(id, newData as PromptNodeData);
     } catch (error) {
       console.error("Error generating prompt:", error);
       toast.error(
@@ -168,62 +178,16 @@ export function PromptNode({
             className="w-full text-sm text-center bg-transparent border-none focus:outline-none focus:ring-0 p-0"
             aria-label="Node label"
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                disabled={isGeneratingPrompt}
-              >
-                {isGeneratingPrompt ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() =>
-                  handleGeneratePrompt(
-                    `Write brief, direct instructions for roleplaying: "${(data as PromptNodeData).prompt}". No professional advice - just raw emotional expression. Keep it under 3 sentences. Example for "angry at therapist": Glare intensely. Use short, snappy responses. Cross arms and lean back defensively.`
-                  )
-                }
-              >
-                <Wand2 className="h-4 w-4 mr-2" />
-                Fix & Improve
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  handleGeneratePrompt(
-                    `Write 1-2 sentences max for roleplaying: "${(data as PromptNodeData).prompt}". Focus only on the key actions and reactions needed to show this emotional state. No professional advice.`
-                  )
-                }
-              >
-                <ArrowLeftRight className="h-4 w-4 mr-2" />
-                Make Shorter
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  handleGeneratePrompt(
-                    `Write detailed roleplay instructions for: "${(data as PromptNodeData).prompt}". Include specific verbal responses, tone variations, gestures, expressions, and thought patterns. No professional advice - focus on raw emotional expression and method acting this state.`
-                  )
-                }
-              >
-                <ArrowLeftRight className="h-4 w-4 mr-2" />
-                Make Longer
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsCustomPromptOpen(true)}>
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Custom Prompt
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <AIPromptFeatures
+            nodeId={id}
+            nodeLabel={data.label}
+            currentPrompt={promptData.prompt}
+            onPromptChange={handleAIPromptChange}
+          />
         </div>
 
         <Textarea
-          value={(data as PromptNodeData).prompt ?? ""}
+          value={promptData.prompt ?? ""}
           onChange={handlePromptChange}
           onKeyDown={handleKeyDown}
           placeholder="Enter your prompt here..."

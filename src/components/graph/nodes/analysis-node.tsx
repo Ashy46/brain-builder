@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { NodePropsWithData, AnalysisNodeData } from "./types";
+import { AIPromptFeatures } from "./ai-prompt-features";
 
 function NodeTypeLabel({ type }: { type: string }) {
   return (
@@ -96,6 +97,14 @@ export function AnalysisNode({
 
   const handleStatesChange = (stateIds: string[]) => {
     analysisData.onStatesChange?.(id, stateIds);
+  };
+
+  const handleAIPromptChange = (nodeId: string, newPrompt: string) => {
+    const newData = {
+      ...data,
+      prompt: newPrompt,
+    };
+    analysisData.onPromptChange?.(nodeId, newData as AnalysisNodeData);
   };
 
   const handleGeneratePrompt = async (prompt: string) => {
@@ -185,58 +194,12 @@ export function AnalysisNode({
             <ArrowLeftRight className="h-4 w-4" />
             States: {selectedStatesCount} selected
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                disabled={isGeneratingPrompt}
-              >
-                {isGeneratingPrompt ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() =>
-                  handleGeneratePrompt(
-                    `Write brief, direct instructions for roleplaying: "${analysisData.prompt}". No professional advice - just raw emotional expression. Keep it under 3 sentences. Example for "angry at therapist": Glare intensely. Use short, snappy responses. Cross arms and lean back defensively.`
-                  )
-                }
-              >
-                <Wand2 className="h-4 w-4 mr-2" />
-                Fix & Improve
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  handleGeneratePrompt(
-                    `Write 1-2 sentences max for roleplaying: "${analysisData.prompt}". Focus only on the key actions and reactions needed to show this emotional state. No professional advice.`
-                  )
-                }
-              >
-                <ArrowLeftRight className="h-4 w-4 mr-2" />
-                Make Shorter
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  handleGeneratePrompt(
-                    `Write detailed roleplay instructions for: "${analysisData.prompt}". Include specific verbal responses, tone variations, gestures, expressions, and thought patterns. No professional advice - focus on raw emotional expression and method acting this state.`
-                  )
-                }
-              >
-                <ArrowLeftRight className="h-4 w-4 mr-2" />
-                Make Longer
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsCustomPromptOpen(true)}>
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Custom Prompt
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <AIPromptFeatures
+            nodeId={id}
+            nodeLabel={data.label}
+            currentPrompt={analysisData.prompt}
+            onPromptChange={handleAIPromptChange}
+          />
         </div>
 
         <Textarea
