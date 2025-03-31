@@ -34,7 +34,7 @@ import {
   PromptNodeData,
 } from "./nodes";
 import { Controls } from "./controls";
-import { AddNodeDialog } from "./add-node-dialog";
+import { AddNodeDialog } from "@/components/graph/dialog/add-node-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 

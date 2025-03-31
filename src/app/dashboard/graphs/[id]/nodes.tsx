@@ -14,8 +14,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 import { Textarea } from "@/components/ui/textarea";
-import { SelectStatesDialog } from "./select-states-dialog";
-import { BuildConditionalDialog } from "./build-conditional-dialog";
+import { SelectStatesDialog } from "../../../../components/graph/dialog/select-states-dialog";
+import { BuildConditionalDialog } from "../../../../components/graph/dialog/build-conditional-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -62,12 +62,12 @@ export interface ConditionalNodeData extends BaseNodeData {
   conditions?: {
     stateId: string;
     operator:
-      | "equals"
-      | "notEquals"
-      | "greaterThan"
-      | "lessThan"
-      | "contains"
-      | "notContains";
+    | "equals"
+    | "notEquals"
+    | "greaterThan"
+    | "lessThan"
+    | "contains"
+    | "notContains";
     value: string;
   }[];
   operator?: "and" | "or";
