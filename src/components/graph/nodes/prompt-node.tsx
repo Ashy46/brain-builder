@@ -191,7 +191,7 @@ export function PromptNode({
           onChange={handlePromptChange}
           onKeyDown={handleKeyDown}
           placeholder="Enter your prompt here..."
-          className="w-full text-sm bg-transparent min-h-[100px] mt-2"
+          className="w-full text-sm bg-transparent min-h-[100px] mt-2 resize-none"
         />
       </div>
 

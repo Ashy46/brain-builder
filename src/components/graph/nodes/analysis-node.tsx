@@ -207,7 +207,7 @@ export function AnalysisNode({
           onChange={handlePromptChange}
           onKeyDown={handleKeyDown}
           placeholder="Enter your analysis prompt here..."
-          className="w-full text-sm bg-transparent min-h-[100px] mt-2"
+          className="w-full text-sm bg-transparent min-h-[100px] mt-2 resize-none"
         />
 
         <Handle
