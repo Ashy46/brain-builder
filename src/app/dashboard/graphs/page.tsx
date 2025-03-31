@@ -29,7 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CreateGraphDialog } from "../../../components/graph/dialog/create-graph-dialog";
+import { CreateGraphDialog } from "../../../components/graph/dialogs/create-graph-dialog";
 
 const PAGE_SIZE = 10;
 

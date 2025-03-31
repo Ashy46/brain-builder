@@ -5,7 +5,7 @@ import { ArrowLeftRight } from "lucide-react";
 import { cn } from "@/lib/utils/tailwind";
 
 import { Button } from "@/components/ui/button";
-import { BuildConditionalDialog } from "@/app/dashboard/graphs/[id]/build-conditional-dialog";
+import { BuildConditionalDialog } from "@/components/graph/dialogs/build-conditional-dialog";
 import { NodePropsWithData, ConditionalNodeData } from "./types";
 
 function NodeTypeLabel({ type }: { type: string }) {

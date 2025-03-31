@@ -32,9 +32,9 @@ import {
   AnalysisNodeData,
   ConditionalNodeData,
   PromptNodeData,
-} from "./nodes";
+} from "@/components/graph/nodes";
 import { Controls } from "./controls";
-import { AddNodeDialog } from "@/components/graph/dialog/add-node-dialog";
+import { AddNodeDialog } from "@/components/graph/dialogs/add-node-dialog";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 
@@ -304,7 +304,10 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
                 onStatesChange: async (nodeId: string, stateIds: string[]) => {
                   await updateNodeData(nodeId, { selectedStates: stateIds });
                 },
-                onPromptChange: async (nodeId: string, newData: AnalysisNodeData) => {
+                onPromptChange: async (
+                  nodeId: string,
+                  newData: AnalysisNodeData
+                ) => {
                   await updateNodeData(nodeId, { prompt: newData.prompt });
                 },
               };
@@ -558,9 +561,14 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
         // Update the source node's data with the handle information
         const sourceNode = nodes.find((n) => n.id === params.source);
-        if (sourceNode && sourceNode.type === "conditional" && params.sourceHandle) {
+        if (
+          sourceNode &&
+          sourceNode.type === "conditional" &&
+          params.sourceHandle
+        ) {
           await updateNodeData(sourceNode.id, {
-            [params.sourceHandle === "true" ? "trueChildId" : "falseChildId"]: params.target,
+            [params.sourceHandle === "true" ? "trueChildId" : "falseChildId"]:
+              params.target,
           });
         }
 
@@ -643,7 +651,10 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
                 onStatesChange: async (nodeId: string, stateIds: string[]) => {
                   await updateNodeData(nodeId, { selectedStates: stateIds });
                 },
-                onPromptChange: async (nodeId: string, newData: AnalysisNodeData) => {
+                onPromptChange: async (
+                  nodeId: string,
+                  newData: AnalysisNodeData
+                ) => {
                   await updateNodeData(nodeId, { prompt: newData.prompt });
                 },
               }),
