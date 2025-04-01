@@ -65,7 +65,7 @@ export function ModelSettingsDialog({
             <Slider
               value={[config.temperature]}
               min={0}
-              max={1}
+              max={2}
               step={0.01}
               onValueChange={(value: number[]) =>
                 onConfigChange({ ...config, temperature: value[0] })

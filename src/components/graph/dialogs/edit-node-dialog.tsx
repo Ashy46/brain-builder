@@ -14,15 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AIPromptFeatures } from "../nodes/ai-prompt-features";
 import { ModelSettingsDialog } from "./model-settings-dialog";
 import { Settings2 } from "lucide-react";
-
-interface LLMConfig {
-  model: "gpt-4" | "gpt-4o-mini";
-  temperature: number;
-  maxTokens: number;
-  frequencyPenalty: number;
-  presencePenalty: number;
-  topP: number;
-}
+import { LLMConfig } from "../nodes/types";
 
 interface EditNodeDialogProps {
   open: boolean;
@@ -64,7 +56,7 @@ export function EditNodeDialog({
   const handleSave = () => {
     onLabelChange(nodeId, label);
     if (nodeType !== "Conditional") {
-      onPromptChange(nodeId, { prompt, ...llmConfig });
+      onPromptChange(nodeId, { prompt, llmConfig });
       if (onLLMConfigChange) {
         onLLMConfigChange(nodeId, llmConfig);
       }

@@ -120,9 +120,20 @@ export const useGraphData = (graphId: string) => {
             fullNodeData = {
               ...baseNodeData,
               prompt: nodeData.prompt || "",
+              llmConfig: nodeData.llmConfig || {
+                model: "gpt-4o-mini",
+                temperature: 1.05,
+                maxTokens: 256,
+                frequencyPenalty: 0.4,
+                presencePenalty: 0.4,
+                topP: 1,
+              },
               graphId,
               onPromptChange: async (nodeId: string, newData: any) => {
-                await updateNodeData(nodeId, { prompt: newData.prompt });
+                await updateNodeData(nodeId, {
+                  prompt: newData.prompt,
+                  llmConfig: newData.llmConfig,
+                });
               },
             };
           } else if (nodeType === "analysis") {
@@ -353,7 +364,18 @@ export const useGraphOperations = (
         let nodeData: any = { type };
 
         if (type === "prompt") {
-          nodeData.prompt = "";
+          nodeData = {
+            ...nodeData,
+            prompt: "",
+            llmConfig: {
+              model: "gpt-4o-mini",
+              temperature: 1.05,
+              maxTokens: 256,
+              frequencyPenalty: 0.4,
+              presencePenalty: 0.4,
+              topP: 1,
+            },
+          };
         } else if (type === "analysis") {
           nodeData.selectedStates = [];
           nodeData.prompt = "";

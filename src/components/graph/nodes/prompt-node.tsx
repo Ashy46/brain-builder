@@ -69,8 +69,17 @@ export function PromptNode({
         nodeLabel={data.label}
         nodePrompt={promptData.prompt}
         nodeType="Prompt"
+        llmConfig={promptData.llmConfig}
         onLabelChange={data.onLabelChange || (() => {})}
         onPromptChange={promptData.onPromptChange || (() => {})}
+        onLLMConfigChange={(nodeId, config) => {
+          if (promptData.onPromptChange) {
+            promptData.onPromptChange(nodeId, {
+              ...promptData,
+              llmConfig: config,
+            });
+          }
+        }}
       />
     </div>
   );

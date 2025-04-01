@@ -43,10 +43,20 @@ export interface ConditionalNodeData extends BaseNodeData {
   graphId: string;
 }
 
+export interface LLMConfig {
+  model: "gpt-4" | "gpt-4o-mini";
+  temperature: number;
+  maxTokens: number;
+  frequencyPenalty: number;
+  presencePenalty: number;
+  topP: number;
+}
+
 export interface PromptNodeData extends BaseNodeData {
   type: "prompt";
   prompt?: string;
   graphId: string;
+  llmConfig?: LLMConfig;
   onPromptChange?: (nodeId: string, newData: PromptNodeData) => void;
 }
 
