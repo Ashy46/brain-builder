@@ -114,7 +114,7 @@ export function EditNodeDialog({
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Enter your prompt here..."
-                  className="min-h-[200px] resize-none"
+                  className="h-[200px] overflow-y-auto resize-none"
                 />
               </div>
             )}
