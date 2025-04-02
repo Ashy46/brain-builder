@@ -68,6 +68,15 @@ export function TestChat({ id, isOpen }: TestChatProps) {
 
   if (!isOpen) return null;
 
+  const findAnalysisNode = () => {
+    return currentGraphNodes.find(node =>
+      typeof node.data === 'object' &&
+      node.data !== null &&
+      'type' in node.data &&
+      node.data.type === 'analysis'
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading || !jwt) return;
@@ -129,6 +138,50 @@ export function TestChat({ id, isOpen }: TestChatProps) {
     } finally {
       setIsLoading(false);
       setTimeout(() => inputRef.current?.focus(), 0);
+    }
+
+    const analysisNode = findAnalysisNode();
+    if (analysisNode) {
+      console.log(analysisNode.data);
+    }
+    try {
+      // I want to send a analysis node prompt to the LLM with our messages and conduct the analysis prompt and then log the result
+      const response = await fetch("/api/ai/stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${jwt}`,
+        },
+        body: JSON.stringify({
+          prompt: analysisNode?.data && typeof analysisNode.data === 'object' && 'prompt' in analysisNode.data
+            ? analysisNode.data.prompt
+            : '',
+          messages: messages.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+        }),
+      })
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No reader available");
+
+      let accumulatedContent = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const text = new TextDecoder().decode(value);
+        accumulatedContent += text;
+        setStreamingContent(accumulatedContent);
+      }
+
+      console.log(accumulatedContent);
+    } catch (error) {
+      console.error("Error:", error);
     }
   };
 
