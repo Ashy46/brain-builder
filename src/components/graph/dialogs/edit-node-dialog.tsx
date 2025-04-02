@@ -158,7 +158,14 @@ export function EditNodeDialog({
                 onChange={(e) => setLabel(e.target.value)}
                 placeholder="Enter node label..."
                 required
+                disabled={mode === "state"}
+                className={mode === "state" ? "opacity-50 cursor-not-allowed" : ""}
               />
+              {mode === "state" && (
+                <p className="text-xs text-muted-foreground">
+                  Labels cannot be edited for state nodes
+                </p>
+              )}
             </div>
             {showPromptSection && (
               <div className="space-y-2">
