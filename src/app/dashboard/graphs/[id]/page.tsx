@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Graph } from "@/components/graph/graph";
 import { ManageStatesDialog } from "@/components/graph/dialogs";
 import { GraphRef } from "@/components/graph/types";
-import { TestChat } from "@/components/graph/test/TestChat";
+import { TestChat } from "@/components/graph/test/test-chat";
 
 export default function GraphPage() {
   const router = useRouter();
