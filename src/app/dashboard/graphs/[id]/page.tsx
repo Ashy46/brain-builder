@@ -3,12 +3,13 @@
 import { useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import { ChevronLeft, Loader2, Plus, Settings } from "lucide-react";
+import { ChevronLeft, Loader2, Plus, Settings, MessageSquare } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Graph } from "@/components/graph/graph";
 import { ManageStatesDialog } from "@/components/graph/dialogs";
 import { GraphRef } from "@/components/graph/types";
+import { TestChat } from "@/components/graph/test/TestChat";
 
 export default function GraphPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function GraphPage() {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [isManageStatesOpen, setIsManageStatesOpen] = useState(false);
+  const [isTestChatOpen, setIsTestChatOpen] = useState(false);
 
   const graphRef = useRef<GraphRef>(null);
 
@@ -38,6 +40,10 @@ export default function GraphPage() {
           <Settings className="h-4 w-4" />
           Manage States
         </Button>
+        <Button variant="outline" onClick={() => setIsTestChatOpen(!isTestChatOpen)}>
+          <MessageSquare className="h-4 w-4" />
+          Test
+        </Button>
       </div>
 
       {isUpdating && (
@@ -58,6 +64,8 @@ export default function GraphPage() {
         onOpenChange={setIsManageStatesOpen}
         graphId={id as string}
       />
+
+      <TestChat isOpen={isTestChatOpen} />
     </>
   );
 }
