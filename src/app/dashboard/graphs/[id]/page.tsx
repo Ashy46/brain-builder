@@ -74,7 +74,7 @@ export default function GraphPage() {
         graphId={id as string}
       />
 
-      <TestChat isOpen={isTestChatOpen} />
+      <TestChat id={id as string} isOpen={isTestChatOpen} />
     </>
   );
 }
