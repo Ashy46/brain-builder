@@ -22,6 +22,7 @@ export function TestChat({ isOpen }: { isOpen: boolean }) {
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -105,11 +106,13 @@ export function TestChat({ isOpen }: { isOpen: boolean }) {
       setStreamingContent("");
     } finally {
       setIsLoading(false);
+      // Ensure focus returns to input after all operations complete
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
 
   return (
-    <Card className="fixed right-4 top-4 h-[calc(100vh-2rem)] w-96 p-4 shadow-lg bg-card text-card-foreground animate-in fade-in slide-in-from-right-1/2">
+    <Card className="fixed right-4 top-4 h-[calc(100vh-2rem)] w-96 p-4 shadow-lg bg-card/80 backdrop-blur-sm border-muted/50 text-card-foreground animate-in fade-in slide-in-from-right-1/2 z-10">
       <div className="flex h-full flex-col">
         <h2 className="text-lg font-semibold mb-4 flex-none">Test Chat</h2>
         <div className="flex-1 min-h-0">
@@ -149,12 +152,13 @@ export function TestChat({ isOpen }: { isOpen: boolean }) {
         </div>
         <form onSubmit={handleSubmit} className="flex-none mt-4 flex gap-2">
           <input
+            ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 p-2 border rounded-md bg-background text-foreground border-input focus:outline-none focus:ring-2 focus:ring-ring h-10"
-            disabled={isLoading || !jwt}
+            className="flex-1 p-2 border rounded-md bg-background/80 backdrop-blur-[2px] text-foreground border-input focus:outline-none focus:ring-2 focus:ring-ring h-10"
+            disabled={!jwt}
           />
           <Button type="submit" disabled={isLoading || !jwt} className="h-10">
             <Send className="w-4 h-4" />
