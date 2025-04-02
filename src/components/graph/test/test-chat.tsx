@@ -123,7 +123,7 @@ export function TestChat({ isOpen }: { isOpen: boolean }) {
                   key={index}
                   className={`p-3 rounded-lg ${
                     message.role === "user"
-                      ? "bg-primary text-primary-foreground ml-auto"
+                      ? "bg-primary text-primary-foreground ml-auto animate-in fade-in slide-in-from-right-1/2"
                       : "bg-muted text-muted-foreground"
                   } max-w-[80%] ${
                     message.role === "user" ? "ml-auto" : "mr-auto"
@@ -133,7 +133,7 @@ export function TestChat({ isOpen }: { isOpen: boolean }) {
                 </div>
               ))}
               {streamingContent && (
-                <div className="bg-muted text-muted-foreground p-3 rounded-lg max-w-[80%] mr-auto">
+                <div className="bg-muted text-muted-foreground p-3 rounded-lg max-w-[80%] mr-auto animate-in fade-in slide-in-from-left-1/2">
                   {streamingContent}
                 </div>
               )}
