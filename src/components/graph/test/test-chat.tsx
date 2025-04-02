@@ -32,6 +32,7 @@ export function TestChat({ id, isOpen }: TestChatProps) {
   const [states, setStates] = useState<
     Database["public"]["Tables"]["graph_states"]["Row"][]
   >([]);
+  const [currentValues, setCurrentValues] = useState<Record<string, string>>({});
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -64,7 +65,16 @@ export function TestChat({ id, isOpen }: TestChatProps) {
         .from("graph_states")
         .select("*")
         .eq("graph_id", id);
-      setStates(data || []);
+      
+      if (data) {
+        setStates(data);
+        // Initialize current values with starting values
+        const initialValues: Record<string, string> = {};
+        data.forEach(state => {
+          initialValues[state.id] = state.starting_value || "0";
+        });
+        setCurrentValues(initialValues);
+      }
     };
 
     fetchGraphNodes();
@@ -114,8 +124,6 @@ export function TestChat({ id, isOpen }: TestChatProps) {
             role: msg.role,
             content: msg.content,
           })),
-          graphId: id,
-          stateId: negativityState.id,
         }),
       });
 
@@ -129,16 +137,13 @@ export function TestChat({ id, isOpen }: TestChatProps) {
         throw new Error("Invalid score received from server");
       }
 
-      setStates((prev) =>
-        prev.map((state) =>
-          state.id === negativityState.id
-            ? { ...state, starting_value: data.score.toString() }
-            : state
-        )
-      );
+      // Update the current value instead of the state itself
+      setCurrentValues(prev => ({
+        ...prev,
+        [negativityState.id]: data.score.toString()
+      }));
     } catch (error) {
       console.error("Error analyzing message:", error);
-      // We don't need to show an error to the user since this is a background analysis
     }
   };
 
@@ -216,7 +221,7 @@ export function TestChat({ id, isOpen }: TestChatProps) {
           <div className="flex gap-2">
             {states.map((state) => (
               <Badge key={state.id} variant="secondary">
-                {state.name}: {state.starting_value || "null"}
+                {state.name}: {currentValues[state.id] || state.starting_value || "null"}
               </Badge>
             ))}
           </div>

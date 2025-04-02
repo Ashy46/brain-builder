@@ -49,30 +49,12 @@ export async function POST(req: Request) {
     const encryptedData = JSON.parse(userData.openai_api_key);
     const apiKey = decrypt(encryptedData);
 
-    const { messages, graphId, stateId } = await req.json();
+    const { messages } = await req.json();
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      throw new ValidationError("Messages array is required and cannot be empty");
-    }
-
-    if (!stateId) {
-      throw new ValidationError("State ID is required");
-    }
-
-    // Get the state we're analyzing
-    const { data: state, error: stateError } = await supabase
-      .from("graph_states")
-      .select("*")
-      .eq("id", stateId)
-      .single();
-
-    if (stateError) {
-      console.error("Error fetching state:", stateError);
-      throw new Error("Failed to fetch state");
-    }
-
-    if (!state) {
-      throw new ValidationError("State not found");
+      throw new ValidationError(
+        "Messages array is required and cannot be empty"
+      );
     }
 
     const openai = new OpenAI({ apiKey });
@@ -106,17 +88,6 @@ export async function POST(req: Request) {
     const negativityScore = parseFloat(content);
     if (isNaN(negativityScore)) {
       throw new Error(`Invalid score from OpenAI: ${content}`);
-    }
-
-    // Update the state value
-    const { error: updateError } = await supabase
-      .from("graph_states")
-      .update({ starting_value: negativityScore.toString() })
-      .eq("id", stateId);
-
-    if (updateError) {
-      console.error("Error updating state:", updateError);
-      throw new Error("Failed to update state");
     }
 
     return NextResponse.json({ score: negativityScore });
