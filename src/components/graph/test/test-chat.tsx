@@ -30,6 +30,9 @@ export function TestChat({ id, isOpen }: TestChatProps) {
   const [currentGraphNodes, setCurrentGraphNodes] = useState<
     Database["public"]["Tables"]["graph_nodes"]["Row"][]
   >([]);
+  const [graphEdges, setGraphEdges] = useState<
+    Database["public"]["Tables"]["graph_node_edges"]["Row"][]
+  >([]);
   const [states, setStates] = useState<
     Database["public"]["Tables"]["graph_states"]["Row"][]
   >([]);
@@ -60,6 +63,15 @@ export function TestChat({ id, isOpen }: TestChatProps) {
       setCurrentGraphNodes(data || []);
     };
 
+    const fetchGraphEdges = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("graph_node_edges")
+        .select("*")
+        .eq("graph_id", id);
+      setGraphEdges(data || []);
+    };
+
     const fetchStates = async () => {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -79,6 +91,7 @@ export function TestChat({ id, isOpen }: TestChatProps) {
     };
 
     fetchGraphNodes();
+    fetchGraphEdges();
     fetchStates();
     fetchJwt();
   }, []);
@@ -86,12 +99,6 @@ export function TestChat({ id, isOpen }: TestChatProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages, streamingContent]);
-
-  useEffect(() => {
-    if (currentGraphNodes.length > 0) {
-      console.log(currentGraphNodes[1].data);
-    }
-  }, [currentGraphNodes]);
 
   if (!isOpen) return null;
 
@@ -103,6 +110,122 @@ export function TestChat({ id, isOpen }: TestChatProps) {
         "type" in node.data &&
         node.data.type === "analysis"
     );
+  };
+
+  const findNodeById = (id: string) => {
+    return currentGraphNodes.find((node) => node.id === id);
+  };
+
+  const traverseGraph = async () => {
+    const analysisNode = findAnalysisNode();
+    if (!analysisNode) return;
+
+    let currentNode = analysisNode;
+    const edges = graphEdges.filter((edge) => edge.source_node_id === currentNode.id);
+    const nextNode = edges[0]?.target_node_id;
+    const nextNodeData = findNodeById(nextNode);
+    if (!nextNodeData) return;
+    currentNode = nextNodeData;
+
+    while (currentNode) {
+      const currentNodeData = currentNode.data as {
+        type: string;
+      };
+
+      if (currentNodeData.type === "prompt") {
+        const prompt = (currentNode.data as { prompt?: string })?.prompt;
+        if (!prompt || !jwt) return;
+
+        try {
+          const response = await fetch("/api/ai/stream", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${jwt}`,
+            },
+            body: JSON.stringify({
+              prompt,
+              messages: messages.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+              })),
+            }),
+          });
+
+          if (!response.ok) throw new Error("Failed to get response");
+
+          const reader = response.body?.getReader();
+          if (!reader) throw new Error("No reader available");
+
+          let accumulatedContent = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const text = new TextDecoder().decode(value);
+            accumulatedContent += text;
+            setStreamingContent(accumulatedContent);
+          }
+
+          const assistantMessage: Message = { role: "assistant", content: accumulatedContent };
+          setMessages(prev => [...prev, assistantMessage]);
+          setStreamingContent("");
+        } catch (error) {
+          console.error("Error:", error);
+          setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I encountered an error." }]);
+          setStreamingContent("");
+        }
+        console.log('streamingContent', streamingContent);
+        return;
+      }
+      else if (currentNodeData.type == "conditional") {
+        const nodeData = currentNode.data as {
+          type: string;
+          conditions: Array<{
+            value: string;
+            stateId: string;
+            operator: string;
+          }>;
+          trueChildId: string;
+          falseChildId: string;
+        };
+        console.log("Conditional node");
+
+        // Evaluate each condition
+        const conditionResults = nodeData.conditions.map(condition => {
+          const stateValue = currentValues[condition.stateId];
+          const numStateValue = parseFloat(stateValue);
+          const numConditionValue = parseFloat(condition.value);
+
+          if (isNaN(numStateValue) || isNaN(numConditionValue)) {
+            return false;
+          }
+
+          switch (condition.operator) {
+            case 'greaterThan':
+              return numStateValue > numConditionValue;
+            case 'lessThan':
+              return numStateValue < numConditionValue;
+            case 'equals':
+              return numStateValue === numConditionValue;
+            default:
+              return false;
+          }
+        });
+
+        // If all conditions are true (AND operator), follow true path
+        const conditionMet = conditionResults.every(result => result);
+
+        // Set next node based on condition result
+        const nextNodeId = conditionMet ? nodeData.trueChildId : nodeData.falseChildId;
+        const nextNode = findNodeById(nextNodeId);
+        if (!nextNode) return;
+        currentNode = nextNode;
+      }
+      else if (currentNodeData.type == "analysis") {
+        console.log("Analysis node");
+        return;
+      }
+    }
   };
 
   const findNegativityState = () => {
