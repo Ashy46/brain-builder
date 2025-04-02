@@ -141,8 +141,18 @@ export const useGraphData = (graphId: string) => {
               ...baseNodeData,
               childId: nodeData.childId,
               selectedStates: nodeData.selectedStates || [],
-              statePrompts: nodeData.statePrompts || [],
-              prompt: nodeData.prompt || "",
+              statePrompts: nodeData.statePrompts?.map((sp: any) => ({
+                stateId: sp.stateId,
+                prompt: sp.prompt || "",
+                llmConfig: sp.llmConfig || {
+                  model: "gpt-4o-mini",
+                  temperature: 1.05,
+                  maxTokens: 256,
+                  frequencyPenalty: 0.4,
+                  presencePenalty: 0.4,
+                  topP: 1,
+                },
+              })) || [],
               graphId,
               onStatesChange: async (nodeId: string, stateIds: string[]) => {
                 await updateNodeData(nodeId, { selectedStates: stateIds });
@@ -157,11 +167,33 @@ export const useGraphData = (graphId: string) => {
                 if (existingPromptIndex >= 0) {
                   // Update existing prompt
                   const newStatePrompts = [...analysisData.statePrompts];
-                  newStatePrompts[existingPromptIndex] = { stateId, prompt, llmConfig };
+                  newStatePrompts[existingPromptIndex] = { 
+                    stateId, 
+                    prompt, 
+                    llmConfig: llmConfig || {
+                      model: "gpt-4o-mini",
+                      temperature: 1.05,
+                      maxTokens: 256,
+                      frequencyPenalty: 0.4,
+                      presencePenalty: 0.4,
+                      topP: 1,
+                    }
+                  };
                   await updateNodeData(nodeId, { statePrompts: newStatePrompts });
                 } else {
                   // Add new prompt
-                  const newStatePrompts = [...analysisData.statePrompts, { stateId, prompt, llmConfig }];
+                  const newStatePrompts = [...analysisData.statePrompts, { 
+                    stateId, 
+                    prompt, 
+                    llmConfig: llmConfig || {
+                      model: "gpt-4o-mini",
+                      temperature: 1.05,
+                      maxTokens: 256,
+                      frequencyPenalty: 0.4,
+                      presencePenalty: 0.4,
+                      topP: 1,
+                    }
+                  }];
                   await updateNodeData(nodeId, { statePrompts: newStatePrompts });
                 }
               },
@@ -425,11 +457,33 @@ export const useGraphOperations = (
                 if (existingPromptIndex >= 0) {
                   // Update existing prompt
                   const newStatePrompts = [...analysisData.statePrompts];
-                  newStatePrompts[existingPromptIndex] = { stateId, prompt, llmConfig };
+                  newStatePrompts[existingPromptIndex] = { 
+                    stateId, 
+                    prompt, 
+                    llmConfig: llmConfig || {
+                      model: "gpt-4o-mini",
+                      temperature: 1.05,
+                      maxTokens: 256,
+                      frequencyPenalty: 0.4,
+                      presencePenalty: 0.4,
+                      topP: 1,
+                    }
+                  };
                   await updateNodeData(nodeId, { statePrompts: newStatePrompts });
                 } else {
                   // Add new prompt
-                  const newStatePrompts = [...analysisData.statePrompts, { stateId, prompt, llmConfig }];
+                  const newStatePrompts = [...analysisData.statePrompts, { 
+                    stateId, 
+                    prompt, 
+                    llmConfig: llmConfig || {
+                      model: "gpt-4o-mini",
+                      temperature: 1.05,
+                      maxTokens: 256,
+                      frequencyPenalty: 0.4,
+                      presencePenalty: 0.4,
+                      topP: 1,
+                    }
+                  }];
                   await updateNodeData(nodeId, { statePrompts: newStatePrompts });
                 }
               },

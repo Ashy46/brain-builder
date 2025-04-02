@@ -1,10 +1,6 @@
 import { Handle, Position } from "@xyflow/react";
 import { useState, useEffect } from "react";
-import {
-  ArrowLeftRight,
-  Pencil,
-  Loader2,
-} from "lucide-react";
+import { ArrowLeftRight, Pencil, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/utils/tailwind";
 import { createClient } from "@/lib/supabase/client";
@@ -76,7 +72,11 @@ export function AnalysisNode({
     analysisData.onStatesChange?.(id, stateIds);
   };
 
-  const handleStatePromptChange = (stateId: string, prompt: string, llmConfig?: any) => {
+  const handleStatePromptChange = (
+    stateId: string,
+    prompt: string,
+    llmConfig?: any
+  ) => {
     analysisData.onStatePromptChange?.(id, stateId, prompt, llmConfig);
   };
 
@@ -130,7 +130,9 @@ export function AnalysisNode({
               );
             })
           ) : (
-            <div className="text-sm text-muted-foreground">No states selected</div>
+            <div className="text-sm text-muted-foreground">
+              No states selected
+            </div>
           )}
         </div>
 
@@ -155,18 +157,37 @@ export function AnalysisNode({
           open={!!editingStateId}
           onOpenChange={(open) => !open && setEditingStateId(null)}
           nodeId={id}
-          nodeLabel={states.find(s => s.id === editingStateId)?.name || editingStateId}
-          nodePrompt={analysisData.statePrompts?.find(
-            (sp) => sp.stateId === editingStateId
-          )?.prompt || ""}
+          nodeLabel={
+            states.find((s) => s.id === editingStateId)?.name || editingStateId
+          }
+          nodePrompt={
+            analysisData.statePrompts?.find(
+              (sp) => sp.stateId === editingStateId
+            )?.prompt || ""
+          }
+          llmConfig={
+            analysisData.statePrompts?.find(
+              (sp) => sp.stateId === editingStateId
+            )?.llmConfig
+          }
           nodeType="Analysis"
           onLabelChange={() => {}}
           onPromptChange={(nodeId, newData) => {
-            handleStatePromptChange(editingStateId, newData.prompt);
+            handleStatePromptChange(editingStateId, newData.prompt, newData.llmConfig);
             setEditingStateId(null);
+          }}
+          onLLMConfigChange={(nodeId, config) => {
+            const statePrompt = analysisData.statePrompts?.find(
+              (sp) => sp.stateId === editingStateId
+            );
+            handleStatePromptChange(
+              editingStateId,
+              statePrompt?.prompt || "",
+              config
+            );
           }}
         />
       )}
     </div>
   );
-} 
+}
