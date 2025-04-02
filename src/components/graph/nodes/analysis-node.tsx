@@ -1,6 +1,7 @@
 import { Handle, Position } from "@xyflow/react";
 import { useState, useEffect } from "react";
 import { ArrowLeftRight, Pencil, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils/tailwind";
 import { createClient } from "@/lib/supabase/client";
@@ -37,7 +38,6 @@ export function AnalysisNode({
   const [isSelectingStates, setIsSelectingStates] = useState(false);
   const [editingStateId, setEditingStateId] = useState<string | null>(null);
   const [states, setStates] = useState<State[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [statePrompts, setStatePrompts] = useState<
     {
       stateId: string;
@@ -45,12 +45,17 @@ export function AnalysisNode({
       llmConfig?: any;
     }[]
   >([]);
+  const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
 
   const analysisData = data as AnalysisNodeData;
   const selectedStates = analysisData.selectedStates || [];
 
+  // Initialize and update statePrompts when data changes
   useEffect(() => {
+    console.log("Analysis node data updated:", {
+      statePrompts: analysisData.statePrompts || []
+    });
     setStatePrompts(analysisData.statePrompts || []);
   }, [analysisData.statePrompts]);
 
@@ -67,6 +72,7 @@ export function AnalysisNode({
         setStates(statesData || []);
       } catch (error) {
         console.error("Error fetching states:", error);
+        toast.error("Failed to load states");
       } finally {
         setIsLoading(false);
       }
@@ -80,28 +86,52 @@ export function AnalysisNode({
   }, [analysisData.graphId, selectedStates, supabase]);
 
   const handleStatesChange = (stateIds: string[]) => {
-    analysisData.onStatesChange?.(id, stateIds);
+    try {
+      analysisData.onStatesChange?.(id, stateIds);
+      toast.success("States updated");
+    } catch (error) {
+      console.error("Error updating states:", error);
+      toast.error("Failed to update states");
+    }
   };
 
-  const handleStatePromptChange = (
+  const handleStatePromptChange = async (
     stateId: string,
     prompt: string,
     llmConfig?: any
   ) => {
-    setStatePrompts((currentPrompts) => {
-      const existingIndex = currentPrompts.findIndex(
-        (sp) => sp.stateId === stateId
-      );
-      if (existingIndex >= 0) {
-        const newPrompts = [...currentPrompts];
-        newPrompts[existingIndex] = { stateId, prompt, llmConfig };
-        return newPrompts;
+    try {
+      // Update local state immediately for responsive UI
+      setStatePrompts((currentPrompts) => {
+        const existingIndex = currentPrompts.findIndex(
+          (sp) => sp.stateId === stateId
+        );
+        if (existingIndex >= 0) {
+          const newPrompts = [...currentPrompts];
+          newPrompts[existingIndex] = { stateId, prompt, llmConfig };
+          return newPrompts;
+        }
+        return [...currentPrompts, { stateId, prompt, llmConfig }];
+      });
+      
+      // Update parent state through callback
+      if (analysisData.onStatePromptChange) {
+        await analysisData.onStatePromptChange(id, stateId, prompt, llmConfig);
       }
-      return [...currentPrompts, { stateId, prompt, llmConfig }];
-    });
-
-    analysisData.onStatePromptChange?.(id, stateId, prompt, llmConfig);
+    } catch (error) {
+      console.error("Error saving state prompt:", error);
+      toast.error("Failed to save prompt");
+      
+      // Revert local state on error
+      setStatePrompts(analysisData.statePrompts || []);
+      throw error;
+    }
   };
+
+  const editingState = states.find((s) => s.id === editingStateId);
+  const editingStatePrompt = statePrompts.find(
+    (sp) => sp.stateId === editingStateId
+  );
 
   return (
     <div className="relative">
@@ -134,13 +164,14 @@ export function AnalysisNode({
             </div>
           ) : states.length > 0 ? (
             states.map((state) => {
-              const statePrompt = statePrompts.find(
-                (sp) => sp.stateId === state.id
+              const hasPrompt = statePrompts.some(
+                (sp) => sp.stateId === state.id && sp.prompt?.trim()
               );
+              
               return (
                 <Badge
                   key={state.id}
-                  variant="secondary"
+                  variant={hasPrompt ? "default" : "secondary"}
                   className="flex items-center gap-1 cursor-pointer hover:bg-secondary/80"
                   onClick={() => setEditingStateId(state.id)}
                 >
@@ -175,41 +206,18 @@ export function AnalysisNode({
         onStatesChange={handleStatesChange}
       />
 
-      {editingStateId && (
+      {editingStateId && editingState && (
         <EditNodeDialog
           open={!!editingStateId}
           onOpenChange={(open) => !open && setEditingStateId(null)}
+          mode="state"
           nodeId={id}
-          nodeLabel={
-            states.find((s) => s.id === editingStateId)?.name || editingStateId
-          }
-          nodePrompt={
-            statePrompts.find((sp) => sp.stateId === editingStateId)?.prompt ||
-            ""
-          }
-          llmConfig={
-            statePrompts.find((sp) => sp.stateId === editingStateId)?.llmConfig
-          }
-          nodeType="Analysis"
-          onLabelChange={() => {}}
-          onPromptChange={(nodeId, newData) => {
-            handleStatePromptChange(
-              editingStateId,
-              newData.prompt,
-              newData.llmConfig
-            );
-            setEditingStateId(null);
-          }}
-          onLLMConfigChange={(nodeId, config) => {
-            const statePrompt = statePrompts.find(
-              (sp) => sp.stateId === editingStateId
-            );
-            handleStatePromptChange(
-              editingStateId,
-              statePrompt?.prompt || "",
-              config
-            );
-          }}
+          stateId={editingStateId}
+          stateName={editingState.name}
+          stateType={editingState.type}
+          prompt={editingStatePrompt?.prompt || ""}
+          llmConfig={editingStatePrompt?.llmConfig}
+          onPromptChange={handleStatePromptChange}
         />
       )}
     </div>

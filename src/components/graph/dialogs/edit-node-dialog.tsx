@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { Settings2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,22 +9,33 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AIPromptFeatures } from "../nodes/ai-prompt-features";
 import { ModelSettingsDialog } from "./model-settings-dialog";
-import { Settings2 } from "lucide-react";
 import { LLMConfig } from "../nodes/types";
+
+type EditMode = "node" | "state";
 
 interface EditNodeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  mode: EditMode;
+  // Node props
   nodeId: string;
-  nodeLabel: string;
+  nodeLabel?: string;
   nodePrompt?: string;
-  nodeType: string;
+  nodeType?: string;
+  // State props
+  stateId?: string;
+  stateName?: string;
+  stateType?: "number" | "text";
+  // Common props
+  prompt?: string;
   llmConfig?: LLMConfig;
-  onLabelChange: (nodeId: string, newLabel: string) => void;
+  // Callbacks
+  onLabelChange?: (nodeId: string, newLabel: string) => void;
   onPromptChange: (nodeId: string, newData: any) => void;
   onLLMConfigChange?: (nodeId: string, config: LLMConfig) => void;
 }
@@ -32,18 +43,28 @@ interface EditNodeDialogProps {
 export function EditNodeDialog({
   open,
   onOpenChange,
+  mode,
+  // Node props
   nodeId,
   nodeLabel,
   nodePrompt,
   nodeType,
+  // State props
+  stateId,
+  stateName,
+  stateType,
+  // Common props
+  prompt: initialPrompt,
   llmConfig: initialLLMConfig,
+  // Callbacks
   onLabelChange,
   onPromptChange,
   onLLMConfigChange,
 }: EditNodeDialogProps) {
-  const [label, setLabel] = useState(nodeLabel);
-  const [prompt, setPrompt] = useState(nodePrompt || "");
+  const [label, setLabel] = useState(nodeLabel || "");
+  const [prompt, setPrompt] = useState(initialPrompt || nodePrompt || "");
   const [isModelSettingsOpen, setIsModelSettingsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [llmConfig, setLLMConfig] = useState<LLMConfig>(() => ({
     model: initialLLMConfig?.model || "gpt-4o-mini",
     temperature: initialLLMConfig?.temperature || 1.05,
@@ -53,30 +74,81 @@ export function EditNodeDialog({
     topP: initialLLMConfig?.topP || 1,
   }));
 
-  const handleSave = () => {
-    onLabelChange(nodeId, label);
-    if (nodeType !== "Conditional") {
-      onPromptChange(nodeId, { prompt, llmConfig });
-      if (onLLMConfigChange) {
-        onLLMConfigChange(nodeId, llmConfig);
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      
+      // Log the data being saved
+      console.log(`Saving ${mode} data for ${mode === "node" ? nodeId : stateId}:`, {
+        label,
+        prompt,
+        llmConfig
+      });
+      
+      // Label is required for all nodes
+      if (!label.trim()) {
+        toast.error("Label is required", {
+          description: "Please enter a label for the node.",
+          duration: 4000,
+        });
+        return;
       }
+
+      // Update label if changed
+      if (label !== nodeLabel && onLabelChange) {
+        await onLabelChange(nodeId, label);
+        toast.success("Node label updated", {
+          description: "The node label has been changed.",
+          duration: 4000,
+        });
+      }
+      
+      // Update prompt and config
+      await onPromptChange(nodeId, { prompt, llmConfig });
+      if (onLLMConfigChange) {
+        await onLLMConfigChange(nodeId, llmConfig);
+      }
+      
+      toast.success(mode === "state" 
+        ? `Successfully saved analysis for "${stateName}"`
+        : "Node prompt updated", {
+        description: "Your prompt and model settings have been saved.",
+        duration: 4000,
+      });
+      
+      // Close the dialog
+      onOpenChange(false);
+    } catch (error) {
+      console.error(`Error saving ${mode} data:`, error);
+      toast.error("Failed to save changes", {
+        description: "Please try again. If the problem persists, check the console for details.",
+        duration: 4000,
+      });
+    } finally {
+      setIsSaving(false);
     }
-    onOpenChange(false);
   };
 
   const handleAIPromptChange = (nodeId: string, newPrompt: string) => {
     setPrompt(newPrompt);
   };
 
-  const showPromptSection = nodeType !== "Conditional";
-  const showLLMConfig = nodeType === "Prompt" || nodeType === "Analysis";
+  const showPromptSection = mode === "state" || nodeType !== "Conditional";
+  const showLLMConfig = mode === "state" || nodeType === "Prompt" || nodeType === "Analysis";
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Edit {nodeType} Node</DialogTitle>
+            <DialogTitle>
+              {mode === "node" ? "Edit Prompt" : `Edit Analysis for ${stateName}`}
+              {mode === "state" && (
+                <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
+                  {stateType}
+                </span>
+              )}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -85,6 +157,7 @@ export function EditNodeDialog({
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
                 placeholder="Enter node label..."
+                required
               />
             </div>
             {showPromptSection && (
@@ -123,7 +196,9 @@ export function EditNodeDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>Save Changes</Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

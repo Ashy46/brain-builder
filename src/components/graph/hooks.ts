@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Node, Edge, ReactFlowInstance } from "@xyflow/react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { NodeType, CustomNodeData, AnalysisNodeData, ConditionalNodeData, PromptNodeData } from "./nodes/types";
@@ -158,43 +159,96 @@ export const useGraphData = (graphId: string) => {
                 await updateNodeData(nodeId, { selectedStates: stateIds });
               },
               onStatePromptChange: async (nodeId: string, stateId: string, prompt: string, llmConfig?: any) => {
-                const node = nodes.find(n => n.id === nodeId);
-                if (!node) return;
+                console.log(`Updating state prompt in hooks.ts for state ${stateId}:`, { prompt, llmConfig });
                 
-                const analysisData = node.data as unknown as AnalysisNodeData;
-                const existingPromptIndex = analysisData.statePrompts.findIndex((sp: { stateId: string }) => sp.stateId === stateId);
-                
-                if (existingPromptIndex >= 0) {
-                  // Update existing prompt
-                  const newStatePrompts = [...analysisData.statePrompts];
-                  newStatePrompts[existingPromptIndex] = { 
-                    stateId, 
-                    prompt, 
-                    llmConfig: llmConfig || {
-                      model: "gpt-4o-mini",
-                      temperature: 1.05,
-                      maxTokens: 256,
-                      frequencyPenalty: 0.4,
-                      presencePenalty: 0.4,
-                      topP: 1,
-                    }
-                  };
-                  await updateNodeData(nodeId, { statePrompts: newStatePrompts });
-                } else {
-                  // Add new prompt
-                  const newStatePrompts = [...analysisData.statePrompts, { 
-                    stateId, 
-                    prompt, 
-                    llmConfig: llmConfig || {
-                      model: "gpt-4o-mini",
-                      temperature: 1.05,
-                      maxTokens: 256,
-                      frequencyPenalty: 0.4,
-                      presencePenalty: 0.4,
-                      topP: 1,
-                    }
-                  }];
-                  await updateNodeData(nodeId, { statePrompts: newStatePrompts });
+                try {
+                  const node = nodes.find(n => n.id === nodeId);
+                  if (!node) {
+                    console.error("Node not found:", nodeId);
+                    toast.error("Failed to update state prompt", {
+                      description: "Node not found in the graph.",
+                      duration: 4000,
+                    });
+                    return;
+                  }
+                  
+                  const analysisData = node.data as unknown as AnalysisNodeData;
+                  const existingPromptIndex = analysisData.statePrompts?.findIndex((sp: { stateId: string }) => sp.stateId === stateId) ?? -1;
+                  
+                  let newStatePrompts;
+                  
+                  if (existingPromptIndex >= 0) {
+                    // Update existing prompt
+                    newStatePrompts = [...(analysisData.statePrompts || [])];
+                    newStatePrompts[existingPromptIndex] = { 
+                      stateId, 
+                      prompt, 
+                      llmConfig: llmConfig || {
+                        model: "gpt-4o-mini",
+                        temperature: 1.05,
+                        maxTokens: 256,
+                        frequencyPenalty: 0.4,
+                        presencePenalty: 0.4,
+                        topP: 1,
+                      }
+                    };
+                  } else {
+                    // Add new prompt
+                    newStatePrompts = [...(analysisData.statePrompts || []), { 
+                      stateId, 
+                      prompt, 
+                      llmConfig: llmConfig || {
+                        model: "gpt-4o-mini",
+                        temperature: 1.05,
+                        maxTokens: 256,
+                        frequencyPenalty: 0.4,
+                        presencePenalty: 0.4,
+                        topP: 1,
+                      }
+                    }];
+                  }
+                  
+                  console.log("Saving new state prompts to database:", newStatePrompts);
+                  
+                  // Update React state
+                  setNodes((currentNodes) =>
+                    currentNodes.map((node) =>
+                      node.id === nodeId
+                        ? { 
+                            ...node, 
+                            data: { 
+                              ...node.data, 
+                              statePrompts: newStatePrompts 
+                            } 
+                          }
+                        : node
+                    )
+                  );
+                  
+                  // Update database
+                  const result = await updateNodeData(nodeId, { statePrompts: newStatePrompts });
+                  console.log("Database update result:", result);
+                  
+                  if (result) {
+                    toast.success("State prompt updated", {
+                      description: "Changes have been saved to the database.",
+                      duration: 4000,
+                    });
+                  } else {
+                    toast.error("Failed to save state prompt", {
+                      description: "Database update failed. Please try again.",
+                      duration: 4000,
+                    });
+                  }
+                  
+                  return result;
+                } catch (error) {
+                  console.error("Error updating state prompt:", error);
+                  toast.error("Error updating state prompt", {
+                    description: "An unexpected error occurred. Check console for details.",
+                    duration: 4000,
+                  });
+                  throw error;
                 }
               },
             };
