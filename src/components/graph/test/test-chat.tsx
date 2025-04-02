@@ -24,6 +24,7 @@ export function TestChat({ id, isOpen }: TestChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [jwt, setJwt] = useState<string | null>(null);
   const [currentGraphNodes, setCurrentGraphNodes] = useState<
@@ -65,7 +66,7 @@ export function TestChat({ id, isOpen }: TestChatProps) {
         .from("graph_states")
         .select("*")
         .eq("graph_id", id);
-      
+
       if (data) {
         setStates(data);
         // Initialize current values with starting values
@@ -112,6 +113,7 @@ export function TestChat({ id, isOpen }: TestChatProps) {
     const negativityState = findNegativityState();
     if (!negativityState || !jwt) return;
 
+    setIsAnalyzing(true);
     try {
       const response = await fetch("/api/ai/analyze", {
         method: "POST",
@@ -144,6 +146,8 @@ export function TestChat({ id, isOpen }: TestChatProps) {
       }));
     } catch (error) {
       console.error("Error analyzing message:", error);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -195,7 +199,7 @@ export function TestChat({ id, isOpen }: TestChatProps) {
       const newMessages = [...updatedMessages, assistantMessage];
       setMessages(newMessages);
       setStreamingContent("");
-      
+
       await analyzeMessage(newMessages);
     } catch (error) {
       console.error("Error:", error);
@@ -232,13 +236,11 @@ export function TestChat({ id, isOpen }: TestChatProps) {
               {messages.map((message, index) => (
                 <div
                   key={index}
-                  className={`p-3 rounded-lg ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground ml-auto"
-                      : "bg-muted text-muted-foreground"
-                  } max-w-[80%] ${
-                    message.role === "user" ? "ml-auto" : "mr-auto"
-                  }`}
+                  className={`p-3 rounded-lg ${message.role === "user"
+                    ? "bg-primary text-primary-foreground ml-auto"
+                    : "bg-muted text-muted-foreground"
+                    } max-w-[80%] ${message.role === "user" ? "ml-auto" : "mr-auto"
+                    }`}
                 >
                   {message.content}
                 </div>
@@ -248,7 +250,7 @@ export function TestChat({ id, isOpen }: TestChatProps) {
                   {streamingContent}
                 </div>
               )}
-              {isLoading && !streamingContent && (
+              {isLoading && !streamingContent && !isAnalyzing && (
                 <div className="bg-muted text-muted-foreground p-3 rounded-lg max-w-[80%] mr-auto">
                   <div className="flex space-x-2">
                     <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
