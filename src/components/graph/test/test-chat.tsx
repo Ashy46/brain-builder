@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 
+import { Send } from "lucide-react";
+
 import { createClient } from "@/lib/supabase/client";
 
 import { Card } from "@/components/ui/card";
@@ -19,6 +21,11 @@ export function TestChat({ isOpen }: { isOpen: boolean }) {
   const [jwt, setJwt] = useState<string | null>(null);
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
     const fetchJwt = async () => {
@@ -33,14 +40,7 @@ export function TestChat({ isOpen }: { isOpen: boolean }) {
   }, []);
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector(
-        "[data-radix-scroll-area-viewport]"
-      );
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
-    }
+    scrollToBottom();
   }, [messages, streamingContent]);
 
   if (!isOpen) return null;
@@ -109,7 +109,7 @@ export function TestChat({ isOpen }: { isOpen: boolean }) {
   };
 
   return (
-    <Card className="fixed right-4 top-4 h-[calc(100vh-2rem)] w-96 p-4 shadow-lg bg-card text-card-foreground">
+    <Card className="fixed right-4 top-4 h-[calc(100vh-2rem)] w-96 p-4 shadow-lg bg-card text-card-foreground animate-in fade-in slide-in-from-right-1/2">
       <div className="flex h-full flex-col">
         <h2 className="text-lg font-semibold mb-4 flex-none">Test Chat</h2>
         <div className="flex-1 min-h-0">
@@ -143,6 +143,7 @@ export function TestChat({ isOpen }: { isOpen: boolean }) {
                   </div>
                 </div>
               )}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
         </div>
@@ -152,11 +153,11 @@ export function TestChat({ isOpen }: { isOpen: boolean }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 p-2 border rounded-md bg-background text-foreground border-input focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex-1 p-2 border rounded-md bg-background text-foreground border-input focus:outline-none focus:ring-2 focus:ring-ring h-10"
             disabled={isLoading || !jwt}
           />
-          <Button type="submit" disabled={isLoading || !jwt}>
-            Send
+          <Button type="submit" disabled={isLoading || !jwt} className="h-10">
+            <Send className="w-4 h-4" />
           </Button>
         </form>
       </div>
