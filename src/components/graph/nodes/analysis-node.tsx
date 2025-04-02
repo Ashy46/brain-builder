@@ -38,10 +38,21 @@ export function AnalysisNode({
   const [editingStateId, setEditingStateId] = useState<string | null>(null);
   const [states, setStates] = useState<State[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [statePrompts, setStatePrompts] = useState<
+    {
+      stateId: string;
+      prompt: string;
+      llmConfig?: any;
+    }[]
+  >([]);
   const supabase = createClient();
 
   const analysisData = data as AnalysisNodeData;
   const selectedStates = analysisData.selectedStates || [];
+
+  useEffect(() => {
+    setStatePrompts(analysisData.statePrompts || []);
+  }, [analysisData.statePrompts]);
 
   useEffect(() => {
     const fetchStates = async () => {
@@ -77,6 +88,18 @@ export function AnalysisNode({
     prompt: string,
     llmConfig?: any
   ) => {
+    setStatePrompts((currentPrompts) => {
+      const existingIndex = currentPrompts.findIndex(
+        (sp) => sp.stateId === stateId
+      );
+      if (existingIndex >= 0) {
+        const newPrompts = [...currentPrompts];
+        newPrompts[existingIndex] = { stateId, prompt, llmConfig };
+        return newPrompts;
+      }
+      return [...currentPrompts, { stateId, prompt, llmConfig }];
+    });
+
     analysisData.onStatePromptChange?.(id, stateId, prompt, llmConfig);
   };
 
@@ -111,7 +134,7 @@ export function AnalysisNode({
             </div>
           ) : states.length > 0 ? (
             states.map((state) => {
-              const statePrompt = analysisData.statePrompts?.find(
+              const statePrompt = statePrompts.find(
                 (sp) => sp.stateId === state.id
               );
               return (
@@ -161,23 +184,24 @@ export function AnalysisNode({
             states.find((s) => s.id === editingStateId)?.name || editingStateId
           }
           nodePrompt={
-            analysisData.statePrompts?.find(
-              (sp) => sp.stateId === editingStateId
-            )?.prompt || ""
+            statePrompts.find((sp) => sp.stateId === editingStateId)?.prompt ||
+            ""
           }
           llmConfig={
-            analysisData.statePrompts?.find(
-              (sp) => sp.stateId === editingStateId
-            )?.llmConfig
+            statePrompts.find((sp) => sp.stateId === editingStateId)?.llmConfig
           }
           nodeType="Analysis"
           onLabelChange={() => {}}
           onPromptChange={(nodeId, newData) => {
-            handleStatePromptChange(editingStateId, newData.prompt, newData.llmConfig);
+            handleStatePromptChange(
+              editingStateId,
+              newData.prompt,
+              newData.llmConfig
+            );
             setEditingStateId(null);
           }}
           onLLMConfigChange={(nodeId, config) => {
-            const statePrompt = analysisData.statePrompts?.find(
+            const statePrompt = statePrompts.find(
               (sp) => sp.stateId === editingStateId
             );
             handleStatePromptChange(
