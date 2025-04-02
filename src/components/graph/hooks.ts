@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Node, Edge } from "@xyflow/react";
+import { Node, Edge, ReactFlowInstance } from "@xyflow/react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { NodeType } from "./nodes";
+import { NodeType, CustomNodeData, AnalysisNodeData, ConditionalNodeData, PromptNodeData } from "./nodes/types";
 import { GraphData } from "./types";
 
 export const useGraphData = (graphId: string) => {
@@ -141,13 +141,29 @@ export const useGraphData = (graphId: string) => {
               ...baseNodeData,
               childId: nodeData.childId,
               selectedStates: nodeData.selectedStates || [],
+              statePrompts: nodeData.statePrompts || [],
               prompt: nodeData.prompt || "",
               graphId,
               onStatesChange: async (nodeId: string, stateIds: string[]) => {
                 await updateNodeData(nodeId, { selectedStates: stateIds });
               },
-              onPromptChange: async (nodeId: string, newData: any) => {
-                await updateNodeData(nodeId, { prompt: newData.prompt });
+              onStatePromptChange: async (nodeId: string, stateId: string, prompt: string, llmConfig?: any) => {
+                const node = nodes.find(n => n.id === nodeId);
+                if (!node) return;
+                
+                const analysisData = node.data as unknown as AnalysisNodeData;
+                const existingPromptIndex = analysisData.statePrompts.findIndex((sp: { stateId: string }) => sp.stateId === stateId);
+                
+                if (existingPromptIndex >= 0) {
+                  // Update existing prompt
+                  const newStatePrompts = [...analysisData.statePrompts];
+                  newStatePrompts[existingPromptIndex] = { stateId, prompt, llmConfig };
+                  await updateNodeData(nodeId, { statePrompts: newStatePrompts });
+                } else {
+                  // Add new prompt
+                  const newStatePrompts = [...analysisData.statePrompts, { stateId, prompt, llmConfig }];
+                  await updateNodeData(nodeId, { statePrompts: newStatePrompts });
+                }
               },
             };
           } else if (nodeType === "conditional") {
@@ -258,45 +274,18 @@ export const useGraphData = (graphId: string) => {
 
 export const useGraphOperations = (
   graphId: string,
-  updateNodeData: (nodeId: string, newData: any) => Promise<boolean>,
+  nodes: Node[],
+  edges: Edge[],
   setNodes: (nodes: Node[] | ((prev: Node[]) => Node[])) => void,
   setEdges: (edges: Edge[] | ((prev: Edge[]) => Edge[])) => void,
-  setSelectedNode: (node: Node | null) => void
+  updateNodeData: (nodeId: string, data: any) => Promise<void>,
+  createEdge: (sourceId: string, targetId: string, sourceHandle?: string) => Promise<Edge | null>,
+  selectedNode: Node | null,
+  setSelectedNode: (node: Node | null) => void,
+  setIsAddNodeDialogOpen: (open: boolean) => void,
+  isRootNode: boolean
 ) => {
   const supabase = createClient();
-
-  const createEdge = useCallback(
-    async (sourceId: string, targetId: string, sourceHandle?: string) => {
-      try {
-        const { data: newEdge, error } = await supabase
-          .from("graph_node_edges")
-          .insert({
-            source_node_id: sourceId,
-            target_node_id: targetId,
-          })
-          .select()
-          .single();
-
-        if (error) {
-          console.error("Error creating edge:", error);
-          return null;
-        }
-
-        const newEdgeObj: Edge = {
-          id: newEdge.id,
-          source: sourceId,
-          target: targetId,
-          ...(sourceHandle && { sourceHandle }),
-        };
-
-        return newEdgeObj;
-      } catch (error) {
-        console.error("Error in createEdge:", error);
-        return null;
-      }
-    },
-    [supabase]
-  );
 
   const deleteEdge = useCallback(
     async (edgeId: string) => {
@@ -378,6 +367,7 @@ export const useGraphOperations = (
           };
         } else if (type === "analysis") {
           nodeData.selectedStates = [];
+          nodeData.statePrompts = [];
           nodeData.prompt = "";
         }
 
@@ -420,13 +410,28 @@ export const useGraphOperations = (
             }),
             ...(type === "analysis" && {
               selectedStates: [],
-              prompt: "",
+              statePrompts: [],
               graphId,
               onStatesChange: async (nodeId: string, stateIds: string[]) => {
                 await updateNodeData(nodeId, { selectedStates: stateIds });
               },
-              onPromptChange: async (nodeId: string, newData: any) => {
-                await updateNodeData(nodeId, { prompt: newData.prompt });
+              onStatePromptChange: async (nodeId: string, stateId: string, prompt: string, llmConfig?: any) => {
+                const node = nodes.find(n => n.id === nodeId);
+                if (!node) return;
+                
+                const analysisData = node.data as unknown as AnalysisNodeData;
+                const existingPromptIndex = analysisData.statePrompts.findIndex((sp: { stateId: string }) => sp.stateId === stateId);
+                
+                if (existingPromptIndex >= 0) {
+                  // Update existing prompt
+                  const newStatePrompts = [...analysisData.statePrompts];
+                  newStatePrompts[existingPromptIndex] = { stateId, prompt, llmConfig };
+                  await updateNodeData(nodeId, { statePrompts: newStatePrompts });
+                } else {
+                  // Add new prompt
+                  const newStatePrompts = [...analysisData.statePrompts, { stateId, prompt, llmConfig }];
+                  await updateNodeData(nodeId, { statePrompts: newStatePrompts });
+                }
               },
             }),
           },

@@ -1,5 +1,5 @@
 import { Handle, Position } from "@xyflow/react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   ArrowLeftRight,
   Pencil,
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils/tailwind";
 
 import { SelectStatesDialog } from "@/components/graph/dialogs";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { NodePropsWithData, AnalysisNodeData } from "./types";
 import { EditNodeDialog } from "@/components/graph/dialogs/edit-node-dialog";
 
@@ -29,39 +30,18 @@ export function AnalysisNode({
   selected,
   id,
 }: NodePropsWithData) {
-  const labelRef = useRef<HTMLInputElement>(null);
-  const [width, setWidth] = useState(200);
   const [isSelectingStates, setIsSelectingStates] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-
-  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newLabel = e.target.value;
-    data.onLabelChange?.(id, newLabel);
-    if (labelRef.current) {
-      const tempSpan = document.createElement("span");
-      tempSpan.style.visibility = "hidden";
-      tempSpan.style.position = "absolute";
-      tempSpan.style.whiteSpace = "pre";
-      tempSpan.style.font = window.getComputedStyle(labelRef.current).font;
-      tempSpan.textContent = newLabel;
-      document.body.appendChild(tempSpan);
-      const newWidth = Math.max(200, tempSpan.offsetWidth + 140);
-      document.body.removeChild(tempSpan);
-      setWidth(newWidth);
-    }
-  };
-
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>
-  ) => {
-    e.stopPropagation();
-  };
+  const [editingStateId, setEditingStateId] = useState<string | null>(null);
 
   const analysisData = data as AnalysisNodeData;
-  const selectedStatesCount = analysisData.selectedStates?.length || 0;
+  const selectedStates = analysisData.selectedStates || [];
 
   const handleStatesChange = (stateIds: string[]) => {
     analysisData.onStatesChange?.(id, stateIds);
+  };
+
+  const handleStatePromptChange = (stateId: string, prompt: string, llmConfig?: any) => {
+    analysisData.onStatePromptChange?.(id, stateId, prompt, llmConfig);
   };
 
   return (
@@ -73,31 +53,38 @@ export function AnalysisNode({
           "border-blue-500/20",
           selected && "border-2 border-blue-400/50"
         )}
-        style={{ width: `${width}px` }}
+        style={{ width: "300px" }}
       >
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-center w-full">
-            {data.label}
-          </span>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium">Analysis Node</span>
           <Button
             variant="outline"
-            size="icon"
-            onClick={() => setIsEditing(true)}
-            className="size-7"
+            size="sm"
+            onClick={() => setIsSelectingStates(true)}
+            className="h-7"
           >
-            <Pencil className="size-4" />
+            <ArrowLeftRight className="h-4 w-4 mr-1" />
+            Manage States
           </Button>
         </div>
 
-        <div className="flex items-center justify-center gap-2 mt-2 text-sm">
-          <Button
-            onClick={() => setIsSelectingStates(true)}
-            variant="outline"
-            size="sm"
-          >
-            <ArrowLeftRight className="h-4 w-4" />
-            States: {selectedStatesCount} selected
-          </Button>
+        <div className="flex flex-wrap gap-2">
+          {selectedStates.map((stateId) => {
+            const statePrompt = analysisData.statePrompts?.find(
+              (sp) => sp.stateId === stateId
+            );
+            return (
+              <Badge
+                key={stateId}
+                variant="secondary"
+                className="flex items-center gap-1 cursor-pointer hover:bg-secondary/80"
+                onClick={() => setEditingStateId(stateId)}
+              >
+                {stateId}
+                <Pencil className="h-3 w-3" />
+              </Badge>
+            );
+          })}
         </div>
 
         <Handle
@@ -112,20 +99,27 @@ export function AnalysisNode({
         open={isSelectingStates}
         onOpenChange={setIsSelectingStates}
         graphId={analysisData.graphId}
-        selectedStateIds={analysisData.selectedStates || []}
+        selectedStateIds={selectedStates}
         onStatesChange={handleStatesChange}
       />
 
-      <EditNodeDialog
-        open={isEditing}
-        onOpenChange={setIsEditing}
-        nodeId={id}
-        nodeLabel={data.label}
-        nodePrompt={analysisData.prompt}
-        nodeType="Analysis"
-        onLabelChange={data.onLabelChange || (() => {})}
-        onPromptChange={analysisData.onPromptChange || (() => {})}
-      />
+      {editingStateId && (
+        <EditNodeDialog
+          open={!!editingStateId}
+          onOpenChange={(open) => !open && setEditingStateId(null)}
+          nodeId={id}
+          nodeLabel={editingStateId}
+          nodePrompt={analysisData.statePrompts?.find(
+            (sp) => sp.stateId === editingStateId
+          )?.prompt || ""}
+          nodeType="Analysis"
+          onLabelChange={() => {}}
+          onPromptChange={(nodeId, newData) => {
+            handleStatePromptChange(editingStateId, newData.prompt);
+            setEditingStateId(null);
+          }}
+        />
+      )}
     </div>
   );
 } 

@@ -19,8 +19,12 @@ export interface AnalysisNodeData extends BaseNodeData {
   selectedStates: string[];
   onStatesChange?: (nodeId: string, stateIds: string[]) => void;
   graphId: string;
-  prompt?: string;
-  onPromptChange?: (nodeId: string, newData: AnalysisNodeData) => void;
+  statePrompts: {
+    stateId: string;
+    prompt: string;
+    llmConfig?: LLMConfig;
+  }[];
+  onStatePromptChange?: (nodeId: string, stateId: string, prompt: string, llmConfig?: LLMConfig) => void;
 }
 
 export interface ConditionalNodeData extends BaseNodeData {
