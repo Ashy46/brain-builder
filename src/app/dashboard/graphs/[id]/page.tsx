@@ -3,7 +3,13 @@
 import { useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import { ChevronLeft, Loader2, Plus, Settings, MessageSquare } from "lucide-react";
+import {
+  ChevronLeft,
+  Loader2,
+  Plus,
+  Settings,
+  MessageSquare,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Graph } from "@/components/graph/graph";
@@ -40,7 +46,10 @@ export default function GraphPage() {
           <Settings className="h-4 w-4" />
           Manage States
         </Button>
-        <Button variant="outline" onClick={() => setIsTestChatOpen(!isTestChatOpen)}>
+        <Button
+          variant="outline"
+          onClick={() => setIsTestChatOpen(!isTestChatOpen)}
+        >
           <MessageSquare className="h-4 w-4" />
           Test
         </Button>

@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { ChatOpenAI } from "@langchain/openai";
-import {
-  HumanMessage,
-  SystemMessage,
-  AIMessage,
-} from "@langchain/core/messages";
+import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/messages";
 import { createClientFromJwt, getUser } from "@/lib/supabase/server/client";
 import {
   AuthenticationError,
@@ -95,10 +91,9 @@ export async function POST(request: Request) {
       async start(controller) {
         try {
           for await (const chunk of chatStream) {
-            const text =
-              typeof chunk.content === "string"
-                ? chunk.content
-                : JSON.stringify(chunk.content);
+            const text = typeof chunk.content === 'string' 
+              ? chunk.content 
+              : JSON.stringify(chunk.content);
             controller.enqueue(encoder.encode(text));
           }
           controller.close();
@@ -119,4 +114,4 @@ export async function POST(request: Request) {
     const { error: errorMessage, status, code } = handleApiError(error);
     return NextResponse.json({ error: errorMessage, code }, { status });
   }
-}
+} 
