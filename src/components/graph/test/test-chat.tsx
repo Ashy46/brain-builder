@@ -106,7 +106,6 @@ export function TestChat({ isOpen }: { isOpen: boolean }) {
       setStreamingContent("");
     } finally {
       setIsLoading(false);
-      // Ensure focus returns to input after all operations complete
       setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
