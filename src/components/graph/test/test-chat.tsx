@@ -1,24 +1,23 @@
-import { Card } from "@/components/ui/card";
 import { useState, useRef, useEffect } from "react";
+
+import { createClient } from "@/lib/supabase/client";
+
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { createClient } from "@/lib/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
 
-interface TestChatProps {
-  isOpen: boolean;
-}
-
-export function TestChat({ isOpen }: TestChatProps) {
+export function TestChat({ isOpen }: { isOpen: boolean }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [jwt, setJwt] = useState<string | null>(null);
+  
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,7 +34,9 @@ export function TestChat({ isOpen }: TestChatProps) {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
@@ -49,7 +50,7 @@ export function TestChat({ isOpen }: TestChatProps) {
     if (!input.trim() || isLoading || !jwt) return;
 
     const userMessage: Message = { role: "user", content: input };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
     setStreamingContent("");
@@ -63,7 +64,7 @@ export function TestChat({ isOpen }: TestChatProps) {
         },
         body: JSON.stringify({
           prompt: input,
-          messages: messages.map(msg => ({
+          messages: messages.map((msg) => ({
             role: msg.role,
             content: msg.content,
           })),
@@ -88,14 +89,14 @@ export function TestChat({ isOpen }: TestChatProps) {
       }
 
       // Add the complete message to the chat history
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
         { role: "assistant", content: accumulatedContent },
       ]);
       setStreamingContent("");
     } catch (error) {
       console.error("Error:", error);
-      setMessages(prev => [
+      setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
@@ -160,4 +161,4 @@ export function TestChat({ isOpen }: TestChatProps) {
       </div>
     </Card>
   );
-} 
+}
