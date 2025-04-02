@@ -30,7 +30,7 @@ function NodeTypeLabel({ type }: { type: string }) {
 }
 
 const baseNodeStyles =
-  "p-3 px-4 shadow-sm rounded-lg border backdrop-blur-[4px] bg-white/5";
+  "p-2 px-3 shadow-sm rounded-lg border backdrop-blur-[4px] bg-white/5";
 
 export function AnalysisNode({
   data,
@@ -89,22 +89,21 @@ export function AnalysisNode({
           "border-blue-500/20",
           selected && "border-2 border-blue-400/50"
         )}
-        style={{ width: "300px" }}
+        style={{ width: "220px" }}
       >
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium">Analysis Node</span>
+        <div className="flex justify-center">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setIsSelectingStates(true)}
-            className="h-7"
+            className="h-7 mb-2"
           >
             <ArrowLeftRight className="h-4 w-4 mr-1" />
             Manage States
           </Button>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5 justify-center">
           {isLoading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
