@@ -56,9 +56,7 @@ export function ConditionalNode({
         />
 
         <div className="flex items-center justify-between">
-          <span className="text-sm text-center w-full">
-            {data.label}
-          </span>
+          <span className="text-sm text-center w-full">{data.label}</span>
           <Button
             variant="outline"
             size="icon"
@@ -124,4 +122,4 @@ export function ConditionalNode({
       />
     </div>
   );
-} 
+}
