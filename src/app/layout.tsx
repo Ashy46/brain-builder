@@ -10,7 +10,7 @@ import "./globals.css";
 const figtree = Figtree({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Brain Builder",
+  title: "BrainBuilder",
   description: "Visual node-based editor",
 };
 
