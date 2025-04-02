@@ -77,14 +77,17 @@ export function EditNodeDialog({
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      
+
       // Log the data being saved
-      console.log(`Saving ${mode} data for ${mode === "node" ? nodeId : stateId}:`, {
-        label,
-        prompt,
-        llmConfig
-      });
-      
+      console.log(
+        `Saving ${mode} data for ${mode === "node" ? nodeId : stateId}:`,
+        {
+          label,
+          prompt,
+          llmConfig,
+        }
+      );
+
       // Label is required for all nodes
       if (!label.trim()) {
         toast.error("Label is required", {
@@ -102,26 +105,30 @@ export function EditNodeDialog({
           duration: 4000,
         });
       }
-      
+
       // Update prompt and config
       await onPromptChange(nodeId, { prompt, llmConfig });
       if (onLLMConfigChange) {
         await onLLMConfigChange(nodeId, llmConfig);
       }
-      
-      toast.success(mode === "state" 
-        ? `Successfully saved analysis for "${stateName}"`
-        : "Node prompt updated", {
-        description: "Your prompt and model settings have been saved.",
-        duration: 4000,
-      });
-      
+
+      toast.success(
+        mode === "state"
+          ? `Successfully saved analysis for "${stateName}"`
+          : "Node prompt updated",
+        {
+          description: "Your prompt and model settings have been saved.",
+          duration: 4000,
+        }
+      );
+
       // Close the dialog
       onOpenChange(false);
     } catch (error) {
       console.error(`Error saving ${mode} data:`, error);
       toast.error("Failed to save changes", {
-        description: "Please try again. If the problem persists, check the console for details.",
+        description:
+          "Please try again. If the problem persists, check the console for details.",
         duration: 4000,
       });
     } finally {
@@ -134,7 +141,8 @@ export function EditNodeDialog({
   };
 
   const showPromptSection = mode === "state" || nodeType !== "Conditional";
-  const showLLMConfig = mode === "state" || nodeType === "Prompt" || nodeType === "Analysis";
+  const showLLMConfig =
+    mode === "state" || nodeType === "Prompt" || nodeType === "Analysis";
 
   return (
     <>
@@ -142,7 +150,9 @@ export function EditNodeDialog({
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>
-              {mode === "node" ? "Edit Prompt" : `Edit Analysis for ${stateName}`}
+              {mode === "node"
+                ? "Edit Prompt"
+                : `Edit Analysis for ${stateName}`}
               {mode === "state" && (
                 <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">
                   {stateType}
@@ -159,7 +169,9 @@ export function EditNodeDialog({
                 placeholder="Enter node label..."
                 required
                 disabled={mode === "state"}
-                className={mode === "state" ? "opacity-50 cursor-not-allowed" : ""}
+                className={
+                  mode === "state" ? "opacity-50 cursor-not-allowed" : ""
+                }
               />
               {mode === "state" && (
                 <p className="text-xs text-muted-foreground">
