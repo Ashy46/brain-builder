@@ -131,9 +131,9 @@ export const useGraphData = (graphId: string) => {
               },
               graphId,
               onPromptChange: async (nodeId: string, newData: any) => {
-                await updateNodeData(nodeId, {
+                await updateNodeData(nodeId, { 
                   prompt: newData.prompt,
-                  llmConfig: newData.llmConfig,
+                  llmConfig: newData.llmConfig 
                 });
               },
             };
@@ -491,7 +491,10 @@ export const useGraphOperations = (
             ...(type === "prompt" && {
               prompt: "",
               onPromptChange: async (nodeId: string, newData: any) => {
-                await updateNodeData(nodeId, { prompt: newData.prompt });
+                await updateNodeData(nodeId, { 
+                  prompt: newData.prompt,
+                  llmConfig: newData.llmConfig 
+                });
               },
             }),
             ...(type === "analysis" && {

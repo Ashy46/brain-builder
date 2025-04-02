@@ -65,18 +65,48 @@ export function PromptNode({
       <EditNodeDialog
         open={isEditing}
         onOpenChange={setIsEditing}
+        mode="node"
         nodeId={id}
         nodeLabel={data.label}
         nodePrompt={promptData.prompt}
         nodeType="Prompt"
         llmConfig={promptData.llmConfig}
         onLabelChange={data.onLabelChange || (() => {})}
-        onPromptChange={promptData.onPromptChange || (() => {})}
+        onPromptChange={(nodeId, newData) => {
+          if (promptData.onPromptChange) {
+            // Save the new prompt and LLM config with required fields
+            promptData.onPromptChange(nodeId, {
+              type: "prompt",
+              label: data.label,
+              graphId: promptData.graphId,
+              prompt: newData.prompt,
+              llmConfig: {
+                model: newData.llmConfig.model,
+                temperature: newData.llmConfig.temperature,
+                maxTokens: newData.llmConfig.maxTokens,
+                frequencyPenalty: newData.llmConfig.frequencyPenalty,
+                presencePenalty: newData.llmConfig.presencePenalty,
+                topP: newData.llmConfig.topP
+              }
+            });
+          }
+        }}
         onLLMConfigChange={(nodeId, config) => {
           if (promptData.onPromptChange) {
+            // Update the LLM config while preserving the current prompt
             promptData.onPromptChange(nodeId, {
-              ...promptData,
-              llmConfig: config,
+              type: "prompt",
+              label: data.label,
+              graphId: promptData.graphId,
+              prompt: promptData.prompt,
+              llmConfig: {
+                model: config.model,
+                temperature: config.temperature,
+                maxTokens: config.maxTokens,
+                frequencyPenalty: config.frequencyPenalty,
+                presencePenalty: config.presencePenalty,
+                topP: config.topP
+              }
             });
           }
         }}
