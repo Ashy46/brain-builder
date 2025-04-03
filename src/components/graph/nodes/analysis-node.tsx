@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils/tailwind";
 import { createClient } from "@/lib/supabase/client";
+import { useStatePromptData } from "@/components/graph/hooks";
 
 import { SelectStatesDialog } from "@/components/graph/dialogs";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ export function AnalysisNode({
   const supabase = createClient();
 
   const analysisData = data as AnalysisNodeData;
+  const { updateStatePrompt } = useStatePromptData(analysisData.graphId);
   const selectedStates = analysisData.selectedStates || [];
 
   // Initialize and update statePrompts when data changes
@@ -102,26 +104,30 @@ export function AnalysisNode({
   ) => {
     try {
       // Update local state immediately for responsive UI
-      setStatePrompts((currentPrompts) => {
-        const existingIndex = currentPrompts.findIndex(
-          (sp) => sp.stateId === stateId
-        );
-        if (existingIndex >= 0) {
-          const newPrompts = [...currentPrompts];
-          newPrompts[existingIndex] = { stateId, prompt, llmConfig };
-          return newPrompts;
-        }
-        return [...currentPrompts, { stateId, prompt, llmConfig }];
-      });
-      
-      // Update parent state through callback
-      if (analysisData.onStatePromptChange) {
-        await analysisData.onStatePromptChange(id, stateId, prompt, llmConfig);
+      const newStatePrompts = [...(analysisData.statePrompts || [])];
+      const existingIndex = newStatePrompts.findIndex(
+        (sp) => sp.stateId === stateId
+      );
+
+      if (existingIndex >= 0) {
+        newStatePrompts[existingIndex] = { stateId, prompt, llmConfig };
+      } else {
+        newStatePrompts.push({ stateId, prompt, llmConfig });
+      }
+
+      // Update local state
+      setStatePrompts(newStatePrompts);
+
+      // Update database using the new hook
+      const success = await updateStatePrompt(stateId, prompt, llmConfig);
+
+      if (success) {
+        toast.success("Prompt saved successfully");
       }
     } catch (error) {
       console.error("Error saving state prompt:", error);
       toast.error("Failed to save prompt");
-      
+
       // Revert local state on error
       setStatePrompts(analysisData.statePrompts || []);
       throw error;
@@ -165,9 +171,9 @@ export function AnalysisNode({
           ) : states.length > 0 ? (
             states.map((state) => {
               const hasPrompt = statePrompts.some(
-                (sp) => sp.stateId === state.id && sp.prompt?.trim()
+                (sp) => sp.stateId === state.id && typeof sp.prompt === 'string' && sp.prompt.trim().length > 0
               );
-              
+
               return (
                 <Badge
                   key={state.id}

@@ -115,6 +115,7 @@ export type Database = {
           id: string
           name: string
           persistent: boolean
+          prompt: string | null
           starting_value: string | null
           type: Database["public"]["Enums"]["state_type"]
           updated_at: string
@@ -125,6 +126,7 @@ export type Database = {
           id?: string
           name: string
           persistent?: boolean
+          prompt?: string | null
           starting_value?: string | null
           type: Database["public"]["Enums"]["state_type"]
           updated_at?: string
@@ -135,6 +137,7 @@ export type Database = {
           id?: string
           name?: string
           persistent?: boolean
+          prompt?: string | null
           starting_value?: string | null
           type?: Database["public"]["Enums"]["state_type"]
           updated_at?: string
@@ -151,32 +154,23 @@ export type Database = {
       }
       graphs: {
         Row: {
-          analysis_methods: string[] | null
           created_at: string
           id: string
           name: string
-          nodes: Json[]
-          patient_params: string[] | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          analysis_methods?: string[] | null
           created_at?: string
           id?: string
           name: string
-          nodes?: Json[]
-          patient_params?: string[] | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          analysis_methods?: string[] | null
           created_at?: string
           id?: string
           name?: string
-          nodes?: Json[]
-          patient_params?: string[] | null
           updated_at?: string
           user_id?: string
         }

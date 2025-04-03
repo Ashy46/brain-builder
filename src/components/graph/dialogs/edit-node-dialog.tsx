@@ -88,8 +88,8 @@ export function EditNodeDialog({
         }
       );
 
-      // Label is required for all nodes
-      if (!label.trim()) {
+      // Label is required only for nodes, not for states
+      if (mode === "node" && !label.trim()) {
         toast.error("Label is required", {
           description: "Please enter a label for the node.",
           duration: 4000,
@@ -97,8 +97,8 @@ export function EditNodeDialog({
         return;
       }
 
-      // Update label if changed
-      if (label !== nodeLabel && onLabelChange) {
+      // Update label if changed and in node mode
+      if (mode === "node" && label !== nodeLabel && onLabelChange) {
         await onLabelChange(nodeId, label);
         toast.success("Node label updated", {
           description: "The node label has been changed.",
@@ -107,7 +107,11 @@ export function EditNodeDialog({
       }
 
       // Update prompt and config
-      await onPromptChange(nodeId, { prompt, llmConfig });
+      if (mode === "node") {
+        await onPromptChange(nodeId, { prompt, llmConfig });
+      } else if (mode === "state" && stateId) {
+        await onPromptChange(stateId, { prompt, llmConfig });
+      }
 
       toast.success(
         mode === "state"

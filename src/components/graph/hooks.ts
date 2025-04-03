@@ -599,4 +599,45 @@ export const useGraphOperations = (
     deleteNode,
     handleAddNode,
   };
+};
+
+export const useStatePromptData = (graphId: string) => {
+  const { user } = useAuth();
+  const supabase = createClient();
+
+  const updateStatePrompt = useCallback(async (
+    stateId: string,
+    prompt: string,
+    llmConfig?: any
+  ) => {
+    try {
+      // Update database
+      const { error: dbError } = await supabase
+        .from("graph_states")
+        .update({
+          data: {
+            prompt,
+            llmConfig
+          }
+        })
+        .eq("id", stateId);
+
+      if (dbError) {
+        throw dbError;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error updating state prompt:", error);
+      toast.error("Failed to update state prompt", {
+        description: "An unexpected error occurred. Check console for details.",
+        duration: 4000,
+      });
+      return false;
+    }
+  }, [supabase]);
+
+  return {
+    updateStatePrompt
+  };
 }; 
