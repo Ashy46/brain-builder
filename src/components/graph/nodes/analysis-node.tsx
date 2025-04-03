@@ -39,27 +39,13 @@ export function AnalysisNode({
   const [isSelectingStates, setIsSelectingStates] = useState(false);
   const [editingStateId, setEditingStateId] = useState<string | null>(null);
   const [states, setStates] = useState<State[]>([]);
-  const [statePrompts, setStatePrompts] = useState<
-    {
-      stateId: string;
-      prompt: string;
-      llmConfig?: any;
-    }[]
-  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
 
   const analysisData = data as AnalysisNodeData;
   const { updateStatePrompt } = useStatePromptData(analysisData.graphId);
   const selectedStates = analysisData.selectedStates || [];
-
-  // Initialize and update statePrompts when data changes
-  useEffect(() => {
-    console.log("Analysis node data updated:", {
-      statePrompts: analysisData.statePrompts || []
-    });
-    setStatePrompts(analysisData.statePrompts || []);
-  }, [analysisData.statePrompts]);
+  const statePrompts = analysisData.statePrompts || [];
 
   useEffect(() => {
     const fetchStates = async () => {
@@ -103,33 +89,13 @@ export function AnalysisNode({
     llmConfig?: any
   ) => {
     try {
-      // Update local state immediately for responsive UI
-      const newStatePrompts = [...(analysisData.statePrompts || [])];
-      const existingIndex = newStatePrompts.findIndex(
-        (sp) => sp.stateId === stateId
-      );
-
-      if (existingIndex >= 0) {
-        newStatePrompts[existingIndex] = { stateId, prompt, llmConfig };
-      } else {
-        newStatePrompts.push({ stateId, prompt, llmConfig });
-      }
-
-      // Update local state
-      setStatePrompts(newStatePrompts);
-
-      // Update database using the new hook
       const success = await updateStatePrompt(stateId, prompt, llmConfig);
-
       if (success) {
         toast.success("Prompt saved successfully");
       }
     } catch (error) {
       console.error("Error saving state prompt:", error);
       toast.error("Failed to save prompt");
-
-      // Revert local state on error
-      setStatePrompts(analysisData.statePrompts || []);
       throw error;
     }
   };

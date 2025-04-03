@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Settings2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { createClient } from "@/lib/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -65,6 +66,8 @@ export function EditNodeDialog({
   const [prompt, setPrompt] = useState(initialPrompt || nodePrompt || "");
   const [isModelSettingsOpen, setIsModelSettingsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const supabase = createClient();
   const [llmConfig, setLLMConfig] = useState<LLMConfig>(() => ({
     model: initialLLMConfig?.model || "gpt-4o-mini",
     temperature: initialLLMConfig?.temperature || 1.05,
@@ -73,6 +76,43 @@ export function EditNodeDialog({
     presencePenalty: initialLLMConfig?.presencePenalty || 0.4,
     topP: initialLLMConfig?.topP || 1,
   }));
+
+  // Fetch state data when dialog opens
+  useEffect(() => {
+    const fetchStateData = async () => {
+      if (!open || mode !== "state" || !stateId) return;
+
+      try {
+        setIsLoading(true);
+        const { data: stateData, error } = await supabase
+          .from("graph_states")
+          .select("data")
+          .eq("id", stateId)
+          .single();
+
+        if (error) throw error;
+
+        if (stateData?.data) {
+          setPrompt(stateData.data.prompt || "");
+          setLLMConfig(stateData.data.llmConfig || {
+            model: "gpt-4o-mini",
+            temperature: 1.05,
+            maxTokens: 256,
+            frequencyPenalty: 0.4,
+            presencePenalty: 0.4,
+            topP: 1,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching state data:", error);
+        toast.error("Failed to load state data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStateData();
+  }, [open, mode, stateId, supabase]);
 
   const handleSave = async () => {
     try {
@@ -162,61 +202,70 @@ export function EditNodeDialog({
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Label</label>
-              <Input
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                placeholder="Enter node label..."
-                required
-                disabled={mode === "state"}
-                className={
-                  mode === "state" ? "opacity-50 cursor-not-allowed" : ""
-                }
-              />
-              {mode === "state" && (
-                <p className="text-xs text-muted-foreground">
-                  Labels cannot be edited for state nodes
-                </p>
-              )}
-            </div>
-            {showPromptSection && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Prompt</label>
-                  <div className="flex gap-2">
-                    {showLLMConfig && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsModelSettingsOpen(true)}
-                      >
-                        <Settings2 className="mr-2 h-4 w-4" />
-                        Configure Model
-                      </Button>
-                    )}
-                    <AIPromptFeatures
-                      nodeId={nodeId}
-                      nodeLabel={label}
-                      currentPrompt={prompt}
-                      onPromptChange={handleAIPromptChange}
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2 py-8">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Loading state data...</span>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Label</label>
+                  <Input
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                    placeholder="Enter node label..."
+                    required
+                    disabled={mode === "state"}
+                    className={
+                      mode === "state" ? "opacity-50 cursor-not-allowed" : ""
+                    }
+                  />
+                  {mode === "state" && (
+                    <p className="text-xs text-muted-foreground">
+                      Labels cannot be edited for state nodes
+                    </p>
+                  )}
+                </div>
+                {showPromptSection && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Prompt</label>
+                      <div className="flex gap-2">
+                        {showLLMConfig && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsModelSettingsOpen(true)}
+                          >
+                            <Settings2 className="mr-2 h-4 w-4" />
+                            Configure Model
+                          </Button>
+                        )}
+                        <AIPromptFeatures
+                          nodeId={nodeId}
+                          nodeLabel={label}
+                          currentPrompt={prompt}
+                          onPromptChange={handleAIPromptChange}
+                        />
+                      </div>
+                    </div>
+                    <Textarea
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      placeholder="Enter your prompt here..."
+                      className="h-[200px] overflow-y-auto resize-none"
                     />
                   </div>
-                </div>
-                <Textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Enter your prompt here..."
-                  className="h-[200px] overflow-y-auto resize-none"
-                />
-              </div>
+                )}
+              </>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
+            <Button onClick={handleSave} disabled={isSaving || isLoading}>
               {isSaving ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
