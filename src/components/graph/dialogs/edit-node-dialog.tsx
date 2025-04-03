@@ -108,9 +108,6 @@ export function EditNodeDialog({
 
       // Update prompt and config
       await onPromptChange(nodeId, { prompt, llmConfig });
-      if (onLLMConfigChange) {
-        await onLLMConfigChange(nodeId, llmConfig);
-      }
 
       toast.success(
         mode === "state"
@@ -227,7 +224,25 @@ export function EditNodeDialog({
           open={isModelSettingsOpen}
           onOpenChange={setIsModelSettingsOpen}
           config={llmConfig}
-          onConfigChange={setLLMConfig}
+          onConfigChange={(config) => {
+            if (onPromptChange) {
+              onPromptChange(nodeId, {
+                type: "prompt",
+                label: label,
+                graphId: "",
+                prompt: prompt,
+                llmConfig: {
+                  model: config.model,
+                  temperature: config.temperature,
+                  maxTokens: config.maxTokens,
+                  frequencyPenalty: config.frequencyPenalty,
+                  presencePenalty: config.presencePenalty,
+                  topP: config.topP
+                }
+              });
+            }
+            setLLMConfig(config);
+          }}
         />
       )}
     </>
