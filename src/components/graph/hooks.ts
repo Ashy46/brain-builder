@@ -364,7 +364,7 @@ export const useGraphOperations = (
   edges: Edge[],
   setNodes: (nodes: Node[] | ((prev: Node[]) => Node[])) => void,
   setEdges: (edges: Edge[] | ((prev: Edge[]) => Edge[])) => void,
-  updateNodeData: (nodeId: string, data: any) => Promise<void>,
+  updateNodeData: (nodeId: string, data: any) => Promise<boolean>,
   createEdge: (sourceId: string, targetId: string, sourceHandle?: string) => Promise<Edge | null>,
   selectedNode: Node | null,
   setSelectedNode: (node: Node | null) => void,
@@ -455,6 +455,15 @@ export const useGraphOperations = (
           nodeData.selectedStates = [];
           nodeData.statePrompts = [];
           nodeData.prompt = "";
+        } else if (type === "conditional") {
+          nodeData = {
+            ...nodeData,
+            conditions: [],
+            operator: "and",
+            trueChildId: null,
+            falseChildId: null,
+            graphId
+          };
         }
 
         const { data: createdNode, error: nodeError } = await supabase
@@ -543,6 +552,17 @@ export const useGraphOperations = (
                   }];
                   await updateNodeData(nodeId, { statePrompts: newStatePrompts });
                 }
+              },
+            }),
+            ...(type === "conditional" && {
+              conditions: [],
+              operator: "and",
+              graphId,
+              onConditionalChange: async (nodeId: string, newData: ConditionalNodeData) => {
+                await updateNodeData(nodeId, { 
+                  conditions: newData.conditions,
+                  operator: newData.operator
+                });
               },
             }),
           },

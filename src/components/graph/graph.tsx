@@ -7,9 +7,11 @@ import { useGraphData } from "./hooks";
 import { useGraphOperations } from "./hooks";
 import { GraphContent } from "./graph-content";
 import { GraphProps, GraphRef } from "./types";
+import { createClient } from "@/lib/supabase/client";
 
 export const Graph = forwardRef<GraphRef, GraphProps>(
   ({ graphId, className, onUpdateStart, onUpdateEnd }, ref) => {
+    const supabase = createClient();
     const {
       nodes,
       edges,
@@ -24,14 +26,55 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       updateGraphData,
     } = useGraphData(graphId);
 
-    const { createEdge, deleteEdge, deleteNode, handleAddNode } = useGraphOperations(
+    // Create edge function
+    const createEdge = useCallback(async (sourceId: string, targetId: string, sourceHandle?: string) => {
+      console.log('Creating edge with params:', { sourceId, targetId, sourceHandle, graphId });
+
+      try {
+        const { data: edge, error } = await supabase
+          .from('graph_node_edges')
+          .insert({
+            source_node_id: sourceId,
+            target_node_id: targetId,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating edge:', error);
+          return null;
+        }
+
+        return edge;
+      } catch (err) {
+        console.error('Unexpected error creating edge:', err);
+        return null;
+      }
+    }, [graphId, supabase]);
+
+    // Get graph operations
+    const { deleteEdge, deleteNode, handleAddNode } = useGraphOperations(
       graphId,
-      updateNodeData,
+      nodes,
+      edges,
       setNodes,
       setEdges,
-      setSelectedNode
+      async (nodeId: string, data: any) => {
+        const result = await updateNodeData(nodeId, data);
+        if (!result) {
+          console.error("Failed to update node data");
+        }
+        return result;
+      },
+      createEdge,
+      selectedNode,
+      setSelectedNode,
+      setIsAddNodeDialogOpen,
+      nodes.length === 0
     );
 
+    // Position update handling
     const positionUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const reactFlowInstance = useRef<any | null>(null);
 
@@ -49,6 +92,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       [updateGraphData, onUpdateStart, onUpdateEnd]
     );
 
+    // Edge change handling
     const onEdgesChangeCallback = useCallback(
       async (changes: any) => {
         const newEdges = applyEdgeChanges(changes, edges);
@@ -70,6 +114,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       [edges, deleteEdge]
     );
 
+    // Node change handling
     const onNodesChangeCallback = useCallback(
       async (changes: any) => {
         const deletionChanges = changes.filter(
@@ -100,6 +145,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
       [nodes, edges, deleteNode, debouncedUpdatePositions]
     );
 
+    // Connection handling
     const onConnect = useCallback(
       async (params: any) => {
         const edgeExists = edges.some(
@@ -110,6 +156,10 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
         if (edgeExists) {
           return;
         }
+
+        // Find the source node to check if it's a conditional node
+        const sourceNode = nodes.find(node => node.id === params.source);
+        const isConditionalNode = sourceNode?.type === 'conditional';
 
         const newEdge: any = {
           id: "",
@@ -132,6 +182,20 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
           return;
         }
 
+        // If this is a conditional node connection, update the parent node's data
+        if (isConditionalNode && params.sourceHandle) {
+          const updateData: any = {};
+          if (params.sourceHandle === 'true') {
+            updateData.trueChildId = params.target;
+          } else if (params.sourceHandle === 'false') {
+            updateData.falseChildId = params.target;
+          }
+
+          if (Object.keys(updateData).length > 0) {
+            await updateNodeData(params.source, updateData);
+          }
+        }
+
         setEdges((prev) =>
           prev.map((edge) =>
             edge.id === newEdge.id ? { ...edge, id: createdEdge.id } : edge
@@ -140,14 +204,16 @@ export const Graph = forwardRef<GraphRef, GraphProps>(
 
         await updateGraphData(nodes, newEdges, onUpdateStart, onUpdateEnd);
       },
-      [nodes, edges, createEdge, updateGraphData, onUpdateStart, onUpdateEnd]
+      [nodes, edges, createEdge, updateNodeData, updateGraphData, onUpdateStart, onUpdateEnd]
     );
 
+    // Node click handling
     const onNodeClick = useCallback((event: any, node: any) => {
       event.stopPropagation();
       setSelectedNode(node);
-    }, []);
+    }, [setSelectedNode]);
 
+    // Add node wrapper
     const handleAddNodeWrapper = useCallback(
       (type: any, label: string) => {
         handleAddNode(type, label, selectedNode, edges);
