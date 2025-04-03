@@ -36,7 +36,7 @@ interface EditNodeDialogProps {
   llmConfig?: LLMConfig;
   // Callbacks
   onLabelChange?: (nodeId: string, newLabel: string) => void;
-  onPromptChange: (nodeId: string, newData: any) => void;
+  onPromptChange: (id: string, ...args: any[]) => void;
   onLLMConfigChange?: (nodeId: string, config: LLMConfig) => void;
 }
 
@@ -110,7 +110,7 @@ export function EditNodeDialog({
       if (mode === "node") {
         await onPromptChange(nodeId, { prompt, llmConfig });
       } else if (mode === "state" && stateId) {
-        await onPromptChange(stateId, { prompt, llmConfig });
+        await onPromptChange(stateId, prompt, llmConfig);
       }
 
       toast.success(
