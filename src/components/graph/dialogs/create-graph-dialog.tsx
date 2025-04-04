@@ -40,12 +40,15 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
     setIsLoading(true);
 
     try {
+      // Create the graph without any child nodes initially
       const { data: graphData, error: graphError } = await supabase
         .from("graphs")
         .insert([
           {
             name,
             user_id: user.id,
+            updated_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
           },
         ])
         .select()
@@ -53,22 +56,9 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
 
       if (graphError) throw graphError;
 
-      const { error: nodeError } = await supabase
-        .from("graph_nodes")
-        .insert({
-          graph_id: graphData.id,
-          label: "Lorem ipsum dolor sit amet",
-          position_x: 0,
-          position_y: 0,
-          data: { 
-            type: "analysis",
-            selectedStates: []
-          }
-        });
-
-      if (nodeError) {
-        console.error("Error creating initial node:", nodeError);
-      }
+      // In our new architecture, we don't create an analysis node
+      // Analysis node is virtual and created on the client side
+      // We'll let the graph component handle this when it loads
 
       setOpen(false);
       router.push(`/dashboard/graphs/${graphData.id}`);

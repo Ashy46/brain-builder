@@ -128,6 +128,7 @@ export type Database = {
           graph_id: string
           id: string
           label: string | null
+          node_type: Database["public"]["Enums"]["node_type"]
           pos_x: number
           pos_y: number
         }
@@ -136,6 +137,7 @@ export type Database = {
           graph_id: string
           id?: string
           label?: string | null
+          node_type: Database["public"]["Enums"]["node_type"]
           pos_x?: number
           pos_y?: number
         }
@@ -144,6 +146,7 @@ export type Database = {
           graph_id?: string
           id?: string
           label?: string | null
+          node_type?: Database["public"]["Enums"]["node_type"]
           pos_x?: number
           pos_y?: number
         }
@@ -430,6 +433,7 @@ export type Database = {
         | "MORE_THAN"
         | "MORE_THAN_OR_EQUAL_TO"
       llm_model: "gpt-4o" | "gpt-4o-mini"
+      node_type: "PROMPT" | "CONDITIONAL"
       state_type: "NUMBER" | "TEXT" | "BOOLEAN"
     }
     CompositeTypes: {
