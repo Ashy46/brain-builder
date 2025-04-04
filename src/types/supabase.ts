@@ -34,36 +34,88 @@ export type Database = {
   }
   public: {
     Tables: {
-      graph_node_edges: {
+      graph_conditional_node_conditions: {
         Row: {
+          conditional_operator: Database["public"]["Enums"]["conditional_operator"]
           created_at: string
+          graph_conditional_node_id: string
           id: string
-          source_node_id: string
-          target_node_id: string
+          state_id: string
+          value: string | null
         }
         Insert: {
+          conditional_operator?: Database["public"]["Enums"]["conditional_operator"]
           created_at?: string
+          graph_conditional_node_id: string
           id?: string
-          source_node_id: string
-          target_node_id: string
+          state_id: string
+          value?: string | null
         }
         Update: {
+          conditional_operator?: Database["public"]["Enums"]["conditional_operator"]
           created_at?: string
+          graph_conditional_node_id?: string
           id?: string
-          source_node_id?: string
-          target_node_id?: string
+          state_id?: string
+          value?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "edges_source_node_id_fkey"
-            columns: ["source_node_id"]
+            foreignKeyName: "graph_conditional_node_condition_graph_conditional_node_id_fkey"
+            columns: ["graph_conditional_node_id"]
+            isOneToOne: false
+            referencedRelation: "graph_conditional_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graph_conditional_node_conditions_state_id_fkey"
+            columns: ["state_id"]
+            isOneToOne: false
+            referencedRelation: "graph_states"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      graph_conditional_nodes: {
+        Row: {
+          created_at: string
+          false_child_id: string | null
+          graph_node_id: string
+          id: string
+          true_child_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          false_child_id?: string | null
+          graph_node_id: string
+          id?: string
+          true_child_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          false_child_id?: string | null
+          graph_node_id?: string
+          id?: string
+          true_child_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "graph_conditional_nodes_false_child_id_fkey"
+            columns: ["false_child_id"]
             isOneToOne: false
             referencedRelation: "graph_nodes"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "edges_target_node_id_fkey"
-            columns: ["target_node_id"]
+            foreignKeyName: "graph_conditional_nodes_graph_node_id_fkey"
+            columns: ["graph_node_id"]
+            isOneToOne: false
+            referencedRelation: "graph_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graph_conditional_nodes_true_child_id_fkey"
+            columns: ["true_child_id"]
             isOneToOne: false
             referencedRelation: "graph_nodes"
             referencedColumns: ["id"]
@@ -73,30 +125,27 @@ export type Database = {
       graph_nodes: {
         Row: {
           created_at: string
-          data: Json | null
           graph_id: string
           id: string
-          label: string
-          position_x: number
-          position_y: number
+          label: string | null
+          pos_x: number
+          pos_y: number
         }
         Insert: {
           created_at?: string
-          data?: Json | null
           graph_id: string
           id?: string
-          label: string
-          position_x?: number
-          position_y?: number
+          label?: string | null
+          pos_x?: number
+          pos_y?: number
         }
         Update: {
           created_at?: string
-          data?: Json | null
           graph_id?: string
           id?: string
-          label?: string
-          position_x?: number
-          position_y?: number
+          label?: string | null
+          pos_x?: number
+          pos_y?: number
         }
         Relationships: [
           {
@@ -108,6 +157,42 @@ export type Database = {
           },
         ]
       }
+      graph_prompt_nodes: {
+        Row: {
+          created_at: string
+          graph_node_id: string
+          id: string
+          prompt_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          graph_node_id: string
+          id?: string
+          prompt_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          graph_node_id?: string
+          id?: string
+          prompt_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "graph_prompt_nodes_graph_node_id_fkey"
+            columns: ["graph_node_id"]
+            isOneToOne: false
+            referencedRelation: "graph_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "graph_prompt_nodes_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "user_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       graph_states: {
         Row: {
           created_at: string
@@ -115,7 +200,7 @@ export type Database = {
           id: string
           name: string
           persistent: boolean
-          prompt: string | null
+          prompt_id: string | null
           starting_value: string | null
           type: Database["public"]["Enums"]["state_type"]
           updated_at: string
@@ -126,7 +211,7 @@ export type Database = {
           id?: string
           name: string
           persistent?: boolean
-          prompt?: string | null
+          prompt_id?: string | null
           starting_value?: string | null
           type: Database["public"]["Enums"]["state_type"]
           updated_at?: string
@@ -137,12 +222,19 @@ export type Database = {
           id?: string
           name?: string
           persistent?: boolean
-          prompt?: string | null
+          prompt_id?: string | null
           starting_value?: string | null
           type?: Database["public"]["Enums"]["state_type"]
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "graph_states_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "user_prompts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "states_graph_id_fkey"
             columns: ["graph_id"]
@@ -154,6 +246,7 @@ export type Database = {
       }
       graphs: {
         Row: {
+          child_node_id: string | null
           created_at: string
           id: string
           name: string
@@ -161,6 +254,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          child_node_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -168,6 +262,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          child_node_id?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -175,6 +270,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "graphs_child_node_id_fkey"
+            columns: ["child_node_id"]
+            isOneToOne: false
+            referencedRelation: "graph_nodes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "graphs_user_id_fkey"
             columns: ["user_id"]
@@ -201,6 +303,59 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      user_prompts: {
+        Row: {
+          content: string | null
+          created_at: string
+          description: string | null
+          frequency_penalty: number
+          id: string
+          llm_model: Database["public"]["Enums"]["llm_model"]
+          max_tokens: number
+          presence_penalty: number
+          public: boolean | null
+          temperature: number
+          top_p: number
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          description?: string | null
+          frequency_penalty?: number
+          id?: string
+          llm_model?: Database["public"]["Enums"]["llm_model"]
+          max_tokens?: number
+          presence_penalty?: number
+          public?: boolean | null
+          temperature?: number
+          top_p?: number
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          description?: string | null
+          frequency_penalty?: number
+          id?: string
+          llm_model?: Database["public"]["Enums"]["llm_model"]
+          max_tokens?: number
+          presence_penalty?: number
+          public?: boolean | null
+          temperature?: number
+          top_p?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -267,8 +422,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      custom_info_type: "number" | "text" | "json" | "boolean"
-      state_type: "number" | "text"
+      conditional_operator:
+        | "EQUALS"
+        | "NOT_EQUALS"
+        | "LESS_THAN"
+        | "LESS_THAN_OR_EQUAL_TO"
+        | "MORE_THAN"
+        | "MORE_THAN_OR_EQUAL_TO"
+      llm_model: "gpt-4o" | "gpt-4o-mini"
+      state_type: "NUMBER" | "TEXT" | "BOOLEAN"
     }
     CompositeTypes: {
       [_ in never]: never
