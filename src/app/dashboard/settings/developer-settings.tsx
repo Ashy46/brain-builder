@@ -44,8 +44,8 @@ export function DeveloperSettings() {
           <p className="text-sm text-muted-foreground">
             This is your current JWT token. It is used to authenticate your
             requests to the API. Do not share it with anyone. This is primarily
-            used for testing. If you do not know what this is, you
-            can ignore it.
+            used for testing. If you do not know what this is, you can ignore
+            it.
           </p>
 
           <div>

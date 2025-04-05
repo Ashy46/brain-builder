@@ -28,6 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+
 import { CreatePromptDialog } from "./create-prompt-dialog";
 import { EditPromptDialog } from "./edit-prompt-dialog";
 
@@ -41,9 +42,8 @@ export default function PromptsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [promptToDelete, setPromptToDelete] = useState<Tables<"user_prompts"> | null>(
-    null
-  );
+  const [promptToDelete, setPromptToDelete] =
+    useState<Tables<"user_prompts"> | null>(null);
 
   const fetchPrompts = async () => {
     if (!user) return;
@@ -127,9 +127,12 @@ export default function PromptsPage() {
                     className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex flex-col">
-                      <span className="font-medium text-lg">{prompt.description || "Untitled Prompt"}</span>
+                      <span className="font-medium text-lg">
+                        {prompt.description || "Untitled Prompt"}
+                      </span>
                       <span className="text-sm text-muted-foreground">
-                        Created {new Date(prompt.created_at).toLocaleDateString()}
+                        Created{" "}
+                        {new Date(prompt.created_at).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -139,7 +142,9 @@ export default function PromptsPage() {
                         onPromptUpdated={fetchPrompts}
                       />
                       <Dialog
-                        open={deleteDialogOpen && promptToDelete?.id === prompt.id}
+                        open={
+                          deleteDialogOpen && promptToDelete?.id === prompt.id
+                        }
                         onOpenChange={setDeleteDialogOpen}
                       >
                         <DialogTrigger asChild>
@@ -156,7 +161,8 @@ export default function PromptsPage() {
                           <DialogHeader>
                             <DialogTitle>Delete Prompt</DialogTitle>
                             <DialogDescription>
-                              Are you sure you want to delete this prompt? This action cannot be undone.
+                              Are you sure you want to delete this prompt? This
+                              action cannot be undone.
                             </DialogDescription>
                           </DialogHeader>
                           <DialogFooter>
@@ -169,7 +175,10 @@ export default function PromptsPage() {
                             >
                               Cancel
                             </Button>
-                            <Button variant="destructive" onClick={handleDelete}>
+                            <Button
+                              variant="destructive"
+                              onClick={handleDelete}
+                            >
                               Delete
                             </Button>
                           </DialogFooter>
@@ -184,24 +193,38 @@ export default function PromptsPage() {
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                        onClick={() =>
+                          setCurrentPage((p) => Math.max(1, p - 1))
+                        }
+                        className={
+                          currentPage === 1
+                            ? "pointer-events-none opacity-50"
+                            : ""
+                        }
                       />
                     </PaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          onClick={() => setCurrentPage(page)}
-                          isActive={currentPage === page}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ))}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (page) => (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(page)}
+                            isActive={currentPage === page}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    )}
                     <PaginationItem>
                       <PaginationNext
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                        onClick={() =>
+                          setCurrentPage((p) => Math.min(totalPages, p + 1))
+                        }
+                        className={
+                          currentPage === totalPages
+                            ? "pointer-events-none opacity-50"
+                            : ""
+                        }
                       />
                     </PaginationItem>
                   </PaginationContent>
