@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { PromptDetailsDialog } from "./prompt-details-dialog";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -164,11 +165,15 @@ export function SearchForPromptsDialog({ trigger }: SearchPromptDialogProps) {
                           {new Date(prompt.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <Button variant="outline" asChild>
-                        <a href={`/dashboard/prompts/${prompt.id}`}>
-                          View Details
-                        </a>
-                      </Button>
+                      <PromptDetailsDialog
+                        trigger={
+                          <Button variant="outline">View Details</Button>
+                        }
+                        prompt={prompt}
+                        onPromptUpdated={() => {
+                          handleSearch(debouncedSearchQuery);
+                        }}
+                      />
                     </div>
                   ))}
                 </div>
@@ -176,8 +181,8 @@ export function SearchForPromptsDialog({ trigger }: SearchPromptDialogProps) {
                 <div className="flex-1 flex flex-col gap-2 justify-center items-center min-h-[60vh] text-muted-foreground">
                   <Search className="size-8" />
                   <p>
-                    No {searchMode === "personal" ? "personal" : "public"} prompts
-                    found matching your search
+                    No {searchMode === "personal" ? "personal" : "public"}{" "}
+                    prompts found matching your search
                   </p>
                 </div>
               ) : (
