@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings2 } from "lucide-react";
 
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -30,9 +30,12 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
-interface CreatePromptDialogProps {
+import { Tables } from "@/types/supabase";
+
+interface EditPromptDialogProps {
+  prompt: Tables<"user_prompts">;
   trigger?: React.ReactNode;
-  onPromptCreated?: () => void;
+  onPromptUpdated?: () => void;
 }
 
 type LLMModel = "gpt-4o" | "gpt-4o-mini";
@@ -203,25 +206,22 @@ function ModelConfigDialog({
   );
 }
 
-export function CreatePromptDialog({
-  trigger,
-  onPromptCreated,
-}: CreatePromptDialogProps) {
+export function EditPromptDialog({ prompt, trigger, onPromptUpdated }: EditPromptDialogProps) {
   const { user } = useAuth();
   const supabase = createClient();
 
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<PromptFormData>({
-    description: "",
-    content: "",
-    llm_model: "gpt-4o",
-    temperature: 0.7,
-    max_tokens: 2000,
-    top_p: 1,
-    frequency_penalty: 0,
-    presence_penalty: 0,
-    public: false,
+    description: prompt.description || "",
+    content: prompt.content || "",
+    llm_model: prompt.llm_model,
+    temperature: prompt.temperature,
+    max_tokens: prompt.max_tokens,
+    top_p: prompt.top_p,
+    frequency_penalty: prompt.frequency_penalty,
+    presence_penalty: prompt.presence_penalty,
+    public: prompt.public || false,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -233,23 +233,21 @@ export function CreatePromptDialog({
     try {
       const { error: promptError } = await supabase
         .from("user_prompts")
-        .insert([
-          {
-            ...formData,
-            user_id: user.id,
-            updated_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-          },
-        ]);
+        .update({
+          ...formData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", prompt.id)
+        .eq("user_id", user.id);
 
       if (promptError) throw promptError;
 
-      toast.success("Prompt created successfully");
+      toast.success("Prompt updated successfully");
       setOpen(false);
-      onPromptCreated?.();
+      onPromptUpdated?.();
     } catch (error) {
-      console.error("Failed to create prompt:", error);
-      toast.error("Failed to create prompt");
+      console.error("Failed to update prompt:", error);
+      toast.error("Failed to update prompt");
     } finally {
       setIsLoading(false);
     }
@@ -258,14 +256,14 @@ export function CreatePromptDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger || <Button>Create New Prompt</Button>}
+        {trigger || <Button>Edit Prompt</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create New Prompt</DialogTitle>
+            <DialogTitle>Edit Prompt</DialogTitle>
             <DialogDescription>
-              Configure your new prompt settings below.
+              Modify your prompt settings below.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -275,10 +273,7 @@ export function CreatePromptDialog({
                 id="description"
                 value={formData.description}
                 onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
+                  setFormData((prev) => ({ ...prev, description: e.target.value }))
                 }
                 placeholder="Enter a description for your prompt"
                 required
@@ -308,19 +303,16 @@ export function CreatePromptDialog({
                   }
                 />
               </div>
-              <ModelConfigDialog
-                formData={formData}
-                setFormData={setFormData}
-              />
+              <ModelConfigDialog formData={formData} setFormData={setFormData} />
             </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Prompt"}
+              {isLoading ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-}
+} 
