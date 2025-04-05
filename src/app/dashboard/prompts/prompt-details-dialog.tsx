@@ -23,7 +23,11 @@ interface PromptDetailsDialogProps {
   prompt: Database["public"]["Tables"]["user_prompts"]["Row"];
 }
 
-function ModelConfigView({ prompt }: { prompt: Database["public"]["Tables"]["user_prompts"]["Row"] }) {
+function ModelConfigView({
+  prompt,
+}: {
+  prompt: Database["public"]["Tables"]["user_prompts"]["Row"];
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -127,7 +131,9 @@ export function PromptDetailsDialog({
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label>Description</Label>
-            <div className="text-sm">{prompt.description || "No description"}</div>
+            <div className="text-sm">
+              {prompt.description || "No description"}
+            </div>
           </div>
           <div className="grid gap-2">
             <Label>Content</Label>
@@ -154,4 +160,4 @@ export function PromptDetailsDialog({
       </DialogContent>
     </Dialog>
   );
-} 
+}

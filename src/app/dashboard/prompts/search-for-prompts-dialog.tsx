@@ -170,9 +170,6 @@ export function SearchForPromptsDialog({ trigger }: SearchPromptDialogProps) {
                           <Button variant="outline">View Details</Button>
                         }
                         prompt={prompt}
-                        onPromptUpdated={() => {
-                          handleSearch(debouncedSearchQuery);
-                        }}
                       />
                     </div>
                   ))}
