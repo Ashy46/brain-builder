@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+
 import { Settings2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { useAuth } from "@/lib/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
+
 import { Database, Tables } from "@/types/supabase";
 
 import { Button } from "@/components/ui/button";
@@ -29,7 +32,6 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
 
 interface EditPromptDialogProps {
   prompt: Tables<"user_prompts">;
