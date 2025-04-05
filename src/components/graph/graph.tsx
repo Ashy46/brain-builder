@@ -10,69 +10,9 @@ import { GraphContent } from "./graph-content";
 import { GraphProps, GraphRef } from "./types";
 import { createClient } from "@/lib/supabase/client";
 
-// Debug counter to track re-renders
-let renderCount = 0;
-
 export const Graph = forwardRef<GraphRef, GraphProps>(
   ({ graphId, className, onUpdateStart, onUpdateEnd }, ref) => {
-    // Debug - count renders
-    renderCount++;
-    
-    // Log render with count
-    console.log(`🔄 Graph component rendering (#${renderCount}), graphId: ${graphId}`);
-    
-    const [error, setError] = useState<Error | null>(null);
 
-    // Add error handler
-    useEffect(() => {
-      // Notify about initial render to help debugging
-      toast.info(`Graph initialized (render #${renderCount})`);
-      
-      const handleError = (event: ErrorEvent) => {
-        console.error("Global error caught:", event.error);
-        setError(event.error);
-        event.preventDefault(); // Prevent default error handling (reloading)
-      };
-
-      // Listen for custom graph:error events
-      const handleGraphError = (event: CustomEvent) => {
-        if (event.detail) {
-          console.error("Graph operation error:", event.detail);
-          toast.error(event.detail.message || "Graph operation failed", {
-            description: JSON.stringify(event.detail.context || {}),
-            duration: 5000
-          });
-        }
-      };
-
-      window.addEventListener("error", handleError);
-      window.addEventListener("graph:error", handleGraphError as EventListener);
-      
-      return () => {
-        window.removeEventListener("error", handleError);
-        window.removeEventListener("graph:error", handleGraphError as EventListener);
-      };
-    }, []);
-
-    // If there was an error, show error UI
-    if (error) {
-      return (
-        <div className="h-screen w-screen flex flex-col items-center justify-center">
-          <h2 className="text-xl font-semibold text-red-600 mb-4">
-            There was an error loading the graph
-          </h2>
-          <div className="bg-red-50 border border-red-200 p-4 rounded-md max-w-md">
-            <p className="text-sm text-red-800 mb-2">Error: {error.message}</p>
-            <button
-              className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-md text-sm"
-              onClick={() => window.location.reload()}
-            >
-              Reload Page
-            </button>
-          </div>
-        </div>
-      );
-    }
 
     try {
       const supabase = createClient();

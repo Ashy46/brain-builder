@@ -22,7 +22,6 @@ export const useGraphData = (graphId: string) => {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isAddNodeDialogOpen, setIsAddNodeDialogOpen] = useState(false);
   
-  // Use a stable ID for the analysis node to prevent re-renders
   const analysisNodeId = useMemo(() => `analysis-${graphId}`, [graphId]);
   const isDataFetchedRef = useRef(false);
 
