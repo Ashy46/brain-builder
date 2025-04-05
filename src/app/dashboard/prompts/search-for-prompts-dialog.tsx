@@ -10,6 +10,8 @@ import { Tables } from "@/types/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +19,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -91,8 +92,8 @@ export function SearchForPromptsDialog({ trigger }: SearchPromptDialogProps) {
     handleSearch(debouncedSearchQuery);
   }, [debouncedSearchQuery, searchMode]);
 
-  const handleModeChange = (value: string) => {
-    setSearchMode(value as "personal" | "public");
+  const handleModeChange = (checked: boolean) => {
+    setSearchMode(checked ? "personal" : "public");
     setSearchResults([]);
   };
 
@@ -105,28 +106,28 @@ export function SearchForPromptsDialog({ trigger }: SearchPromptDialogProps) {
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex flex-col gap-4">
-            <Tabs
-              value={searchMode}
-              onValueChange={handleModeChange}
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="personal">My Prompts</TabsTrigger>
-                <TabsTrigger value="public">Public Prompts</TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            <div className="flex gap-2">
-              <Input
-                placeholder={`Search ${
-                  searchMode === "personal" ? "your" : "public"
-                } prompts...`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 h-10"
-                autoFocus
+          <div className="flex items-center gap-4">
+            <Input
+              placeholder={`Search ${
+                searchMode === "personal" ? "your" : "public"
+              } prompts...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 h-10"
+              autoFocus
+            />
+            <div className="flex items-center gap-2">
+              <Switch
+                id="search-mode"
+                checked={searchMode === "personal"}
+                onCheckedChange={handleModeChange}
               />
+              <label
+                htmlFor="search-mode"
+                className="text-sm text-muted-foreground"
+              >
+                My Prompts
+              </label>
             </div>
           </div>
 
@@ -136,47 +137,49 @@ export function SearchForPromptsDialog({ trigger }: SearchPromptDialogProps) {
             </div>
           ) : (
             searchResults.length > 0 && (
-              <div className="max-h-[60vh] overflow-y-auto">
-                {searchResults.length > 0 ? (
-                  searchResults.map((prompt) => (
-                    <div
-                      key={prompt.id}
-                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                    >
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-lg">
-                            {prompt.description || "Untitled Prompt"}
+              <ScrollArea className="h-[60vh]">
+                <div className="space-y-3">
+                  {searchResults.length > 0 ? (
+                    searchResults.map((prompt) => (
+                      <div
+                        key={prompt.id}
+                        className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-lg">
+                              {prompt.description || "Untitled Prompt"}
+                            </span>
+                            <Badge
+                              variant={prompt.public ? "default" : "secondary"}
+                            >
+                              {prompt.public ? "Public" : "Private"}
+                            </Badge>
+                            {searchMode === "public" &&
+                              prompt.user_id === user?.id && (
+                                <Badge variant="outline">Created by you</Badge>
+                              )}
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            Created{" "}
+                            {new Date(prompt.created_at).toLocaleDateString()}
                           </span>
-                          <Badge
-                            variant={prompt.public ? "default" : "secondary"}
-                          >
-                            {prompt.public ? "Public" : "Private"}
-                          </Badge>
-                          {searchMode === "public" &&
-                            prompt.user_id === user?.id && (
-                              <Badge variant="outline">Created by you</Badge>
-                            )}
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          Created{" "}
-                          {new Date(prompt.created_at).toLocaleDateString()}
-                        </span>
+                        <Button variant="outline" asChild>
+                          <a href={`/dashboard/prompts/${prompt.id}`}>
+                            View Details
+                          </a>
+                        </Button>
                       </div>
-                      <Button variant="outline" asChild>
-                        <a href={`/dashboard/prompts/${prompt.id}`}>
-                          View Details
-                        </a>
-                      </Button>
+                    ))
+                  ) : searchQuery.trim() !== "" && !isLoading ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      No {searchMode === "personal" ? "personal" : "public"}{" "}
+                      prompts found matching your search
                     </div>
-                  ))
-                ) : searchQuery.trim() !== "" && !isLoading ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    No {searchMode === "personal" ? "personal" : "public"}{" "}
-                    prompts found matching your search
-                  </div>
-                ) : null}
-              </div>
+                  ) : null}
+                </div>
+              </ScrollArea>
             )
           )}
         </div>
