@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
-import { BrainCircuit, PlusCircle, Loader2, Trash2 } from "lucide-react";
+import {
+  BrainCircuit,
+  PlusCircle,
+  Loader2,
+  Trash2,
+  Search,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -102,15 +110,23 @@ export default function PromptsPage() {
     <>
       <div className="flex justify-between items-center mb-5">
         <h1 className="text-4xl font-bold">My Prompts</h1>
-        <CreatePromptDialog
-          trigger={
-            <Button className="flex items-center gap-2">
-              <PlusCircle className="w-4 h-4" />
-              New Prompt
-            </Button>
-          }
-          onPromptCreated={fetchPrompts}
-        />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="flex items-center gap-2" asChild>
+            <Link href="/dashboard/prompts/search">
+              <Search className="w-4 h-4" />
+              Search Prompts
+            </Link>
+          </Button>
+          <CreatePromptDialog
+            trigger={
+              <Button className="flex items-center gap-2">
+                <PlusCircle className="w-4 h-4" />
+                New Prompt
+              </Button>
+            }
+            onPromptCreated={fetchPrompts}
+          />
+        </div>
       </div>
 
       <Card className="animate-in fade-in zoom-in-95">
@@ -127,9 +143,16 @@ export default function PromptsPage() {
                     className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex flex-col">
-                      <span className="font-medium text-lg">
-                        {prompt.description || "Untitled Prompt"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-lg">
+                          {prompt.description || "Untitled Prompt"}
+                        </span>
+                        <Badge
+                          variant={prompt.public ? "default" : "secondary"}
+                        >
+                          {prompt.public ? "Public" : "Private"}
+                        </Badge>
+                      </div>
                       <span className="text-sm text-muted-foreground">
                         Created{" "}
                         {new Date(prompt.created_at).toLocaleDateString()}
