@@ -29,24 +29,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { CreateGraphDialog } from "./create-graph-dialog";
+
+import { CreatePromptDialog } from "./create-prompt-dialog";
 
 const PAGE_SIZE = 10;
 
-export default function GraphsPage() {
+export default function PromptsPage() {
   const { user } = useAuth();
 
-  const [graphs, setGraphs] = useState<Tables<"graphs">[]>([]);
+  const [prompts, setPrompts] = useState<Tables<"user_prompts">[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [graphToDelete, setGraphToDelete] = useState<Tables<"graphs"> | null>(
-    null
-  );
+  const [promptToDelete, setPromptToDelete] =
+    useState<Tables<"user_prompts"> | null>(null);
 
   useEffect(() => {
-    async function fetchGraphs() {
+    async function fetchPrompts() {
       if (!user) return;
 
       setIsLoading(true);
@@ -57,43 +57,43 @@ export default function GraphsPage() {
       const supabase = createClient();
 
       const { data, error, count } = await supabase
-        .from("graphs")
+        .from("user_prompts")
         .select("*", { count: "exact" })
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .range(start, end);
 
       if (error) {
-        console.error("Error fetching graphs:", error);
+        console.error("Error fetching prompts:", error);
         return;
       }
 
-      setGraphs(data || []);
+      setPrompts(data || []);
       if (count) {
         setTotalPages(Math.ceil(count / PAGE_SIZE));
       }
       setIsLoading(false);
     }
 
-    fetchGraphs();
+    fetchPrompts();
   }, [user, currentPage]);
 
   const handleDelete = async () => {
-    if (!graphToDelete) return;
+    if (!promptToDelete) return;
 
     const supabase = createClient();
 
     const { error } = await supabase
-      .from("graphs")
+      .from("user_prompts")
       .delete()
-      .eq("id", graphToDelete.id)
+      .eq("id", promptToDelete.id)
       .eq("user_id", user?.id);
 
-    if (error) console.error("Error deleting graph:", error);
+    if (error) console.error("Error deleting prompt:", error);
 
-    setGraphs((prev) => prev.filter((g) => g.id !== graphToDelete.id));
+    setPrompts((prev) => prev.filter((p) => p.id !== promptToDelete.id));
     setDeleteDialogOpen(false);
-    setGraphToDelete(null);
+    setPromptToDelete(null);
   };
 
   return isLoading ? (
@@ -101,44 +101,46 @@ export default function GraphsPage() {
   ) : (
     <>
       <div className="flex justify-between items-center mb-5">
-        <h1 className="text-4xl font-bold">My Graphs</h1>
-        <CreateGraphDialog
+        <h1 className="text-4xl font-bold">My Prompts</h1>
+        <CreatePromptDialog
           trigger={
             <Button className="flex items-center gap-2">
               <PlusCircle className="w-4 h-4" />
-              New Graph
+              New Prompt
             </Button>
           }
         />
       </div>
 
       <Card className="animate-in fade-in zoom-in-95">
-        {graphs.length > 0 ? (
+        {prompts.length > 0 ? (
           <>
             <CardHeader>
-              <CardTitle>All Graphs</CardTitle>
+              <CardTitle>All Prompts</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {graphs.map((graph) => (
+                {prompts.map((prompt) => (
                   <div
-                    key={graph.id}
+                    key={prompt.id}
                     className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex flex-col">
-                      <span className="font-medium text-lg">{graph.name}</span>
+                      <span className="font-medium text-lg">
+                        {prompt.description || "Untitled Prompt"}
+                      </span>
                       <span className="text-sm text-muted-foreground">
                         Created{" "}
-                        {new Date(graph.created_at).toLocaleDateString()}
+                        {new Date(prompt.created_at).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Link href={`/dashboard/graphs/${graph.id}`}>
-                        <Button variant="outline">View Graph</Button>
+                      <Link href={`/dashboard/prompts/${prompt.id}`}>
+                        <Button variant="outline">View Prompt</Button>
                       </Link>
                       <Dialog
                         open={
-                          deleteDialogOpen && graphToDelete?.id === graph.id
+                          deleteDialogOpen && promptToDelete?.id === prompt.id
                         }
                         onOpenChange={setDeleteDialogOpen}
                       >
@@ -147,17 +149,17 @@ export default function GraphsPage() {
                             variant="outline"
                             size="icon"
                             className="text-destructive hover:text-destructive"
-                            onClick={() => setGraphToDelete(graph)}
+                            onClick={() => setPromptToDelete(prompt)}
                           >
                             <Trash2 className="size-4" />
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>Delete Graph</DialogTitle>
+                            <DialogTitle>Delete Prompt</DialogTitle>
                             <DialogDescription>
-                              Are you sure you want to delete "{graph.name}"?
-                              This action cannot be undone.
+                              Are you sure you want to delete this prompt? This
+                              action cannot be undone.
                             </DialogDescription>
                           </DialogHeader>
                           <DialogFooter>
@@ -165,7 +167,7 @@ export default function GraphsPage() {
                               variant="outline"
                               onClick={() => {
                                 setDeleteDialogOpen(false);
-                                setGraphToDelete(null);
+                                setPromptToDelete(null);
                               }}
                             >
                               Cancel
@@ -231,13 +233,13 @@ export default function GraphsPage() {
           <CardContent className="min-h-[300px] flex flex-col items-center justify-center gap-5">
             <BrainCircuit className="w-10 h-10 text-muted-foreground" />
             <p className="text-muted-foreground">
-              No graphs created yet. Create your first graph to get started!
+              No prompts created yet. Create your first prompt to get started!
             </p>
-            <CreateGraphDialog
+            <CreatePromptDialog
               trigger={
                 <Button className="flex items-center gap-2">
                   <PlusCircle className="w-4 h-4" />
-                  Create New Graph
+                  Create New Prompt
                 </Button>
               }
             />

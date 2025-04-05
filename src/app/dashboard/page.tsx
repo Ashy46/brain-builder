@@ -14,7 +14,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { CreateGraphDialog } from "../../components/graph/dialogs/create-graph-dialog";
+import { CreateGraphDialog } from "./graphs/create-graph-dialog";
 
 export default function DashboardPage() {
   const { user } = useAuth();

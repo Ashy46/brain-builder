@@ -40,7 +40,6 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
     setIsLoading(true);
 
     try {
-      // Create the graph without any child nodes initially
       const { data: graphData, error: graphError } = await supabase
         .from("graphs")
         .insert([
@@ -55,10 +54,6 @@ export function CreateGraphDialog({ trigger }: CreateGraphDialogProps) {
         .single();
 
       if (graphError) throw graphError;
-
-      // In our new architecture, we don't create an analysis node
-      // Analysis node is virtual and created on the client side
-      // We'll let the graph component handle this when it loads
 
       setOpen(false);
       router.push(`/dashboard/graphs/${graphData.id}`);
