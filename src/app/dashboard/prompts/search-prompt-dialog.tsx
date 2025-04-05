@@ -82,6 +82,7 @@ export function SearchPromptDialog({ trigger }: SearchPromptDialogProps) {
         <DialogHeader>
           <DialogTitle>Search Prompts</DialogTitle>
         </DialogHeader>
+
         <div className="space-y-6 pt-4">
           <div className="flex gap-2">
             <Input
