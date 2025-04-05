@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Database } from "@/types/supabase";
+import { SupabaseAuthClient } from "@supabase/supabase-js/dist/module/lib/SupabaseAuthClient";
 
 interface Message {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
@@ -30,9 +31,6 @@ export function TestChat({ id, isOpen }: TestChatProps) {
   const [currentGraphNodes, setCurrentGraphNodes] = useState<
     Database["public"]["Tables"]["graph_nodes"]["Row"][]
   >([]);
-  const [graphEdges, setGraphEdges] = useState<
-    Database["public"]["Tables"]["graph_node_edges"]["Row"][]
-  >([]);
   const [states, setStates] = useState<
     Database["public"]["Tables"]["graph_states"]["Row"][]
   >([]);
@@ -40,6 +38,11 @@ export function TestChat({ id, isOpen }: TestChatProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [traversalLog, setTraversalLog] = useState<string[]>([]);
+
+  useEffect(() => {
+    console.log(currentValues);
+  }, [currentValues]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -63,15 +66,6 @@ export function TestChat({ id, isOpen }: TestChatProps) {
       setCurrentGraphNodes(data || []);
     };
 
-    const fetchGraphEdges = async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("graph_node_edges")
-        .select("*")
-        .eq("graph_id", id);
-      setGraphEdges(data || []);
-    };
-
     const fetchStates = async () => {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -91,7 +85,6 @@ export function TestChat({ id, isOpen }: TestChatProps) {
     };
 
     fetchGraphNodes();
-    fetchGraphEdges();
     fetchStates();
     fetchJwt();
   }, []);
@@ -116,114 +109,127 @@ export function TestChat({ id, isOpen }: TestChatProps) {
     return currentGraphNodes.find((node) => node.id === id);
   };
 
+  const fetchNextNode = async (currentNode: Database["public"]["Tables"]["graph_nodes"]["Row"], conditional: boolean) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("graph_node_edges")
+      .select("*")
+      .eq("source_node_id", currentNode.id);
+
+    if (error) {
+      console.error("Error fetching next node:", error);
+      return null;
+    }
+
+    if (typeof currentNode.data === 'object' && currentNode.data !== null && 'type' in currentNode.data) {
+      if (currentNode.data.type === "conditional") {
+        const nodeData = currentNode.data as { trueChildId: string; falseChildId: string };
+        if (conditional) {
+          return findNodeById(nodeData.trueChildId);
+        } else {
+          return findNodeById(nodeData.falseChildId);
+        }
+      }
+    }
+
+    return data[0]?.target_node_id;
+  }
+
   const traverseGraph = async () => {
     const analysisNode = findAnalysisNode();
-    if (!analysisNode) return;
+    if (!analysisNode) {
+      console.error("No analysis node found in the graph.");
+      return;
+    }
 
     let currentNode = analysisNode;
-    const edges = graphEdges.filter((edge) => edge.source_node_id === currentNode.id);
-    const nextNode = edges[0]?.target_node_id;
-    const nextNodeData = findNodeById(nextNode);
-    if (!nextNodeData) return;
-    currentNode = nextNodeData;
+    console.log("Starting graph traversal...");
+    console.log("Current values:", currentValues);
 
     while (currentNode) {
-      const currentNodeData = currentNode.data as {
-        type: string;
-      };
+      console.log("Current node:", currentNode);
+      if (typeof currentNode.data === 'object' && currentNode.data !== null && 'type' in currentNode.data) {
+        if (currentNode.data.type == "conditional") {
+          const nodeData = currentNode.data as {
+            trueChildId: string;
+            falseChildId: string;
+            conditions: {
+              value: string;
+              stateId: string;
+              operator: string;
+            }[];
+          };
 
-      if (currentNodeData.type === "prompt") {
-        const prompt = (currentNode.data as { prompt?: string })?.prompt;
-        if (!prompt || !jwt) return;
+          let conditionResult = true;
 
-        try {
-          const response = await fetch("/api/ai/stream", {
+          // Evaluate each condition
+          for (const condition of nodeData.conditions) {
+            const currentValue = currentValues[condition.stateId];
+            const conditionValue = condition.value;
+
+            switch (condition.operator) {
+              case "greaterThan":
+                conditionResult = conditionResult && parseFloat(currentValue) > parseFloat(conditionValue);
+                break;
+              case "lessThan":
+                conditionResult = conditionResult && parseFloat(currentValue) < parseFloat(conditionValue);
+                break;
+              case "equals":
+                conditionResult = conditionResult && currentValue === conditionValue;
+                break;
+              case "notEquals":
+                conditionResult = conditionResult && currentValue !== conditionValue;
+                break;
+              case "greaterThanOrEquals":
+                conditionResult = conditionResult && parseFloat(currentValue) >= parseFloat(conditionValue);
+                break;
+              case "lessThanOrEquals":
+                conditionResult = conditionResult && parseFloat(currentValue) <= parseFloat(conditionValue);
+                break;
+              default:
+                console.warn(`Unknown operator: ${condition.operator}`);
+                conditionResult = false;
+            }
+          }
+
+          // Get the next node based on condition result
+          const nextNodeId = conditionResult ? nodeData.trueChildId : nodeData.falseChildId;
+          const nextNode = findNodeById(nextNodeId);
+          if (!nextNode) {
+            console.error(`Next node not found for ID: ${nextNodeId}`);
+            break;
+          }
+          currentNode = nextNode;
+          continue;
+        }
+        else if (currentNode.data.type == "prompt") {
+          const nodeData = currentNode.data as {
+            prompt: string;
+          };
+
+          const response = await fetch("/api/ai", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${jwt}`,
             },
             body: JSON.stringify({
-              prompt,
-              messages: messages.map((msg) => ({
-                role: msg.role,
-                content: msg.content,
-              })),
+              prompt: nodeData.prompt,
+              messages: messages,
             }),
           });
 
-          if (!response.ok) throw new Error("Failed to get response");
+          const data = await response.json();
 
-          const reader = response.body?.getReader();
-          if (!reader) throw new Error("No reader available");
-
-          let accumulatedContent = "";
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const text = new TextDecoder().decode(value);
-            accumulatedContent += text;
-            setStreamingContent(accumulatedContent);
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to analyze message");
           }
 
-          const assistantMessage: Message = { role: "assistant", content: accumulatedContent };
-          setMessages(prev => [...prev, assistantMessage]);
-          setStreamingContent("");
-        } catch (error) {
-          console.error("Error:", error);
-          setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I encountered an error." }]);
-          setStreamingContent("");
+          if (typeof data.score !== "number") {
+            throw new Error("Invalid score received from server");
+          }
+          
         }
-        console.log('streamingContent', streamingContent);
-        return;
-      }
-      else if (currentNodeData.type == "conditional") {
-        const nodeData = currentNode.data as {
-          type: string;
-          conditions: Array<{
-            value: string;
-            stateId: string;
-            operator: string;
-          }>;
-          trueChildId: string;
-          falseChildId: string;
-        };
-        console.log("Conditional node");
-
-        // Evaluate each condition
-        const conditionResults = nodeData.conditions.map(condition => {
-          const stateValue = currentValues[condition.stateId];
-          const numStateValue = parseFloat(stateValue);
-          const numConditionValue = parseFloat(condition.value);
-
-          if (isNaN(numStateValue) || isNaN(numConditionValue)) {
-            return false;
-          }
-
-          switch (condition.operator) {
-            case 'greaterThan':
-              return numStateValue > numConditionValue;
-            case 'lessThan':
-              return numStateValue < numConditionValue;
-            case 'equals':
-              return numStateValue === numConditionValue;
-            default:
-              return false;
-          }
-        });
-
-        // If all conditions are true (AND operator), follow true path
-        const conditionMet = conditionResults.every(result => result);
-
-        // Set next node based on condition result
-        const nextNodeId = conditionMet ? nodeData.trueChildId : nodeData.falseChildId;
-        const nextNode = findNodeById(nextNodeId);
-        if (!nextNode) return;
-        currentNode = nextNode;
-      }
-      else if (currentNodeData.type == "analysis") {
-        console.log("Analysis node");
-        return;
       }
     }
   };
@@ -267,6 +273,9 @@ export function TestChat({ id, isOpen }: TestChatProps) {
         ...prev,
         [negativityState.id]: data.score.toString()
       }));
+
+      // Add a small delay to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
       console.error("Error analyzing message:", error);
     } finally {
@@ -324,6 +333,10 @@ export function TestChat({ id, isOpen }: TestChatProps) {
       setStreamingContent("");
 
       await analyzeMessage(newMessages);
+
+      // Traverse the graph after processing the message
+      console.log("Traversing graph after message processing...");
+      await traverseGraph();
     } catch (error) {
       console.error("Error:", error);
       setMessages((prev) => [
@@ -361,9 +374,10 @@ export function TestChat({ id, isOpen }: TestChatProps) {
                   key={index}
                   className={`p-3 rounded-lg ${message.role === "user"
                     ? "bg-primary text-primary-foreground ml-auto"
-                    : "bg-muted text-muted-foreground"
-                    } max-w-[80%] ${message.role === "user" ? "ml-auto" : "mr-auto"
-                    }`}
+                    : message.role === "system"
+                      ? "bg-yellow-100 text-yellow-900 border border-yellow-300 mr-auto"
+                      : "bg-muted text-muted-foreground mr-auto"
+                    } max-w-[80%] ${message.role === "user" ? "ml-auto" : "mr-auto"}`}
                 >
                   {message.content}
                 </div>
