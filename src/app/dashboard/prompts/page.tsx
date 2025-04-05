@@ -39,7 +39,7 @@ import {
 
 import { CreatePromptDialog } from "./create-prompt-dialog";
 import { EditPromptDialog } from "./edit-prompt-dialog";
-import { SearchPromptDialog } from "./search-prompt-dialog";
+import { SearchForPromptsDialog } from "./search-for-prompts-dialog";
 
 const PAGE_SIZE = 10;
 
@@ -112,11 +112,11 @@ export default function PromptsPage() {
       <div className="flex justify-between items-center mb-5">
         <h1 className="text-4xl font-bold">My Prompts</h1>
         <div className="flex items-center gap-2">
-          <SearchPromptDialog
+          <SearchForPromptsDialog
             trigger={
               <Button variant="outline" className="flex items-center gap-2">
                 <Search className="w-4 h-4" />
-                Search Prompts
+                Search for Prompts
               </Button>
             }
           />

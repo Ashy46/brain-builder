@@ -37,7 +37,7 @@ interface SearchPromptDialogProps {
   trigger: React.ReactNode;
 }
 
-export function SearchPromptDialog({ trigger }: SearchPromptDialogProps) {
+export function SearchForPromptsDialog({ trigger }: SearchPromptDialogProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Tables<"user_prompts">[]>(
@@ -80,7 +80,7 @@ export function SearchPromptDialog({ trigger }: SearchPromptDialogProps) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Search Prompts</DialogTitle>
+          <DialogTitle>Search for Prompts</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 pt-4">
