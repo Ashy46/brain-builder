@@ -41,6 +41,13 @@ export function DeveloperSettings() {
       icon={<TerminalIcon className="h-5 w-5 text-blue-500" />}
       dialogContent={
         <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            This is your current JWT token. It is used to authenticate your
+            requests to the API. Do not share it with anyone. This is primarily
+            used for testing. If you do not know what this is, you
+            can ignore it.
+          </p>
+
           <div>
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">JWT Token</label>

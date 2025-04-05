@@ -60,6 +60,12 @@ export function OpenAISettings() {
       icon={<SparklesIcon className="h-5 w-5 text-purple-500" />}
       dialogContent={
         <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            If you already have an API key set, it will not be visible here.
+            Setting it will override the existing key. We store your API key
+            securely, encrypted at rest, and do not share it with anyone.
+          </p>
+
           <div>
             <label className="text-sm font-medium">API Key</label>
             <Input
@@ -70,7 +76,9 @@ export function OpenAISettings() {
               className="mt-1"
             />
           </div>
-          <Button onClick={handleSubmit}>Save API Key</Button>
+          <Button onClick={handleSubmit} className="w-full">
+            Save API Key
+          </Button>
         </div>
       }
     />

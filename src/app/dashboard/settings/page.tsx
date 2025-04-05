@@ -15,12 +15,11 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 import { DeveloperSettings } from "./developer-settings";
 import { OpenAISettings } from "./openai-settings";
+import { ThemeSettings } from "./theme-settings";
 
 export function SettingsItem({
   title,
@@ -66,10 +65,11 @@ export default function SettingsPage() {
   return (
     <>
       <h1 className="text-4xl font-bold">Settings</h1>
-      
+
       <div className="grid grid-cols-3 gap-4">
         <OpenAISettings />
         <DeveloperSettings />
+        <ThemeSettings />
       </div>
     </>
   );
