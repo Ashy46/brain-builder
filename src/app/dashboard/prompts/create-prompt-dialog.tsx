@@ -5,6 +5,7 @@ import { Settings2 } from "lucide-react";
 
 import { useAuth } from "@/lib/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
+import { Database } from "@/types/supabase";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -35,7 +36,7 @@ interface CreatePromptDialogProps {
   onPromptCreated?: () => void;
 }
 
-type LLMModel = "gpt-4o" | "gpt-4o-mini";
+type LLMModel = Database["public"]["Enums"]["llm_model"];
 
 interface PromptFormData {
   description: string;

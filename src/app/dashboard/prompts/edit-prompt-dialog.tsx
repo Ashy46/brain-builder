@@ -5,6 +5,7 @@ import { Settings2 } from "lucide-react";
 
 import { useAuth } from "@/lib/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
+import { Database, Tables } from "@/types/supabase";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,15 +31,13 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
-import { Tables } from "@/types/supabase";
-
 interface EditPromptDialogProps {
   prompt: Tables<"user_prompts">;
   trigger?: React.ReactNode;
   onPromptUpdated?: () => void;
 }
 
-type LLMModel = "gpt-4o" | "gpt-4o-mini";
+type LLMModel = Database["public"]["Enums"]["llm_model"];
 
 interface PromptFormData {
   description: string;
@@ -206,7 +205,11 @@ function ModelConfigDialog({
   );
 }
 
-export function EditPromptDialog({ prompt, trigger, onPromptUpdated }: EditPromptDialogProps) {
+export function EditPromptDialog({
+  prompt,
+  trigger,
+  onPromptUpdated,
+}: EditPromptDialogProps) {
   const { user } = useAuth();
   const supabase = createClient();
 
@@ -273,7 +276,10 @@ export function EditPromptDialog({ prompt, trigger, onPromptUpdated }: EditPromp
                 id="description"
                 value={formData.description}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, description: e.target.value }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
                 }
                 placeholder="Enter a description for your prompt"
                 required
@@ -303,7 +309,10 @@ export function EditPromptDialog({ prompt, trigger, onPromptUpdated }: EditPromp
                   }
                 />
               </div>
-              <ModelConfigDialog formData={formData} setFormData={setFormData} />
+              <ModelConfigDialog
+                formData={formData}
+                setFormData={setFormData}
+              />
             </div>
           </div>
           <DialogFooter>
@@ -315,4 +324,4 @@ export function EditPromptDialog({ prompt, trigger, onPromptUpdated }: EditPromp
       </DialogContent>
     </Dialog>
   );
-} 
+}
