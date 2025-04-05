@@ -52,7 +52,6 @@ export function SearchForPromptsDialog({ trigger }: SearchPromptDialogProps) {
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Reset search when closing dialog
   useEffect(() => {
     if (!open) {
       setSearchQuery("");
@@ -125,49 +124,61 @@ export function SearchForPromptsDialog({ trigger }: SearchPromptDialogProps) {
                 } prompts...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
+                className="flex-1 h-10"
                 autoFocus
               />
-              {isLoading && <Loader2 className="size-4 animate-spin mt-2" />}
             </div>
           </div>
 
-          <div className="max-h-[60vh] overflow-y-auto">
-            {searchResults.length > 0 ? (
-              searchResults.map((prompt) => (
-                <div
-                  key={prompt.id}
-                  className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-lg">
-                        {prompt.description || "Untitled Prompt"}
-                      </span>
-                      <Badge variant={prompt.public ? "default" : "secondary"}>
-                        {prompt.public ? "Public" : "Private"}
-                      </Badge>
-                      {searchMode === "public" &&
-                        prompt.user_id === user?.id && (
-                          <Badge variant="outline">Created by you</Badge>
-                        )}
+          {isLoading ? (
+            <div className="flex justify-center items-center">
+              <Loader2 className="size-8 animate-spin mt-2" />
+            </div>
+          ) : (
+            searchResults.length > 0 && (
+              <div className="max-h-[60vh] overflow-y-auto">
+                {searchResults.length > 0 ? (
+                  searchResults.map((prompt) => (
+                    <div
+                      key={prompt.id}
+                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-lg">
+                            {prompt.description || "Untitled Prompt"}
+                          </span>
+                          <Badge
+                            variant={prompt.public ? "default" : "secondary"}
+                          >
+                            {prompt.public ? "Public" : "Private"}
+                          </Badge>
+                          {searchMode === "public" &&
+                            prompt.user_id === user?.id && (
+                              <Badge variant="outline">Created by you</Badge>
+                            )}
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          Created{" "}
+                          {new Date(prompt.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <Button variant="outline" asChild>
+                        <a href={`/dashboard/prompts/${prompt.id}`}>
+                          View Details
+                        </a>
+                      </Button>
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      Created {new Date(prompt.created_at).toLocaleDateString()}
-                    </span>
+                  ))
+                ) : searchQuery.trim() !== "" && !isLoading ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    No {searchMode === "personal" ? "personal" : "public"}{" "}
+                    prompts found matching your search
                   </div>
-                  <Button variant="outline" asChild>
-                    <a href={`/dashboard/prompts/${prompt.id}`}>View Details</a>
-                  </Button>
-                </div>
-              ))
-            ) : searchQuery.trim() !== "" && !isLoading ? (
-              <div className="text-center text-muted-foreground py-8">
-                No {searchMode === "personal" ? "personal" : "public"} prompts
-                found matching your search
+                ) : null}
               </div>
-            ) : null}
-          </div>
+            )
+          )}
         </div>
       </DialogContent>
     </Dialog>
