@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { Search, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 
