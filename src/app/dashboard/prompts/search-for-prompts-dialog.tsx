@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -131,57 +131,63 @@ export function SearchForPromptsDialog({ trigger }: SearchPromptDialogProps) {
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="flex justify-center items-center">
-              <Loader2 className="size-8 animate-spin mt-2" />
-            </div>
-          ) : (
-            searchResults.length > 0 && (
-              <ScrollArea className="h-[60vh]">
-                <div className="space-y-3">
-                  {searchResults.length > 0 ? (
-                    searchResults.map((prompt) => (
-                      <div
-                        key={prompt.id}
-                        className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-lg">
-                              {prompt.description || "Untitled Prompt"}
-                            </span>
-                            <Badge
-                              variant={prompt.public ? "default" : "secondary"}
-                            >
-                              {prompt.public ? "Public" : "Private"}
-                            </Badge>
-                            {searchMode === "public" &&
-                              prompt.user_id === user?.id && (
-                                <Badge variant="outline">Created by you</Badge>
-                              )}
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            Created{" "}
-                            {new Date(prompt.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <Button variant="outline" asChild>
-                          <a href={`/dashboard/prompts/${prompt.id}`}>
-                            View Details
-                          </a>
-                        </Button>
-                      </div>
-                    ))
-                  ) : searchQuery.trim() !== "" && !isLoading ? (
-                    <div className="text-center text-muted-foreground py-8">
-                      No {searchMode === "personal" ? "personal" : "public"}{" "}
-                      prompts found matching your search
-                    </div>
-                  ) : null}
+          <ScrollArea className="h-[60vh] w-full">
+            <div className="flex flex-col h-full min-h-[60vh]">
+              {isLoading ? (
+                <div className="flex-1 flex justify-center items-center min-h-[60vh]">
+                  <Loader2 className="size-8 animate-spin text-muted-foreground" />
                 </div>
-              </ScrollArea>
-            )
-          )}
+              ) : searchResults.length > 0 ? (
+                <div className="space-y-3">
+                  {searchResults.map((prompt) => (
+                    <div
+                      key={prompt.id}
+                      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-lg">
+                            {prompt.description || "Untitled Prompt"}
+                          </span>
+                          <Badge
+                            variant={prompt.public ? "default" : "secondary"}
+                          >
+                            {prompt.public ? "Public" : "Private"}
+                          </Badge>
+                          {searchMode === "public" &&
+                            prompt.user_id === user?.id && (
+                              <Badge variant="outline">Created by you</Badge>
+                            )}
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          Created{" "}
+                          {new Date(prompt.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <Button variant="outline" asChild>
+                        <a href={`/dashboard/prompts/${prompt.id}`}>
+                          View Details
+                        </a>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : searchQuery.trim() !== "" ? (
+                <div className="flex-1 flex flex-col gap-2 justify-center items-center min-h-[60vh] text-muted-foreground">
+                  <Search className="size-8" />
+                  <p>
+                    No {searchMode === "personal" ? "personal" : "public"} prompts
+                    found matching your search
+                  </p>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col gap-2 justify-center items-center min-h-[60vh] text-muted-foreground">
+                  <Search className="size-8" />
+                  <p>Start typing to search prompts</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </div>
       </DialogContent>
     </Dialog>
