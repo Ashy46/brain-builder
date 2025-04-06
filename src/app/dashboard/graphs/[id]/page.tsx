@@ -15,7 +15,9 @@ import { Button } from "@/components/ui/button";
 import { ManageStatesDialog } from "@/components/graph/dialogs";
 
 import { GraphRef, Graph } from "./graph";
-
+import { NodeType } from "@/components/graph/nodes";
+import { createClient } from "@/lib/supabase/client";
+import { Tables } from "@/types/supabase";
 export default function GraphPage() {
   const router = useRouter();
   const { id } = useParams();
@@ -25,6 +27,58 @@ export default function GraphPage() {
   const [isTestChatOpen, setIsTestChatOpen] = useState(false);
 
   const graphRef = useRef<GraphRef>(null);
+
+  const onAddNode = async (type: string, label: string, config: any) => {
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from("graph_nodes")
+      .insert({
+        graph_id: id as string,
+        label: label,
+        pos_x: 0,
+        pos_y: 0,
+        node_type: type === "prompt" ? "PROMPT" : type === "conditional" ? "CONDITIONAL" : type.toUpperCase() as Tables<'graph_nodes'>['node_type'],
+      })
+      .select();
+
+    if (type === "conditional" && data && data.length > 0) {
+      const { data: conditionalData, error: conditionalError } = await supabase
+        .from("graph_conditional_nodes")
+        .insert({
+          graph_node_id: data[0].id
+        });
+
+      const { data: conditionalDataConditions, error: conditionalDataConditionsError } = await supabase
+        .from("graph_conditional_conditions")
+        .insert({
+          graph_conditional_node_id: data[0].id,
+          conditional_operator: config.operator,
+          value: config.value,
+          state_id: config.stateId,
+        });
+
+      if (conditionalDataConditionsError) {
+        console.error(conditionalDataConditionsError);
+      }
+
+      if (conditionalError) {
+        console.error(conditionalError);
+      }
+    }
+    if (type === "prompt" && data && data.length > 0) {
+      const { data: promptData, error: promptError } = await supabase
+        .from("graph_prompt_nodes")
+        .insert({
+          graph_node_id: data[0].id,
+          prompt_id: config.promptId,
+        });
+
+      if (promptError) {
+        console.error(promptError);
+      }
+    }
+  }
 
   return !id ? null : (
     <>
