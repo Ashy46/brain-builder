@@ -14,8 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 
 import { GraphRef, Graph } from "./graph";
-import { AddNodeDialog } from "./add-node-dialog";
-import { ManageStatesDialog } from "./manage-states-dialog";
+import { AddNodeDialog } from "./dialogs/add-node-dialog";
+import { ManageStatesDialog } from "./dialogs/manage-states-dialog";
 
 export default function GraphPage() {
   const router = useRouter();

@@ -247,7 +247,7 @@ export function ManageStatesDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Manage States</DialogTitle>
+            <DialogTitle className="mb-2">Manage States</DialogTitle>
             <div className="flex gap-2">
               <Input
                 placeholder="New state name"
