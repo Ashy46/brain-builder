@@ -1,3 +1,15 @@
+"use client";
+
+import { useParams } from "next/navigation";
+
+import { Graph } from "./graph";
+
 export default function GraphPage() {
-  return <div>GraphPage</div>;
+  const { id } = useParams();
+
+  return (
+    <>
+      <Graph />
+    </>
+  );
 }

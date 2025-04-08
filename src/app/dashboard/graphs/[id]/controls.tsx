@@ -1,6 +1,7 @@
+import { useTheme } from "next-themes";
+
 import { useReactFlow } from "@xyflow/react";
 import { ZoomIn, ZoomOut, Maximize, Sun, Moon } from "lucide-react";
-import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
 
@@ -57,4 +58,4 @@ export function Controls({
       </Button>
     </div>
   );
-} 
+}

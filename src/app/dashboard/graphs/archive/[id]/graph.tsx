@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { AddNodeDialog } from "./dialogs/add-node-dialog";
 import { nodeTypes, NodeType } from "./nodes";
 // Import our custom Controls
-import { Controls as CustomControls } from "@/app/dashboard/graphs/archive/graph/controls";
+import { Controls as CustomControls } from "@/app/dashboard/graphs/[id]/controls";
 
 export interface GraphRef {
   fitView: () => void;
