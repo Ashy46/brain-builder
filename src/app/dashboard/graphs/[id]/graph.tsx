@@ -17,13 +17,19 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { Controls } from "./controls";
+import { AnalysisNode } from "./nodes/analysis-node";
+
+const nodeTypes = {
+  analysis: AnalysisNode,
+};
 
 const initialNodes: Node[] = [
   {
     id: "1",
-    type: "input",
+    type: "analysis",
     data: { label: "Start" },
     position: { x: 0, y: 0 },
+    draggable: false,
   },
   {
     id: "2",
@@ -68,6 +74,7 @@ export function Graph() {
   return (
     <div className="h-full w-full relative">
       <ReactFlow
+        nodeTypes={nodeTypes}
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
