@@ -7,7 +7,8 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils/tailwind";
 import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/lib/hooks/use-auth";
+
+import { Enums, Tables } from "@/types/supabase";
 
 import {
   Dialog,
@@ -28,23 +29,15 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface State {
-  id: string;
-  name: string;
-  starting_value: string | null;
-  persistent: boolean;
-  type: "number" | "text";
-}
-
 function EditStateDialog({
   state,
   onClose,
   onUpdate,
   onDelete,
 }: {
-  state: State;
+  state: Tables<"graph_states">;
   onClose: () => void;
-  onUpdate: (id: string, updates: Partial<State>) => void;
+  onUpdate: (id: string, updates: Partial<Tables<"graph_states">>) => void;
   onDelete: (id: string) => void;
 }) {
   const [name, setName] = useState(state.name);
@@ -53,7 +46,7 @@ function EditStateDialog({
   );
   const [isPersistent, setIsPersistent] = useState(state.persistent);
 
-  const handleUpdate = (updates: Partial<State>) => {
+  const handleUpdate = (updates: Partial<Tables<"graph_states">>) => {
     onUpdate(state.id, updates);
   };
 
@@ -81,14 +74,12 @@ function EditStateDialog({
             <Label>Starting Value</Label>
             <Input
               className="h-10 mt-2"
-              placeholder={`Starting ${
-                state.type === "number" ? "number" : "text"
-              }`}
-              type={state.type === "number" ? "number" : "text"}
+              placeholder={`Starting ${state.type}`}
+              type={state.type}
               value={startingValue}
               onChange={(e) => {
                 const value = e.target.value;
-                if (state.type === "number" && value && isNaN(Number(value)))
+                if (state.type === "NUMBER" && value && isNaN(Number(value)))
                   return;
                 setStartingValue(value);
                 handleUpdate({ starting_value: value || null });
@@ -138,14 +129,13 @@ export function ManageStatesDialog({
   onOpenChange: (open: boolean) => void;
   graphId: string;
 }) {
-  const { user } = useAuth();
-  const supabase = createClient();
-
-  const [states, setStates] = useState<State[]>([]);
+  const [states, setStates] = useState<Tables<"graph_states">[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newStateName, setNewStateName] = useState("");
-  const [newStateType, setNewStateType] = useState<"number" | "text">("text");
-  const [editingState, setEditingState] = useState<State | null>(null);
+  const [newStateType, setNewStateType] =
+    useState<Enums<"state_type">>("NUMBER");
+  const [editingState, setEditingState] =
+    useState<Tables<"graph_states"> | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -154,20 +144,24 @@ export function ManageStatesDialog({
   }, [open, graphId]);
 
   const fetchStates = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("graph_states")
-        .select("*")
-        .eq("graph_id", graphId);
+    setIsLoading(true);
 
-      if (error) throw error;
-      setStates(data || []);
-    } catch (error) {
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from("graph_states")
+      .select("*")
+      .eq("graph_id", graphId);
+
+    if (error) {
       console.error("Error fetching states:", error);
-      toast.error("Failed to load states");
-    } finally {
-      setIsLoading(false);
+      toast.error("Failed to fetch states");
+      return;
     }
+
+    setStates(data || []);
+
+    setIsLoading(false);
   };
 
   const createState = async () => {
@@ -176,70 +170,76 @@ export function ManageStatesDialog({
       return;
     }
 
-    try {
-      const { data, error } = await supabase
-        .from("graph_states")
-        .insert({
-          name: newStateName.trim(),
-          graph_id: graphId,
-          starting_value: null,
-          persistent: false,
-          type: newStateType,
-        })
-        .select()
-        .single();
+    const supabase = createClient();
 
-      if (error) throw error;
+    const { data, error } = await supabase
+      .from("graph_states")
+      .insert({
+        name: newStateName.trim(),
+        graph_id: graphId,
+        starting_value: null,
+        persistent: false,
+        type: newStateType,
+      })
+      .select()
+      .single();
 
-      const newState = data;
-      setStates((prev) => [...prev, newState]);
-      setNewStateName("");
-      setNewStateType("text");
-      toast.success("State created successfully");
-    } catch (error) {
+    if (error) {
       console.error("Error creating state:", error);
       toast.error("Failed to create state");
+      return;
     }
+
+    setStates((prev) => [...prev, data]);
+    toast.success("State created successfully");
+
+    setNewStateName("");
+    setNewStateType("NUMBER");
   };
 
-  const updateState = async (stateId: string, updates: Partial<State>) => {
+  const updateState = async (
+    stateId: string,
+    updates: Partial<Tables<"graph_states">>
+  ) => {
     setStates(
       states.map((state) =>
         state.id === stateId ? { ...state, ...updates } : state
       )
     );
 
-    try {
-      const { error } = await supabase
-        .from("graph_states")
-        .update(updates)
-        .eq("id", stateId);
+    const supabase = createClient();
 
-      if (error) throw error;
-      toast.success("State updated successfully");
-    } catch (error) {
+    const { error } = await supabase
+      .from("graph_states")
+      .update(updates)
+      .eq("id", stateId);
+
+    if (error) {
       console.error("Error updating state:", error);
       toast.error("Failed to update state");
-      await fetchStates();
+      return;
     }
+
+    toast.success("State updated successfully");
   };
 
   const deleteState = async (stateId: string) => {
     setStates(states.filter((state) => state.id !== stateId));
 
-    try {
-      const { error } = await supabase
-        .from("graph_states")
-        .delete()
-        .eq("id", stateId);
+    const supabase = createClient();
 
-      if (error) throw error;
-      toast.success("State deleted successfully");
-    } catch (error) {
+    const { error } = await supabase
+      .from("graph_states")
+      .delete()
+      .eq("id", stateId);
+
+    if (error) {
       console.error("Error deleting state:", error);
       toast.error("Failed to delete state");
-      await fetchStates();
+      return;
     }
+
+    toast.success("State deleted successfully");
   };
 
   return (
@@ -262,7 +262,7 @@ export function ManageStatesDialog({
               />
               <Select
                 value={newStateType}
-                onValueChange={(value: "number" | "text") =>
+                onValueChange={(value: Enums<"state_type">) =>
                   setNewStateType(value)
                 }
               >
@@ -270,8 +270,9 @@ export function ManageStatesDialog({
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="text">Text</SelectItem>
-                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="TEXT">Text</SelectItem>
+                  <SelectItem value="NUMBER">Number</SelectItem>
+                  <SelectItem value="BOOLEAN">Boolean</SelectItem>
                 </SelectContent>
               </Select>
               <Button onClick={createState} className="h-10">
@@ -297,7 +298,7 @@ export function ManageStatesDialog({
                       <span
                         className={cn(
                           "px-2 py-0.5 rounded-full text-xs font-medium",
-                          state.type === "number"
+                          state.type === "NUMBER"
                             ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
                             : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
                         )}

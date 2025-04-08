@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { GitBranch, MessageSquare } from "lucide-react";
+import { GitBranch, MessageSquare, Loader2 } from "lucide-react";
 
+import { toast } from "sonner";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
 import { NodeType } from "@/components/graph/nodes";
+import { cn } from "@/lib/utils/tailwind";
 
 import {
   Dialog,
@@ -26,15 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tables } from "@/types/supabase";
-
-interface AddNodeDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onAddNode: (type: NodeType, label: string, config?: any) => void;
-  graphId: string;
-  isRootNode?: boolean;
-}
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface State {
   id: string;
@@ -48,6 +41,14 @@ interface Prompt {
   content: string;
 }
 
+interface AddNodeDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAddNode: (type: NodeType, label: string, config?: any) => void;
+  graphId: string;
+  isRootNode?: boolean;
+}
+
 export function AddNodeDialog({
   open,
   onOpenChange,
@@ -58,19 +59,15 @@ export function AddNodeDialog({
   const { user } = useAuth();
   const supabase = createClient();
 
+  const [isLoading, setIsLoading] = useState(false);
   const [label, setLabel] = useState("");
   const [nodeType, setNodeType] = useState<"conditional" | "prompt">("prompt");
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Conditional node fields
   const [states, setStates] = useState<State[]>([]);
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [selectedStateId, setSelectedStateId] = useState<string>("");
+  const [selectedPromptId, setSelectedPromptId] = useState<string>("");
   const [conditionValue, setConditionValue] = useState<string>("");
   const [conditionOperator, setConditionOperator] = useState<string>("equals");
-
-  // Prompt node fields
-  const [prompts, setPrompts] = useState<Prompt[]>([]);
-  const [selectedPromptId, setSelectedPromptId] = useState<string>("");
 
   useEffect(() => {
     if (open) {
@@ -84,9 +81,9 @@ export function AddNodeDialog({
     setLabel("");
     setNodeType("prompt");
     setSelectedStateId("");
+    setSelectedPromptId("");
     setConditionValue("");
     setConditionOperator("equals");
-    setSelectedPromptId("");
   };
 
   const fetchStates = async () => {
@@ -167,7 +164,7 @@ export function AddNodeDialog({
           stateId: selectedStateId,
           operator: conditionOperator,
           value: conditionValue,
-          stateName: states.find(s => s.id === selectedStateId)?.name || ""
+          stateName: states.find((s) => s.id === selectedStateId)?.name || "",
         };
 
         onAddNode("conditional", label.trim(), config);
@@ -179,7 +176,8 @@ export function AddNodeDialog({
 
         const config = {
           promptId: selectedPromptId,
-          promptDescription: prompts.find(p => p.id === selectedPromptId)?.description || ""
+          promptDescription:
+            prompts.find((p) => p.id === selectedPromptId)?.description || "",
         };
 
         onAddNode("prompt", label.trim(), config);
@@ -193,7 +191,7 @@ export function AddNodeDialog({
     }
   };
 
-  const selectedState = states.find(s => s.id === selectedStateId);
+  const selectedState = states.find((s) => s.id === selectedStateId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -202,132 +200,167 @@ export function AddNodeDialog({
           <DialogTitle>Add New Node</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="label">Node Label</Label>
-            <Input
-              id="label"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="Enter a label for the node"
-            />
-          </div>
+        <ScrollArea className="h-[400px]">
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="label">Node Label</Label>
+              <Input
+                id="label"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="Enter a label for the node"
+                className="h-10"
+              />
+            </div>
 
-          <Tabs
-            defaultValue="prompt"
-            value={nodeType}
-            onValueChange={(value) => setNodeType(value as "conditional" | "prompt")}
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="prompt" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Prompt Node
-              </TabsTrigger>
-              <TabsTrigger value="conditional" className="flex items-center gap-2">
-                <GitBranch className="h-4 w-4" />
-                Conditional Node
-              </TabsTrigger>
-            </TabsList>
+            <Tabs
+              defaultValue="prompt"
+              value={nodeType}
+              onValueChange={(value) =>
+                setNodeType(value as "conditional" | "prompt")
+              }
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="prompt" className="flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Prompt Node
+                </TabsTrigger>
+                <TabsTrigger
+                  value="conditional"
+                  className="flex items-center gap-2"
+                >
+                  <GitBranch className="h-4 w-4" />
+                  Conditional Node
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="prompt" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="prompt">Select Prompt</Label>
-                {prompts.length === 0 ? (
-                  <div className="text-sm text-muted-foreground py-2">
-                    No prompts found. Please create a prompt first.
-                  </div>
-                ) : (
-                  <Select value={selectedPromptId} onValueChange={setSelectedPromptId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a prompt" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {prompts.map((prompt) => (
-                        <SelectItem key={prompt.id} value={prompt.id}>
-                          {prompt.description}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              {selectedPromptId && (
-                <div className="space-y-2 p-3 border rounded-md bg-muted/50">
-                  <Label>Selected Prompt</Label>
-                  <div className="text-sm whitespace-pre-wrap max-h-32 overflow-y-auto">
-                    {prompts.find(p => p.id === selectedPromptId)?.content || ""}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="conditional" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
-                {states.length === 0 ? (
-                  <div className="text-sm text-muted-foreground py-2">
-                    No states found. Please create a state first.
-                  </div>
-                ) : (
-                  <Select value={selectedStateId} onValueChange={setSelectedStateId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {states.map((state) => (
-                        <SelectItem key={state.id} value={state.id}>
-                          {state.name} ({state.type})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              {selectedStateId && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="operator">Condition Operator</Label>
+              <TabsContent value="prompt" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="prompt">Select Prompt</Label>
+                  {isLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : prompts.length === 0 ? (
+                    <div className="text-sm text-muted-foreground py-2">
+                      No prompts found. Please create a prompt first.
+                    </div>
+                  ) : (
                     <Select
-                      value={conditionOperator}
-                      onValueChange={setConditionOperator}
+                      value={selectedPromptId}
+                      onValueChange={setSelectedPromptId}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select operator" />
+                        <SelectValue placeholder="Select a prompt" />
                       </SelectTrigger>
                       <SelectContent>
-                        {getOperatorsForType(selectedState?.type || "TEXT").map((op) => (
-                          <SelectItem key={op.value} value={op.value}>
-                            {op.label}
+                        {prompts.map((prompt) => (
+                          <SelectItem key={prompt.id} value={prompt.id}>
+                            {prompt.description}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
+                  )}
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="value">Condition Value</Label>
-                    <Input
-                      id="value"
-                      value={conditionValue}
-                      onChange={(e) => setConditionValue(e.target.value)}
-                      placeholder={`Enter value to compare against ${selectedState?.name}`}
-                      type={selectedState?.type === "NUMBER" ? "number" : "text"}
-                    />
+                {selectedPromptId && (
+                  <div className="space-y-2 p-3 border rounded-md bg-muted/50">
+                    <Label>Selected Prompt</Label>
+                    <div className="text-sm whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      {prompts.find((p) => p.id === selectedPromptId)?.content ||
+                        ""}
+                    </div>
                   </div>
-                </>
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="conditional" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="state">State</Label>
+                  {isLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    </div>
+                  ) : states.length === 0 ? (
+                    <div className="text-sm text-muted-foreground py-2">
+                      No states found. Please create a state first.
+                    </div>
+                  ) : (
+                    <Select
+                      value={selectedStateId}
+                      onValueChange={setSelectedStateId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a state" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {states.map((state) => (
+                          <SelectItem key={state.id} value={state.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{state.name}</span>
+                              <span
+                                className={cn(
+                                  "px-2 py-0.5 rounded-full text-xs font-medium",
+                                  state.type === "NUMBER"
+                                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                                    : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
+                                )}
+                              >
+                                {state.type}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+
+                {selectedStateId && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="operator">Condition Operator</Label>
+                      <Select
+                        value={conditionOperator}
+                        onValueChange={setConditionOperator}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select operator" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getOperatorsForType(selectedState?.type || "TEXT").map(
+                            (op) => (
+                              <SelectItem key={op.value} value={op.value}>
+                                {op.label}
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="value">Condition Value</Label>
+                      <Input
+                        id="value"
+                        value={conditionValue}
+                        onChange={(e) => setConditionValue(e.target.value)}
+                        placeholder={`Enter value to compare against ${selectedState?.name}`}
+                        type={selectedState?.type === "NUMBER" ? "number" : "text"}
+                        className="h-10"
+                      />
+                    </div>
+                  </>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
+        </ScrollArea>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button
