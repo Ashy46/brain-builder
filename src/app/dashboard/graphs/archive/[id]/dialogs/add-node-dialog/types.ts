@@ -1,5 +1,5 @@
 import { Tables, Enums } from "@/types/supabase";
-import { NodeType } from "@/components/graph/nodes";
+import { NodeType } from "@/app/dashboard/graphs/archive/graph/nodes";
 
 export interface NodeTypeSelectionProps {
   onSelect: (type: "prompt" | "conditional") => void;

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils/tailwind";
 
 import { Button } from "@/components/ui/button";
 import { BuildConditionalDialog } from "@/components/graph/dialogs";
-import { EditNodeDialog } from "@/components/graph/dialogs/edit-node-dialog";
+import { EditNodeDialog } from "@/app/dashboard/graphs/archive/graph/dialogs/edit-node-dialog";
 import { NodePropsWithData, ConditionalNodeData } from "./types";
 
 function NodeTypeLabel({ type }: { type: string }) {

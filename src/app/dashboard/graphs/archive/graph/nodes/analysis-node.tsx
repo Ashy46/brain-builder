@@ -5,13 +5,13 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils/tailwind";
 import { createClient } from "@/lib/supabase/client";
-import { useStatePromptData } from "@/components/graph/hooks";
+import { useStatePromptData } from "@/app/dashboard/graphs/archive/graph/hooks";
 
 import { SelectStatesDialog } from "@/components/graph/dialogs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { NodePropsWithData, AnalysisNodeData } from "./types";
-import { EditNodeDialog } from "@/components/graph/dialogs/edit-node-dialog";
+import { EditNodeDialog } from "@/app/dashboard/graphs/archive/graph/dialogs/edit-node-dialog";
 
 interface State {
   id: string;

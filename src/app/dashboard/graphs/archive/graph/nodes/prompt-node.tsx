@@ -5,7 +5,7 @@ import { Pencil } from "lucide-react";
 import { cn } from "@/lib/utils/tailwind";
 
 import { Button } from "@/components/ui/button";
-import { EditNodeDialog } from "@/components/graph/dialogs/edit-node-dialog";
+import { EditNodeDialog } from "@/app/dashboard/graphs/archive/graph/dialogs/edit-node-dialog";
 import { NodePropsWithData, PromptNodeData } from "./types";
 
 function NodeTypeLabel({ type }: { type: string }) {
