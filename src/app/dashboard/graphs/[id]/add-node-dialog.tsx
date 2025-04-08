@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GitBranch, MessageSquare, Loader2 } from "lucide-react";
 
+import { GitBranch, MessageSquare, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
 import { useAuth } from "@/lib/hooks/use-auth";
 import { createClient } from "@/lib/supabase/client";
-import { NodeType } from "@/components/graph/nodes";
 import { cn } from "@/lib/utils/tailwind";
+
+import { Tables, Enums } from "@/types/supabase";
 
 import {
   Dialog,
@@ -28,26 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface State {
-  id: string;
-  name: string;
-  type: "TEXT" | "NUMBER" | "BOOLEAN";
-}
-
-interface Prompt {
-  id: string;
-  description: string;
-  content: string;
-}
-
-interface AddNodeDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onAddNode: (type: NodeType, label: string, config?: any) => void;
-  graphId: string;
-  isRootNode?: boolean;
-}
+import { NodeType } from "@/components/graph/nodes";
 
 export function AddNodeDialog({
   open,
@@ -55,19 +38,26 @@ export function AddNodeDialog({
   onAddNode,
   graphId,
   isRootNode = false,
-}: AddNodeDialogProps) {
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAddNode: (type: NodeType, label: string, config?: any) => void;
+  graphId: string;
+  isRootNode?: boolean;
+}) {
   const { user } = useAuth();
   const supabase = createClient();
 
   const [isLoading, setIsLoading] = useState(false);
   const [label, setLabel] = useState("");
   const [nodeType, setNodeType] = useState<"conditional" | "prompt">("prompt");
-  const [states, setStates] = useState<State[]>([]);
-  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [states, setStates] = useState<Tables<"graph_states">[]>([]);
+  const [prompts, setPrompts] = useState<Tables<"user_prompts">[]>([]);
   const [selectedStateId, setSelectedStateId] = useState<string>("");
   const [selectedPromptId, setSelectedPromptId] = useState<string>("");
   const [conditionValue, setConditionValue] = useState<string>("");
-  const [conditionOperator, setConditionOperator] = useState<string>("equals");
+  const [conditionOperator, setConditionOperator] =
+    useState<Enums<"conditional_operator">>("EQUALS");
 
   useEffect(() => {
     if (open) {
@@ -83,7 +73,7 @@ export function AddNodeDialog({
     setSelectedStateId("");
     setSelectedPromptId("");
     setConditionValue("");
-    setConditionOperator("equals");
+    setConditionOperator("EQUALS");
   };
 
   const fetchStates = async () => {
@@ -91,7 +81,7 @@ export function AddNodeDialog({
       setIsLoading(true);
       const { data, error } = await supabase
         .from("graph_states")
-        .select("id, name, type")
+        .select("*")
         .eq("graph_id", graphId);
 
       if (error) throw error;
@@ -109,7 +99,7 @@ export function AddNodeDialog({
       setIsLoading(true);
       const { data, error } = await supabase
         .from("user_prompts")
-        .select("id, description, content")
+        .select("*")
         .eq("user_id", user?.id || "");
 
       if (error) throw error;
@@ -122,27 +112,27 @@ export function AddNodeDialog({
     }
   };
 
-  const getOperatorsForType = (stateType: string) => {
+  const getOperatorsForType = (stateType: Enums<"state_type">) => {
     if (stateType === "NUMBER") {
       return [
-        { value: "equals", label: "Equals" },
-        { value: "notEquals", label: "Not Equals" },
-        { value: "greaterThan", label: "Greater Than" },
-        { value: "greaterThanOrEqual", label: "Greater Than or Equal To" },
-        { value: "lessThan", label: "Less Than" },
-        { value: "lessThanOrEqual", label: "Less Than or Equal To" },
+        { value: "EQUALS", label: "Equals" },
+        { value: "NOT_EQUALS", label: "Not Equals" },
+        { value: "MORE_THAN", label: "Greater Than" },
+        { value: "MORE_THAN_OR_EQUAL_TO", label: "Greater Than or Equal To" },
+        { value: "LESS_THAN", label: "Less Than" },
+        { value: "LESS_THAN_OR_EQUAL_TO", label: "Less Than or Equal To" },
       ];
     } else if (stateType === "BOOLEAN") {
       return [
-        { value: "equals", label: "Equals" },
-        { value: "notEquals", label: "Not Equals" },
+        { value: "EQUALS", label: "Equals" },
+        { value: "NOT_EQUALS", label: "Not Equals" },
       ];
     } else {
       return [
-        { value: "equals", label: "Equals" },
-        { value: "notEquals", label: "Not Equals" },
-        { value: "contains", label: "Contains" },
-        { value: "notContains", label: "Not Contains" },
+        { value: "EQUALS", label: "Equals" },
+        { value: "NOT_EQUALS", label: "Not Equals" },
+        { value: "CONTAINS", label: "Contains" },
+        { value: "NOT_CONTAINS", label: "Not Contains" },
       ];
     }
   };
@@ -269,8 +259,8 @@ export function AddNodeDialog({
                   <div className="space-y-2 p-3 border rounded-md bg-muted/50">
                     <Label>Selected Prompt</Label>
                     <div className="text-sm whitespace-pre-wrap max-h-32 overflow-y-auto">
-                      {prompts.find((p) => p.id === selectedPromptId)?.content ||
-                        ""}
+                      {prompts.find((p) => p.id === selectedPromptId)
+                        ?.content || ""}
                     </div>
                   </div>
                 )}
@@ -324,19 +314,21 @@ export function AddNodeDialog({
                       <Label htmlFor="operator">Condition Operator</Label>
                       <Select
                         value={conditionOperator}
-                        onValueChange={setConditionOperator}
+                        onValueChange={(value: Enums<"conditional_operator">) =>
+                          setConditionOperator(value)
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select operator" />
                         </SelectTrigger>
                         <SelectContent>
-                          {getOperatorsForType(selectedState?.type || "TEXT").map(
-                            (op) => (
-                              <SelectItem key={op.value} value={op.value}>
-                                {op.label}
-                              </SelectItem>
-                            )
-                          )}
+                          {getOperatorsForType(
+                            selectedState?.type || "TEXT"
+                          ).map((op) => (
+                            <SelectItem key={op.value} value={op.value}>
+                              {op.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -348,7 +340,9 @@ export function AddNodeDialog({
                         value={conditionValue}
                         onChange={(e) => setConditionValue(e.target.value)}
                         placeholder={`Enter value to compare against ${selectedState?.name}`}
-                        type={selectedState?.type === "NUMBER" ? "number" : "text"}
+                        type={
+                          selectedState?.type === "NUMBER" ? "number" : "text"
+                        }
                         className="h-10"
                       />
                     </div>
