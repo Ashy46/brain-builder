@@ -101,7 +101,7 @@ export function EditStateDialog({
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
+          <div className="grid gap-3">
             <Label>Name</Label>
             <Input
               type="text"
