@@ -22,27 +22,28 @@ export function AnalysisNode() {
   const [states, setStates] = useState<Tables<"graph_states">[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchStates = async () => {
+    setIsLoading(true);
+
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from("graph_states")
+      .select("*")
+      .eq("graph_id", graphId);
+
+    if (error) {
+      console.error(error);
+      toast.error("Failed to fetch states");
+      return;
+    }
+
+    setStates(data ?? []);
+
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    const fetchStates = async () => {
-      setIsLoading(true);
-
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from("graph_states")
-        .select("*")
-        .eq("graph_id", graphId);
-
-      if (error) {
-        console.error(error);
-        toast.error("Failed to fetch states");
-        return;
-      }
-
-      setStates(data ?? []);
-
-      setIsLoading(false);
-    };
     fetchStates();
   }, [graphId]);
 
@@ -79,7 +80,7 @@ export function AnalysisNode() {
                   state.type.slice(1).toLowerCase()}
               </Badge>
 
-              <EditStateDialog state={state} />
+              <EditStateDialog state={state} fetchStates={fetchStates} />
             </div>
           ))
         )}
