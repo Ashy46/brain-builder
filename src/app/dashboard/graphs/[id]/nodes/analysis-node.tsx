@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Pencil } from "lucide-react";
+import { Loader2, Pencil } from "lucide-react";
 import { Handle, Position } from "@xyflow/react";
 import { toast } from "sonner";
 
@@ -19,9 +19,12 @@ export function AnalysisNode() {
   const { graphId } = useGraph();
 
   const [states, setStates] = useState<Tables<"graph_states">[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchStates = async () => {
+      setIsLoading(true);
+
       const supabase = createClient();
 
       const { data, error } = await supabase
@@ -36,6 +39,8 @@ export function AnalysisNode() {
       }
 
       setStates(data ?? []);
+
+      setIsLoading(false);
     };
     fetchStates();
   }, [graphId]);
@@ -46,25 +51,31 @@ export function AnalysisNode() {
         Analysis
       </span>
 
-      <div className="rounded-2xl bg-muted border-2 backdrop-blur-md p-4 space-y-3">
-        {states.map((state) => (
-          <div key={state.id} className="flex items-center gap-3">
-            <div className="flex flex-1">
-              <Badge variant="default" className="text-md py-1.5 px-6">
-                {state.name.charAt(0).toUpperCase() + state.name.slice(1)}
-              </Badge>
-            </div>
-
-            <Badge variant="outline" className="text-md py-1.5 px-6">
-              {state.type.charAt(0).toUpperCase() +
-                state.type.slice(1).toLowerCase()}
-            </Badge>
-
-            <Button variant="outline" size="icon">
-              <Pencil className="size-4" />
-            </Button>
+      <div className="rounded-2xl bg-muted border-2 backdrop-blur-md p-4 space-y-3 min-w-[340px]">
+        {isLoading ? (
+          <div className="flex items-center justify-center">
+            <Loader2 className="size-12 animate-spin p-2" />
           </div>
-        ))}
+        ) : (
+          states.map((state) => (
+            <div key={state.id} className="flex items-center gap-3">
+              <div className="flex flex-1">
+                <Badge variant="default" className="text-md py-1.5 px-6">
+                  {state.name.charAt(0).toUpperCase() + state.name.slice(1)}
+                </Badge>
+              </div>
+
+              <Badge variant="outline" className="text-md py-1.5 px-6">
+                {state.type.charAt(0).toUpperCase() +
+                  state.type.slice(1).toLowerCase()}
+              </Badge>
+
+              <Button variant="outline" size="icon">
+                <Pencil className="size-4" />
+              </Button>
+            </div>
+          ))
+        )}
       </div>
 
       <Handle
