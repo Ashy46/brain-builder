@@ -51,7 +51,7 @@ export function AnalysisNode() {
         Analysis
       </span>
 
-      <div className="rounded-2xl bg-muted/50 border backdrop-blur-md p-4 space-y-3 min-w-[340px]">
+      <div className="rounded-2xl bg-muted/40 border backdrop-blur-md p-4 space-y-3 min-w-[340px]">
         <Button variant="outline" className="w-full mb-4">
           Add State <Plus className="size-4" />
         </Button>
@@ -62,7 +62,7 @@ export function AnalysisNode() {
           </div>
         ) : (
           states.map((state) => (
-            <div key={state.id} className="flex items-center gap-3">
+            <div key={state.id} className="flex items-center gap-3 animate-in fade-in">
               <div className="flex flex-1">
                 <Badge variant="default" className="text-md py-1.5 px-6">
                   {state.name.charAt(0).toUpperCase() + state.name.slice(1)}

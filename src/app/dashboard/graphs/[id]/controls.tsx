@@ -24,7 +24,7 @@ export function Controls() {
           variant="outline"
           size="icon"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="size-10 bg-background/50 hover:bg-accent/50"
+          className="size-10 bg-background/50 hover:bg-accent/50 backdrop-blur-md"
         >
           {theme === "dark" ? (
             <Sun className="h-4 w-4" />
@@ -37,7 +37,7 @@ export function Controls() {
           variant="outline"
           size="icon"
           onClick={() => zoomIn()}
-          className="size-10 bg-background/50 hover:bg-accent/50"
+          className="size-10 bg-background/50 hover:bg-accent/50 backdrop-blur-md"
         >
           <ZoomIn className="h-4 w-4" />
         </Button>
@@ -46,7 +46,7 @@ export function Controls() {
           variant="outline"
           size="icon"
           onClick={() => zoomOut()}
-          className="size-10 bg-background/50 hover:bg-accent/50"
+          className="size-10 bg-background/50 hover:bg-accent/50 backdrop-blur-md"
         >
           <ZoomOut className="h-4 w-4" />
         </Button>
@@ -55,7 +55,7 @@ export function Controls() {
           variant="outline"
           size="icon"
           onClick={() => fitView({ duration: 500 })}
-          className="size-10 bg-background/50 hover:bg-accent/50"
+          className="size-10 bg-background/50 hover:bg-accent/50 backdrop-blur-md"
         >
           <Maximize className="h-4 w-4" />
         </Button>
