@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Loader2, Pencil } from "lucide-react";
+import { Loader2, Pencil, Plus } from "lucide-react";
 import { Handle, Position } from "@xyflow/react";
 import { toast } from "sonner";
 
@@ -51,7 +51,11 @@ export function AnalysisNode() {
         Analysis
       </span>
 
-      <div className="rounded-2xl bg-muted border-2 backdrop-blur-md p-4 space-y-3 min-w-[340px]">
+      <div className="rounded-2xl bg-muted/50 border backdrop-blur-md p-4 space-y-3 min-w-[340px]">
+        <Button variant="outline" className="w-full mb-4">
+          Add State <Plus className="size-4" />
+        </Button>
+
         {isLoading ? (
           <div className="flex items-center justify-center">
             <Loader2 className="size-12 animate-spin p-2" />
