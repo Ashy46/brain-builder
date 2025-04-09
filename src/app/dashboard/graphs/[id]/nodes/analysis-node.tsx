@@ -54,7 +54,7 @@ export function AnalysisNode() {
 
       <div className="rounded-2xl bg-muted/40 border backdrop-blur-md p-4 space-y-3 min-w-[340px]">
         <Button variant="outline" className="w-full mb-4">
-          <Plus className="size-5" />
+          <Plus className="size-4" />
           Add State
         </Button>
 
