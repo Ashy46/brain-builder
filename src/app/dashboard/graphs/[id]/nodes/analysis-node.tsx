@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Loader2, Pencil, Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { Handle, Position } from "@xyflow/react";
 import { toast } from "sonner";
 
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import { useGraph } from "../layout";
+import { EditStateDialog } from "../dialogs/edit-state-dialog";
 
 export function AnalysisNode() {
   const { graphId } = useGraph();
@@ -53,7 +54,8 @@ export function AnalysisNode() {
 
       <div className="rounded-2xl bg-muted/40 border backdrop-blur-md p-4 space-y-3 min-w-[340px]">
         <Button variant="outline" className="w-full mb-4">
-          Add State <Plus className="size-4" />
+          <Plus className="size-5" />
+          Add State
         </Button>
 
         {isLoading ? (
@@ -62,7 +64,10 @@ export function AnalysisNode() {
           </div>
         ) : (
           states.map((state) => (
-            <div key={state.id} className="flex items-center gap-3 animate-in fade-in">
+            <div
+              key={state.id}
+              className="flex items-center gap-3 animate-in fade-in"
+            >
               <div className="flex flex-1">
                 <Badge variant="default" className="text-md py-1.5 px-6">
                   {state.name.charAt(0).toUpperCase() + state.name.slice(1)}
@@ -74,9 +79,7 @@ export function AnalysisNode() {
                   state.type.slice(1).toLowerCase()}
               </Badge>
 
-              <Button variant="outline" size="icon">
-                <Pencil className="size-4" />
-              </Button>
+              <EditStateDialog state={state} />
             </div>
           ))
         )}
