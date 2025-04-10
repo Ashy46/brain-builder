@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useGraph } from "../layout";
+
 const stateSchema = z.object({
   name: z.string().min(1, "Name is required"),
   type: z.enum(["NUMBER", "TEXT", "BOOLEAN"]),
