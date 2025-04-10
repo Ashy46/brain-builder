@@ -50,13 +50,8 @@ export function AnalysisNode() {
   }, [graphId]);
 
   return (
-    <>
-      <span className="text-sm text-foreground/50 text-center font-medium block mb-1">
-        Analysis
-      </span>
-
-      <div className="rounded-2xl bg-muted/40 border backdrop-blur-md p-4 space-y-3 min-w-[340px]">
-        <AddStateDialog fetchStates={fetchStates} />
+    <div className="rounded-2xl bg-muted/40 border backdrop-blur-md p-4 space-y-3 min-w-[340px]">
+      <AddStateDialog fetchStates={fetchStates} />
 
       {isLoading ? (
         <div className="flex items-center justify-center">
