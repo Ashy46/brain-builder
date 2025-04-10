@@ -18,3 +18,17 @@ export async function updateNodePositionInDatabase(
     toast.error("Failed to update node position");
   }
 }
+
+export async function deleteNodeFromDatabase(nodeId: string) {
+  const supabase = createClient();
+
+  const { error } = await supabase
+    .from("graph_nodes")
+    .delete()
+    .eq("id", nodeId);
+
+  if (error) {
+    console.error("Failed to delete node:", error);
+    toast.error("Failed to delete node");
+  }
+}

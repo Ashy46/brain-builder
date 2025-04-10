@@ -25,7 +25,7 @@ import { AnalysisNode } from "../nodes/analysis-node";
 import { PromptNode } from "../nodes/prompt-node";
 import { ConditionalNode } from "../nodes/conditional-node";
 import { useGraph } from "../layout";
-import { updateNodePositionInDatabase } from "./utils";
+import { updateNodePositionInDatabase, deleteNodeFromDatabase } from "./utils";
 
 const nodeTypes = {
   analysis: AnalysisNode,
@@ -55,6 +55,10 @@ export function Graph() {
                 movedNode.id,
                 movedNode.position
               );
+            }
+          } else if (change.type === "remove") {
+            if (change.id !== "1") {
+              deleteNodeFromDatabase(change.id);
             }
           }
         });
