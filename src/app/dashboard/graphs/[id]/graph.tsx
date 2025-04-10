@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 import {
   ReactFlow,
@@ -23,21 +23,9 @@ const nodeTypes = {
   analysis: AnalysisNode,
 };
 
-const initialNodes: Node[] = [
-  {
-    id: "1",
-    type: "analysis",
-    data: { label: "Start" },
-    position: { x: 0, y: 0 },
-    draggable: false,
-  },
-];
-
-const initialEdges: Edge[] = [];
-
 export function Graph() {
-  const [nodes, setNodes] = useState<Node[]>(initialNodes);
-  const [edges, setEdges] = useState<Edge[]>(initialEdges);
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) =>
@@ -55,6 +43,18 @@ export function Graph() {
     (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
     [setEdges]
   );
+
+  useEffect(() => {
+    setNodes([
+      {
+        id: "1",
+        type: "analysis",
+        data: { label: "Start" },
+        position: { x: 0, y: 0 },
+        draggable: false,
+      },
+    ]);
+  }, []);
 
   return (
     <div className="h-full w-full relative">

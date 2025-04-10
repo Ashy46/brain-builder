@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { z } from "zod";
 import { toast } from "sonner";
 import { Pencil } from "lucide-react";
 
 import { Tables } from "@/types/supabase";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 import { createClient } from "@/lib/supabase/client";
 
@@ -28,6 +29,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { EditPromptDialog } from "@/app/dashboard/prompts/edit-prompt-dialog";
 
 const stateSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -45,6 +47,7 @@ export function EditStateDialog({
   state: Tables<"graph_states">;
   fetchStates: () => void;
 }) {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState<StateFormData>({
     name: state.name,
@@ -53,6 +56,7 @@ export function EditStateDialog({
     starting_value: state.starting_value,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [prompt, setPrompt] = useState<Tables<"user_prompts">>();
 
   const handleSave = async () => {
     try {
@@ -85,6 +89,64 @@ export function EditStateDialog({
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchPrompt = async () => {
+      const supabase = createClient();
+      
+      if (!user) {
+        console.error("User not authenticated");
+        return;
+      }
+
+      if (!state.prompt_id) {
+          const { data, error } = await supabase
+            .from("user_prompts")
+            .insert({
+              description: "Default prompt",
+              content: "Hey, this is a test prompt. Edit this to your fit",
+              user_id: user.id,
+              llm_model: "gpt-4o",
+              temperature: 0.7,
+              max_tokens: 2000,
+              top_p: 1,
+              frequency_penalty: 0,
+              presence_penalty: 0,
+              public: false,
+            })
+            .select("*")
+            .maybeSingle();
+
+          if (error) throw error;
+
+          setPrompt(data);
+
+          const { error: updateError } = await supabase
+            .from("graph_states")
+            .update({
+              prompt_id: data.id,
+            })
+            .eq("id", state.id);
+
+          if (updateError) throw updateError;
+
+          state.prompt_id = data.id;
+          return;
+        }
+
+      const { data, error } = await supabase
+        .from("user_prompts")
+        .select("*")
+        .eq("id", state.prompt_id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      setPrompt(data);
+    };
+
+    fetchPrompt();
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -157,6 +219,15 @@ export function EditStateDialog({
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
+          {prompt && (
+            <div className="grid gap-3">
+              <EditPromptDialog
+                prompt={prompt}
+              trigger={<Button variant="outline">Edit Prompt</Button>}
+              onPromptUpdated={fetchStates}
+            />
+            </div>
+          )}
           <Button onClick={handleSave} disabled={isLoading}>
             {isLoading ? "Saving..." : "Save Changes"}
           </Button>
