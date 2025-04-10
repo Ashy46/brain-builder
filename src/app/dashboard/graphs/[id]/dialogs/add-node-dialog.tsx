@@ -56,11 +56,17 @@ export default function AddNodeDialog() {
 
     if (formData.type === "PROMPT") {
       const { data: promptData, error: promptError } = await supabase
-        .from("graph_prompts")
+        .from("graph_prompt_nodes")
         .insert({
-          node_id: data.id,
           graph_node_id: data.id,
         })
+
+      if (promptError) {
+        toast.error("Error adding prompt");
+        return;
+      }
+
+      toast.success("Prompt added successfully");
     }
 
     toast.success("Node added successfully");
