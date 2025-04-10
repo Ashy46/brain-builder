@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 
 import { useGraph } from "../layout";
 import { EditStateDialog } from "../dialogs/edit-state-dialog";
+import AddStateDialog from "../dialogs/add-state-dialog";
 
 export function AnalysisNode() {
   const { graphId } = useGraph();
@@ -55,10 +56,7 @@ export function AnalysisNode() {
       </span>
 
       <div className="rounded-2xl bg-muted/40 border backdrop-blur-md p-4 space-y-3 min-w-[340px]">
-        <Button variant="outline" className="w-full mb-4">
-          <Plus className="size-4" />
-          Add State
-        </Button>
+        <AddStateDialog fetchStates={fetchStates} />
 
         {isLoading ? (
           <div className="flex items-center justify-center">
