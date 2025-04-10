@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 
+import { debounce } from "lodash";
 import {
   ReactFlow,
   Background,
@@ -18,7 +19,6 @@ import "@xyflow/react/dist/style.css";
 import { toast } from "sonner";
 
 import { createClient } from "@/lib/supabase/client";
-import { debounce } from "@/lib/utils/debounce";
 
 import { Controls } from "./controls";
 import { AnalysisNode } from "../nodes/analysis-node";
@@ -65,9 +65,9 @@ export function Graph() {
     [setNodes]
   );
 
-  const debouncedUpdateNodePositionInDatabase = debounce(
-    updateNodePositionInDatabase,
-    300
+  const debouncedUpdateNodePositionInDatabase = useCallback(
+    debounce(updateNodePositionInDatabase, 300),
+    []
   );
 
   const onEdgesChange = useCallback(
@@ -106,7 +106,7 @@ export function Graph() {
       ...data.map((node) => ({
         id: node.id,
         type: node.node_type.toLowerCase(),
-        data: { label: node.data },
+        data: { id: node.id },
         position: { x: node.pos_x, y: node.pos_y },
       })),
     ]);

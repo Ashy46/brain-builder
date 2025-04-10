@@ -49,46 +49,40 @@ export function AnalysisNode() {
   }, [graphId]);
 
   return (
-    <>
-      <span className="text-sm text-foreground/50 text-center font-medium block mb-1">
-        Analysis
-      </span>
+    <div className="rounded-2xl bg-muted/40 border backdrop-blur-md p-4 space-y-3 min-w-[340px]">
+      <Button variant="outline" className="w-full mb-4">
+        <Plus className="size-4" />
+        Add State
+      </Button>
 
-      <div className="rounded-2xl bg-muted/40 border backdrop-blur-md p-4 space-y-3 min-w-[340px]">
-        <Button variant="outline" className="w-full mb-4">
-          <Plus className="size-4" />
-          Add State
-        </Button>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center">
-            <Loader2 className="size-12 animate-spin p-2" />
-          </div>
-        ) : (
-          states.map((state) => (
-            <div
-              key={state.id}
-              className="flex items-center gap-3 animate-in fade-in"
+      {isLoading ? (
+        <div className="flex items-center justify-center">
+          <Loader2 className="size-12 animate-spin p-2" />
+        </div>
+      ) : (
+        states.map((state) => (
+          <div
+            key={state.id}
+            className="flex items-center gap-3 animate-in fade-in"
+          >
+            <Badge
+              variant="default"
+              className="text-md w-full justify-center py-1.5 px-6"
             >
-              <Badge
-                variant="default"
-                className="text-md w-full justify-center py-1.5 px-6"
-              >
-                {state.name.charAt(0).toUpperCase() + state.name.slice(1)}
-              </Badge>
+              {state.name.charAt(0).toUpperCase() + state.name.slice(1)}
+            </Badge>
 
-              <Badge variant="outline" className="text-md py-1.5 px-6">
-                {state.type.charAt(0).toUpperCase() +
-                  state.type.slice(1).toLowerCase()}
-              </Badge>
+            <Badge variant="outline" className="text-md py-1.5 px-6">
+              {state.type.charAt(0).toUpperCase() +
+                state.type.slice(1).toLowerCase()}
+            </Badge>
 
-              <EditStateDialog state={state} fetchStates={fetchStates} />
-            </div>
-          ))
-        )}
-      </div>
+            <EditStateDialog state={state} fetchStates={fetchStates} />
+          </div>
+        ))
+      )}
 
       <Handle type="source" position={Position.Bottom} />
-    </>
+    </div>
   );
 }
