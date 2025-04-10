@@ -5,10 +5,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, BrainCircuit, Code2 } from "lucide-react";
-import { useGraph } from "../layout";
+import { useGraph, useRefreshGraph } from "../layout";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
+
 
 const nodeSchema = z.object({
   label: z.string().min(1, "Label is required"),
@@ -24,6 +25,8 @@ export default function AddNodeDialog() {
     label: "",
     type: "CONDITIONAL",
   });
+
+  const { setRefresh } = useRefreshGraph();
 
   const handleSubmit = async () => {
     const result = nodeSchema.safeParse(formData);
@@ -54,6 +57,7 @@ export default function AddNodeDialog() {
     toast.success("Node added successfully");
     setOpen(false);
     setFormData({ label: "", type: "CONDITIONAL" });
+    setRefresh(true);
   }
 
   return (
