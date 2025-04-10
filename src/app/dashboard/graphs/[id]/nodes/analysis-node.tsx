@@ -88,11 +88,7 @@ export function AnalysisNode() {
         )}
       </div>
 
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="analysis-node-output"
-      />
+      <Handle type="source" position={Position.Bottom} />
     </>
   );
 }

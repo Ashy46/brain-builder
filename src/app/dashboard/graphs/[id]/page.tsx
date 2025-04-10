@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -23,6 +24,7 @@ export default function GraphPage() {
           Back
         </Button>
       </div>
+
       <Graph />
     </>
   );
