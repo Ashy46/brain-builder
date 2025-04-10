@@ -54,6 +54,15 @@ export default function AddNodeDialog() {
       return;
     }
 
+    if (formData.type === "PROMPT") {
+      const { data: promptData, error: promptError } = await supabase
+        .from("graph_prompts")
+        .insert({
+          node_id: data.id,
+          graph_node_id: data.id,
+        })
+    }
+
     toast.success("Node added successfully");
     setOpen(false);
     setFormData({ label: "", type: "CONDITIONAL" });

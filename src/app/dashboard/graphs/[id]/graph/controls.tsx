@@ -5,7 +5,7 @@ import { useReactFlow } from "@xyflow/react";
 import { ZoomIn, ZoomOut, Maximize, Sun, Moon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-
+import { useRefreshGraph } from "../layout";
 export function Controls() {
   const { theme, setTheme } = useTheme();
 
@@ -13,9 +13,18 @@ export function Controls() {
 
   const [mounted, setMounted] = useState(false);
 
+  const { refresh, setRefresh } = useRefreshGraph();
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (refresh) {
+      fitView({ duration: 500 });
+      setRefresh(false);
+    }
+  }, [refresh, fitView, setRefresh]);
 
   return (
     mounted && (
