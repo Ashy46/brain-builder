@@ -105,7 +105,7 @@ export default function AddNodeDialog() {
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit">Add</Button>
+          <Button type="submit" onClick={handleSubmit}>Add</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
