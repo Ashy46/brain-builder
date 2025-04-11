@@ -27,7 +27,7 @@ export function PromptNode({ data }: { data: any }) {
 
       const { data: nodeData, error } = await supabase
         .from("graph_nodes")
-        .select("label, prompt_id")
+        .select("label")
         .eq("id", data.id)
         .single();
 
@@ -40,11 +40,23 @@ export function PromptNode({ data }: { data: any }) {
         setLabel(nodeData.label);
       }
 
-      if (nodeData?.prompt_id) {
+      // Fetch prompt through graph_prompt_nodes
+      const { data: promptNodeData, error: promptNodeError } = await supabase
+        .from("graph_prompt_nodes")
+        .select("prompt_id")
+        .eq("graph_node_id", data.id)
+        .single();
+
+      if (promptNodeError) {
+        console.error("Error fetching prompt node:", promptNodeError);
+        return;
+      }
+
+      if (promptNodeData?.prompt_id) {
         const { data: promptData, error: promptError } = await supabase
           .from("user_prompts")
           .select("*")
-          .eq("id", nodeData.prompt_id)
+          .eq("id", promptNodeData.prompt_id)
           .single();
 
         if (promptError) {
@@ -76,13 +88,16 @@ export function PromptNode({ data }: { data: any }) {
           return;
         }
 
-        const { error: updateError } = await supabase
-          .from("graph_nodes")
-          .update({ prompt_id: newPrompt.id })
-          .eq("id", data.id);
+        // Create entry in graph_prompt_nodes instead of updating graph_nodes
+        const { error: promptNodeCreateError } = await supabase
+          .from("graph_prompt_nodes")
+          .insert({
+            graph_node_id: data.id,
+            prompt_id: newPrompt.id,
+          });
 
-        if (updateError) {
-          console.error("Error updating node with prompt ID:", updateError);
+        if (promptNodeCreateError) {
+          console.error("Error creating prompt node:", promptNodeCreateError);
           return;
         }
 
@@ -101,6 +116,7 @@ export function PromptNode({ data }: { data: any }) {
 
   const debouncedUpdateLabel = debounce(async (newLabel: string) => {
     const supabase = createClient();
+
     const { error } = await supabase
       .from("graph_nodes")
       .update({ label: newLabel })
@@ -131,7 +147,9 @@ export function PromptNode({ data }: { data: any }) {
         className="w-full nodrag"
       />
 
-      {prompt && <EditPromptDialog prompt={prompt} />}
+      <div className="flex flex-col gap-2">
+        {prompt && <EditPromptDialog prompt={prompt} />}
+      </div>
     </div>
   );
 }
