@@ -37,53 +37,6 @@ export function Graph() {
   const { graphId, graph } = useGraph();
 
   const [nodes, setNodes] = useState<Node[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
-
-  const onNodesChange = useCallback(
-    async (changes: NodeChange[]) => {
-      setNodes((nds) => {
-        const updatedNodes = applyNodeChanges(changes, nds);
-
-        changes.forEach((change) => {
-          if (change.type === "position" && change.position) {
-            const movedNode = updatedNodes.find(
-              (node) => node.id === change.id
-            );
-
-            if (movedNode) {
-              debouncedUpdateNodePositionInDatabase(
-                movedNode.id,
-                movedNode.position
-              );
-            }
-          } else if (change.type === "remove") {
-            if (change.id !== "1") {
-              deleteNodeFromDatabase(change.id);
-            }
-          }
-        });
-
-        return updatedNodes;
-      });
-    },
-    [setNodes]
-  );
-
-  const debouncedUpdateNodePositionInDatabase = useCallback(
-    debounce(updateNodePositionInDatabase, 300),
-    []
-  );
-
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) =>
-      setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges]
-  );
-
-  const onConnect = useCallback(
-    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges]
-  );
 
   async function fetchNodes() {
     const supabase = createClient();
@@ -119,6 +72,62 @@ export function Graph() {
   useEffect(() => {
     fetchNodes();
   }, []);
+
+  const debouncedUpdateNodePositionInDatabase = useCallback(
+    debounce(updateNodePositionInDatabase, 300),
+    []
+  );
+
+  const onNodesChange = useCallback(
+    async (changes: NodeChange[]) => {
+      setNodes((nds) => {
+        const updatedNodes = applyNodeChanges(changes, nds);
+
+        changes.forEach((change) => {
+          if (change.type === "position" && change.position) {
+            const movedNode = updatedNodes.find(
+              (node) => node.id === change.id
+            );
+
+            if (movedNode) {
+              debouncedUpdateNodePositionInDatabase(
+                movedNode.id,
+                movedNode.position
+              );
+            }
+          } else if (change.type === "remove") {
+            if (change.id !== "1") {
+              deleteNodeFromDatabase(change.id);
+            }
+
+            for (const edge of edges) {
+              if (edge.source === change.id) {
+                setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+              } else if (edge.target === change.id) {
+                setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+              }
+            }
+          }
+        });
+
+        return updatedNodes;
+      });
+    },
+    [setNodes]
+  );
+
+  const [edges, setEdges] = useState<Edge[]>([]);
+
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) =>
+      setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [setEdges]
+  );
+
+  const onConnect = useCallback(
+    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
+    [setEdges]
+  );
 
   useEffect(() => {
     const edges: Edge[] = [];
