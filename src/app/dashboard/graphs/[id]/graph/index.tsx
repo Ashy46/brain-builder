@@ -38,8 +38,9 @@ export function Graph() {
 
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  async function fetchNodes() {
+  const fetchNodesAndMakeEdges = async () => {
     const supabase = createClient();
 
     const { data, error } = await supabase
@@ -55,7 +56,7 @@ export function Graph() {
 
     console.log("Setting nodes");
 
-    setNodes([
+    const curNodes: Node[] = [
       {
         id: "1",
         type: "analysis",
@@ -69,15 +70,19 @@ export function Graph() {
         data: { id: node.id },
         position: { x: node.pos_x, y: node.pos_y },
       })),
-    ]);
-  }
+    ];
 
-  async function makeInitialEdges() {
+    setNodes(curNodes);
+
+    console.log("Nodes:", curNodes);
+
     const edges: Edge[] = [];
 
-    if (nodes.length > 0 && graph) {
-      for (const node of nodes) {
+    if (curNodes.length > 0 && graph) {
+      for (const node of curNodes) {
+        console.log("Node:", node);
         if (node.type === "analysis") {
+          console.log("Graph:", graph);
           if (graph.child_node_id) {
             edges.push({
               id: `1-${graph.child_node_id}`,
@@ -89,8 +94,26 @@ export function Graph() {
       }
     }
 
+    console.log("Edges:", edges);
+
     setEdges(edges);
-  }
+  };
+
+  useEffect(() => {
+    if (refresh) {
+      fetchNodesAndMakeEdges();
+      setRefresh(false);
+    }
+  }, [refresh, setRefresh]);
+
+  useEffect(() => {
+    if (isInitialLoad) {
+      if (!graph) return;
+
+      fetchNodesAndMakeEdges();
+      setIsInitialLoad(false);
+    }
+  }, [isInitialLoad, graph]);
 
   const debouncedUpdateNodePositionInDatabase = useCallback(
     debounce(updateNodePositionInDatabase, 300),
@@ -137,59 +160,43 @@ export function Graph() {
 
   const onEdgesChange = useCallback(
     async (changes: EdgeChange[]) => {
+      console.log("Edge changes:", changes);
       setEdges((eds) => {
         const updatedEdges = applyEdgeChanges(changes, eds);
-
-        changes.forEach(async (change) => {
-          console.log("change", change);
-          if (change.type === "add") {
-            if (change.item.source === "1") {
-              const supabase = createClient();
-
-              const { data, error } = await supabase
-                .from("graphs")
-                .update({ child_node_id: change.item.target })
-                .eq("id", graphId);
-
-              if (error) {
-                console.error(error);
-                toast.error("Failed to fetch graph");
-                return;
-              }
-
-              toast.success("Graph connection updated");
-
-              setEdges((eds) => [...eds, change.item]);
-            }
-          }
-        });
-
         return updatedEdges;
       });
     },
-    [setEdges, graphId]
-  );
-
-  const onConnect = useCallback(
-    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
     [setEdges]
   );
 
-  useEffect(() => {
-    if (refresh) {
-      fetchNodes();
-      setRefresh(false);
-    }
-  }, [refresh, setRefresh]);
+  const onConnect = useCallback(
+    async (connection: Connection) => {
+      console.log("New connection:", connection);
 
-  useEffect(() => {
-    const graphInitialization = async () => {
-      await fetchNodes();
-      await makeInitialEdges();
-    };
+      const newEdge = addEdge(connection, edges);
+      setEdges(newEdge);
 
-    graphInitialization();
-  }, []);
+      if (connection.source === "1") {
+        const supabase = createClient();
+
+        console.log(connection.target);
+
+        const { error } = await supabase
+          .from("graphs")
+          .update({ child_node_id: connection.target })
+          .eq("id", graphId);
+
+        if (error) {
+          console.error(error);
+          toast.error("Failed to update graph connection");
+          return;
+        }
+
+        toast.success("Graph connection updated");
+      }
+    },
+    [setEdges, edges, graphId]
+  );
 
   return (
     <div className="h-full w-full relative">
