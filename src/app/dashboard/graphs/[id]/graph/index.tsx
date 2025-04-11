@@ -34,7 +34,7 @@ const nodeTypes = {
 };
 
 export function Graph() {
-  const { graphId } = useGraph();
+  const { graphId, graph } = useGraph();
 
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
@@ -123,15 +123,20 @@ export function Graph() {
   useEffect(() => {
     const edges: Edge[] = [];
 
-    if (nodes.length > 0) {
+    if (nodes.length > 0 && graph) {
       for (const node of nodes) {
         if (node.type === "analysis") {
-          const promptId = node.data.promptId;
-          
+          if (graph.child_node_id) {
+            edges.push({
+              id: `1-${graph.child_node_id}`,
+              source: "1",
+              target: graph.child_node_id,
+            });
+          }
         }
       }
     }
-  }, [nodes]);
+  }, [nodes, graph]);
 
   return (
     <div className="h-full w-full relative">
