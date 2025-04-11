@@ -136,6 +136,8 @@ export function Graph() {
         }
       }
     }
+
+    setEdges(edges);
   }, [nodes, graph]);
 
   return (
