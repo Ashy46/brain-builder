@@ -120,6 +120,19 @@ export function Graph() {
     fetchNodes();
   }, []);
 
+  useEffect(() => {
+    const edges: Edge[] = [];
+
+    if (nodes.length > 0) {
+      for (const node of nodes) {
+        if (node.type === "analysis") {
+          const promptId = node.data.promptId;
+          
+        }
+      }
+    }
+  }, [nodes]);
+
   return (
     <div className="h-full w-full relative">
       <ReactFlow
