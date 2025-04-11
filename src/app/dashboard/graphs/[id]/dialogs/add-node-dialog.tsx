@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, BrainCircuit, Code2 } from "lucide-react";
-import { useGraph, useRefreshGraph } from "../layout";
+import { useGraph } from "../layout";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
@@ -26,7 +26,7 @@ export default function AddNodeDialog() {
     type: "CONDITIONAL",
   });
 
-  const { setRefresh } = useRefreshGraph();
+  const { refresh, setRefresh } = useGraph();
 
   const handleSubmit = async () => {
     const result = nodeSchema.safeParse(formData);
@@ -72,7 +72,9 @@ export default function AddNodeDialog() {
     toast.success("Node added successfully");
     setOpen(false);
     setFormData({ label: "", type: "CONDITIONAL" });
+    console.log("Setting refresh");
     setRefresh(true);
+    console.log("refresh", refresh);
   }
 
   return (

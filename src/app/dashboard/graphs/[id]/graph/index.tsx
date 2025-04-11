@@ -35,6 +35,7 @@ const nodeTypes = {
 
 export function Graph() {
   const { graphId, graph } = useGraph();
+  const { refresh, setRefresh } = useGraph();
 
   const [nodes, setNodes] = useState<Node[]>([]);
 
@@ -51,6 +52,8 @@ export function Graph() {
       toast.error("Failed to fetch nodes");
       return;
     }
+
+    console.log("Setting nodes");
 
     setNodes([
       {
@@ -130,6 +133,14 @@ export function Graph() {
   );
 
   useEffect(() => {
+    console.log("refresh", refresh);
+    if (refresh) {
+      fetchNodes();
+      setRefresh(false);
+    }
+  }, [refresh, setRefresh]);
+
+  useEffect(() => {
     const edges: Edge[] = [];
 
     if (nodes.length > 0 && graph) {
@@ -152,6 +163,7 @@ export function Graph() {
   return (
     <div className="h-full w-full relative">
       <ReactFlow
+        key={nodes.length}
         nodeTypes={nodeTypes}
         nodes={nodes}
         edges={edges}
