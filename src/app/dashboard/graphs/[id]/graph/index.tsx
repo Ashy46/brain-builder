@@ -25,7 +25,13 @@ import { AnalysisNode } from "../nodes/analysis-node";
 import { PromptNode } from "../nodes/prompt-node";
 import { ConditionalNode } from "../nodes/conditional-node";
 import { useGraph } from "../layout";
-import { updateNodePositionInDatabase, deleteNodeFromDatabase } from "./utils";
+import {
+  updateNodePositionInDatabase,
+  deleteNodeFromDatabase,
+  saveEdgeToDatabase,
+  deleteEdgeFromDatabase,
+  fetchEdgesFromDatabase,
+} from "./utils";
 
 const nodeTypes = {
   analysis: AnalysisNode,
@@ -119,9 +125,36 @@ export function Graph() {
   const [edges, setEdges] = useState<Edge[]>([]);
 
   const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) =>
-      setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges]
+    async (changes: EdgeChange[]) => {
+      setEdges((eds) => {
+        const updatedEdges = applyEdgeChanges(changes, eds);
+
+        changes.forEach((change) => {
+          if (change.type === "add") {
+            if (change.item.source === "1") {
+              const supabase = createClient();
+              
+              supabase
+                .from("graphs")
+                .update({ child_node_id: change.item.target })
+                .eq("id", graphId)
+                .then(({ error }) => {
+                  if (error) {
+                    console.error("Failed to update graph:", error);
+                    toast.error("Failed to update graph connection");
+                  } else {
+                    saveEdgeToDatabase(change.item, graphId);
+                    toast.success("Graph connection updated");
+                  }
+                });
+            }
+          }
+        });
+
+        return updatedEdges;
+      });
+    },
+    [setEdges, graphId]
   );
 
   const onConnect = useCallback(
