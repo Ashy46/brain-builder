@@ -9,9 +9,13 @@ import { createContext, useContext, useEffect, useState } from "react";
 const GraphContext = createContext<{
   graphId: string;
   graph: Tables<"graphs"> | undefined;
+  refresh: boolean;
+  setRefresh: (refresh: boolean) => void;
 }>({
   graphId: "",
   graph: undefined,
+  refresh: false,
+  setRefresh: () => { },
 });
 
 export function useGraph() {
@@ -27,6 +31,7 @@ export function useGraph() {
 function GraphProvider({ children }: { children: React.ReactNode }) {
   const { id } = useParams();
   const [graph, setGraph] = useState<Tables<"graphs"> | undefined>(undefined);
+  const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
     const fetchGraph = async () => {
@@ -55,54 +60,16 @@ function GraphProvider({ children }: { children: React.ReactNode }) {
   }, [id]);
 
   return (
-    <GraphContext.Provider value={{ graphId: id as string, graph }}>
+    <GraphContext.Provider value={{ graphId: id as string, graph, refresh, setRefresh }}>
       {children}
     </GraphContext.Provider>
   );
 }
 
-export default function GraphLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <GraphProvider>{children}</GraphProvider>;
-}
-
-const RefreshGraphContext = createContext<{
-  refresh: boolean;
-  setRefresh: (refresh: boolean) => void;
-}>({
-  refresh: false,
-  setRefresh: () => {},
-});
-
-export function useRefreshGraph() {
-  const context = useContext(RefreshGraphContext);
-
-  if (context === undefined) {
-    throw new Error(
-      "useRefreshGraph must be used within a RefreshGraphProvider"
-    );
-  }
-
-  return context;
-}
-
-function RefreshGraphProvider({ children }: { children: React.ReactNode }) {
-  const [refresh, setRefresh] = useState(false);
-
+export default function GraphLayout({ children }: { children: React.ReactNode }) {
   return (
-    <RefreshGraphContext.Provider value={{ refresh, setRefresh }}>
+    <GraphProvider>
       {children}
-    </RefreshGraphContext.Provider>
+    </GraphProvider>
   );
-}
-
-export function RefreshGraphLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <RefreshGraphProvider>{children}</RefreshGraphProvider>;
 }
