@@ -141,6 +141,7 @@ export function Graph() {
         const updatedEdges = applyEdgeChanges(changes, eds);
 
         changes.forEach(async (change) => {
+          console.log("change", change);
           if (change.type === "add") {
             if (change.item.source === "1") {
               const supabase = createClient();
