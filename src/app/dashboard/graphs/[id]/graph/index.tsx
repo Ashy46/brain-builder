@@ -25,13 +25,7 @@ import { AnalysisNode } from "../nodes/analysis-node";
 import { PromptNode } from "../nodes/prompt-node";
 import { ConditionalNode } from "../nodes/conditional-node";
 import { useGraph } from "../layout";
-import {
-  updateNodePositionInDatabase,
-  deleteNodeFromDatabase,
-  saveEdgeToDatabase,
-  deleteEdgeFromDatabase,
-  fetchEdgesFromDatabase,
-} from "./utils";
+import { updateNodePositionInDatabase, deleteNodeFromDatabase } from "./utils";
 
 const nodeTypes = {
   analysis: AnalysisNode,
@@ -40,10 +34,10 @@ const nodeTypes = {
 };
 
 export function Graph() {
-  const { graphId, graph } = useGraph();
-  const { refresh, setRefresh } = useGraph();
+  const { graphId, graph, refresh, setRefresh } = useGraph();
 
   const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
 
   async function fetchNodes() {
     const supabase = createClient();
@@ -78,9 +72,25 @@ export function Graph() {
     ]);
   }
 
-  useEffect(() => {
-    fetchNodes();
-  }, []);
+  async function makeInitialEdges() {
+    const edges: Edge[] = [];
+
+    if (nodes.length > 0 && graph) {
+      for (const node of nodes) {
+        if (node.type === "analysis") {
+          if (graph.child_node_id) {
+            edges.push({
+              id: `1-${graph.child_node_id}`,
+              source: "1",
+              target: graph.child_node_id,
+            });
+          }
+        }
+      }
+    }
+
+    setEdges(edges);
+  }
 
   const debouncedUpdateNodePositionInDatabase = useCallback(
     debounce(updateNodePositionInDatabase, 300),
@@ -125,8 +135,6 @@ export function Graph() {
     [setNodes]
   );
 
-  const [edges, setEdges] = useState<Edge[]>([]);
-
   const onEdgesChange = useCallback(
     async (changes: EdgeChange[]) => {
       setEdges((eds) => {
@@ -149,6 +157,8 @@ export function Graph() {
               }
 
               toast.success("Graph connection updated");
+
+              setEdges((eds) => [...eds, change.item]);
             }
           }
         });
@@ -165,7 +175,6 @@ export function Graph() {
   );
 
   useEffect(() => {
-    console.log("refresh", refresh);
     if (refresh) {
       fetchNodes();
       setRefresh(false);
@@ -173,24 +182,13 @@ export function Graph() {
   }, [refresh, setRefresh]);
 
   useEffect(() => {
-    const edges: Edge[] = [];
+    const graphInitialization = async () => {
+      await fetchNodes();
+      await makeInitialEdges();
+    };
 
-    if (nodes.length > 0 && graph) {
-      for (const node of nodes) {
-        if (node.type === "analysis") {
-          if (graph.child_node_id) {
-            edges.push({
-              id: `1-${graph.child_node_id}`,
-              source: "1",
-              target: graph.child_node_id,
-            });
-          }
-        }
-      }
-    }
-
-    setEdges(edges);
-  }, [nodes, graph]);
+    graphInitialization();
+  }, []);
 
   return (
     <div className="h-full w-full relative">
