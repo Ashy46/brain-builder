@@ -50,6 +50,8 @@ function GraphProvider({ children }: { children: React.ReactNode }) {
 
       setGraph(data);
     };
+
+    fetchGraph();
   }, [id]);
 
   return (
