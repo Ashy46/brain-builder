@@ -132,24 +132,23 @@ export function Graph() {
       setEdges((eds) => {
         const updatedEdges = applyEdgeChanges(changes, eds);
 
-        changes.forEach((change) => {
+        changes.forEach(async (change) => {
           if (change.type === "add") {
             if (change.item.source === "1") {
               const supabase = createClient();
-              
-              supabase
+
+              const { data, error } = await supabase
                 .from("graphs")
                 .update({ child_node_id: change.item.target })
-                .eq("id", graphId)
-                .then(({ error }) => {
-                  if (error) {
-                    console.error("Failed to update graph:", error);
-                    toast.error("Failed to update graph connection");
-                  } else {
-                    saveEdgeToDatabase(change.item, graphId);
-                    toast.success("Graph connection updated");
-                  }
-                });
+                .eq("id", graphId);
+
+              if (error) {
+                console.error(error);
+                toast.error("Failed to fetch graph");
+                return;
+              }
+
+              toast.success("Graph connection updated");
             }
           }
         });
