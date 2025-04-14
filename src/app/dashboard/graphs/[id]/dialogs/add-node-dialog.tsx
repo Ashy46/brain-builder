@@ -8,8 +8,10 @@ import { Plus, BrainCircuit, Code2 } from "lucide-react";
 import { useGraph } from "../layout";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
-
+import { Tables } from "@/types/supabase";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 const nodeSchema = z.object({
   label: z.string().min(1, "Label is required"),
@@ -19,14 +21,44 @@ const nodeSchema = z.object({
 type NodeFormData = z.infer<typeof nodeSchema>;
 
 export default function AddNodeDialog() {
+  const { user } = useAuth();
+
   const [open, setOpen] = useState(false);
   const { graphId } = useGraph();
   const [formData, setFormData] = useState<NodeFormData>({
     label: "",
     type: "CONDITIONAL",
   });
+  const [prompts, setPrompts] = useState<Tables<"user_prompts">[]>([]);
+  const [selectedPrompt, setSelectedPrompt] = useState<Tables<"user_prompts"> | null>(null);
 
   const { refresh, setRefresh } = useGraph();
+
+  const fetchPrompts = async () => {
+    console.log("FETCHING");
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("user_prompts")
+      .select("*")
+      .eq("user_id", user?.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.log("GAYYY");
+      toast.error("Error fetching prompts");
+      return;
+    }
+
+    const filteredData = data.filter(prompt => prompt.description !== "Default prompt");
+    console.log("FILTERED PROMPTS DATA", filteredData);
+    setPrompts(filteredData);
+  }
+
+  useEffect(() => {
+    if (!user) return;
+    fetchPrompts();
+
+  }, [user]);
 
   const handleSubmit = async () => {
     const result = nodeSchema.safeParse(formData);
@@ -59,6 +91,7 @@ export default function AddNodeDialog() {
         .from("graph_prompt_nodes")
         .insert({
           graph_node_id: data.id,
+          prompt_id: selectedPrompt?.id || null,
         })
 
       if (promptError) {
@@ -72,15 +105,13 @@ export default function AddNodeDialog() {
     toast.success("Node added successfully");
     setOpen(false);
     setFormData({ label: "", type: "CONDITIONAL" });
-    console.log("Setting refresh");
     setRefresh(true);
-    console.log("refresh", refresh);
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="bg-background/50 hover:bg-accent/50 backdrop-blur-md">
+        <Button variant="outline" onClick={() => fetchPrompts()} className="bg-background/50 hover:bg-accent/50 backdrop-blur-md">
           <Plus className="h-4 w-4" />
           Add Node
         </Button>
@@ -122,6 +153,31 @@ export default function AddNodeDialog() {
                 <BrainCircuit className="w-6 h-6 mx-auto mb-2" />
                 <span className="text-sm font-medium">Prompt</span>
               </button>
+            </div>
+            <div className="gap-2">
+              {formData.type === "PROMPT" && (
+                <div className="grid gap-2 py-4">
+                  <Label>Select Prompt</Label>
+                  <Select
+                    value={selectedPrompt?.id}
+                    onValueChange={(value) => {
+                      const prompt = prompts.find(p => p.id === value);
+                      setSelectedPrompt(prompt || null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a prompt" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" side="bottom" align="start">
+                      {prompts.map((prompt) => (
+                        <SelectItem key={prompt.id} value={prompt.id}>
+                          {prompt.description || "Untitled Prompt"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </div>
         </div>
