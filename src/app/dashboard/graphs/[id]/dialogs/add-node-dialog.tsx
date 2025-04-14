@@ -100,6 +100,22 @@ export default function AddNodeDialog() {
       }
 
       toast.success("Prompt added successfully");
+    } else if (formData.type === "CONDITIONAL") {
+      const { data: conditionalData, error: conditionalError } = await supabase
+        .from("graph_conditional_nodes")
+        .insert({
+          graph_node_id: data.id,
+        })
+        .select();
+
+      if (conditionalError) {
+        toast.error("Error adding conditional node");
+        console.error("Error adding conditional node:", conditionalError);
+        return;
+      }
+
+      console.log("Created conditional node:", conditionalData);
+      toast.success("Conditional node added successfully");
     }
 
     toast.success("Node added successfully");

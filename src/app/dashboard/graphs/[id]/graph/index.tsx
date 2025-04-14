@@ -43,18 +43,35 @@ export function Graph() {
   const fetchNodesAndMakeEdges = async () => {
     const supabase = createClient();
 
-    const { data, error } = await supabase
+    const { data: nodesData, error: nodesError } = await supabase
       .from("graph_nodes")
       .select("*")
       .eq("graph_id", graphId);
 
-    if (error) {
-      console.error(error);
+    if (nodesError) {
+      console.error(nodesError);
       toast.error("Failed to fetch nodes");
       return;
     }
 
-    console.log("Setting nodes");
+    console.log("Fetched nodes:", nodesData);
+
+    // Fetch conditional nodes and their connections
+    const { data: conditionalNodes, error: conditionalError } = await supabase
+      .from("graph_conditional_nodes")
+      .select("*")
+      .in(
+        "graph_node_id",
+        nodesData.map((node) => node.id)
+      );
+
+    if (conditionalError) {
+      console.error(conditionalError);
+      toast.error("Failed to fetch conditional nodes");
+      return;
+    }
+
+    console.log("Fetched conditional nodes:", conditionalNodes);
 
     const curNodes: Node[] = [
       {
@@ -64,7 +81,7 @@ export function Graph() {
         position: { x: 0, y: 0 },
         draggable: false,
       },
-      ...data.map((node) => ({
+      ...nodesData.map((node) => ({
         id: node.id,
         type: node.node_type.toLowerCase(),
         data: { id: node.id },
@@ -74,15 +91,11 @@ export function Graph() {
 
     setNodes(curNodes);
 
-    console.log("Nodes:", curNodes);
-
     const edges: Edge[] = [];
 
     if (curNodes.length > 0 && graph) {
       for (const node of curNodes) {
-        console.log("Node:", node);
         if (node.type === "analysis") {
-          console.log("Graph:", graph);
           if (graph.child_node_id) {
             edges.push({
               id: `1-${graph.child_node_id}`,
@@ -90,12 +103,39 @@ export function Graph() {
               target: graph.child_node_id,
             });
           }
+        } else if (node.type === "conditional") {
+          const conditionalNode = conditionalNodes.find(
+            (cn) => cn.graph_node_id === node.id
+          );
+          console.log(
+            "Found conditional node:",
+            conditionalNode,
+            "for node:",
+            node
+          );
+          if (conditionalNode) {
+            if (conditionalNode.true_child_id) {
+              edges.push({
+                id: `${node.id}-true-${conditionalNode.true_child_id}`,
+                source: node.id,
+                target: conditionalNode.true_child_id,
+                sourceHandle: "true",
+              });
+            }
+            if (conditionalNode.false_child_id) {
+              edges.push({
+                id: `${node.id}-false-${conditionalNode.false_child_id}`,
+                source: node.id,
+                target: conditionalNode.false_child_id,
+                sourceHandle: "false",
+              });
+            }
+          }
         }
       }
     }
 
-    console.log("Edges:", edges);
-
+    console.log("Created edges:", edges);
     setEdges(edges);
   };
 
@@ -172,15 +212,21 @@ export function Graph() {
   const onConnect = useCallback(
     async (connection: Connection) => {
       console.log("New connection:", connection);
+      console.log("Source handle:", connection.sourceHandle);
+
+      // Make sure we have a valid sourceHandle for conditional nodes
+      if (connection.source !== "1" && !connection.sourceHandle) {
+        console.error("Missing sourceHandle for connection", connection);
+        toast.error("Invalid connection: missing source handle");
+        return;
+      }
 
       const newEdge = addEdge(connection, edges);
       setEdges(newEdge);
 
+      const supabase = createClient();
+
       if (connection.source === "1") {
-        const supabase = createClient();
-
-        console.log(connection.target);
-
         const { error } = await supabase
           .from("graphs")
           .update({ child_node_id: connection.target })
@@ -193,9 +239,41 @@ export function Graph() {
         }
 
         toast.success("Graph connection updated");
+      } else {
+        // Handle conditional node connections
+        const sourceNode = nodes.find((node) => node.id === connection.source);
+        if (sourceNode?.type === "conditional") {
+          console.log("Updating conditional connection:", connection);
+          console.log(
+            "Field to update:",
+            connection.sourceHandle === "true"
+              ? "true_child_id"
+              : "false_child_id"
+          );
+
+          const { error } = await supabase
+            .from("graph_conditional_nodes")
+            .update({
+              [connection.sourceHandle === "true"
+                ? "true_child_id"
+                : "false_child_id"]: connection.target,
+            })
+            .eq("graph_node_id", connection.source);
+
+          if (error) {
+            console.error(error);
+            toast.error("Failed to update conditional connection");
+            return;
+          }
+
+          toast.success("Conditional connection updated");
+        }
       }
+
+      // Refresh the graph to ensure all connections are properly loaded
+      setRefresh(true);
     },
-    [setEdges, edges, graphId]
+    [setEdges, edges, graphId, nodes, setRefresh]
   );
 
   return (

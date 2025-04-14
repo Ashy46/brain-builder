@@ -11,11 +11,11 @@ import { createClient } from "@/lib/supabase/client";
 import { Tables } from "@/types/supabase";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 import { useGraph } from "../layout";
 import { EditStateDialog } from "../dialogs/edit-state-dialog";
 import AddStateDialog from "../dialogs/add-state-dialog";
+import { Node } from "./base/node";
 
 export function AnalysisNode() {
   const { graphId } = useGraph();
@@ -50,7 +50,7 @@ export function AnalysisNode() {
   }, [graphId]);
 
   return (
-    <div className="rounded-2xl bg-muted/40 border backdrop-blur-md p-4 space-y-3 min-w-[340px]">
+    <Node title="Analysis States">
       <AddStateDialog fetchStates={fetchStates} />
 
       {isLoading ? (
@@ -81,6 +81,6 @@ export function AnalysisNode() {
       )}
 
       <Handle type="source" position={Position.Bottom} />
-    </div>
+    </Node>
   );
 }

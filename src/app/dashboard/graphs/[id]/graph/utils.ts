@@ -22,14 +22,24 @@ export async function updateNodePositionInDatabase(
 export async function deleteNodeFromDatabase(nodeId: string) {
   const supabase = createClient();
 
+  // First delete any conditional node entry if it exists
+  const { error: conditionalError } = await supabase
+    .from("graph_conditional_nodes")
+    .delete()
+    .eq("graph_node_id", nodeId);
+
+  if (conditionalError) {
+    console.error("Error deleting conditional node:", conditionalError);
+  }
+
+  // Then delete the node itself
   const { error } = await supabase
     .from("graph_nodes")
     .delete()
     .eq("id", nodeId);
 
   if (error) {
-    console.error("Failed to delete node:", error);
-    toast.error("Failed to delete node");
+    console.error("Error deleting node:", error);
   }
 }
 
