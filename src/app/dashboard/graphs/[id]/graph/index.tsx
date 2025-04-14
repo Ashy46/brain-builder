@@ -201,12 +201,78 @@ export function Graph() {
   const onEdgesChange = useCallback(
     async (changes: EdgeChange[]) => {
       console.log("Edge changes:", changes);
+
+      // Handle edge deletions first to update the database
+      for (const change of changes) {
+        if (change.type === "remove") {
+          console.log("Removing edge:", change);
+
+          // Find the edge that's being removed
+          const edgeToRemove = edges.find((e) => e.id === change.id);
+
+          if (edgeToRemove) {
+            console.log("Found edge to remove:", edgeToRemove);
+
+            // Check if this is a conditional node edge
+            if (
+              edgeToRemove.sourceHandle === "true" ||
+              edgeToRemove.sourceHandle === "false"
+            ) {
+              console.log(
+                "Removing conditional edge connection:",
+                edgeToRemove
+              );
+
+              const supabase = createClient();
+
+              // Update the conditional node to remove the connection
+              const { error } = await supabase
+                .from("graph_conditional_nodes")
+                .update({
+                  [edgeToRemove.sourceHandle === "true"
+                    ? "true_child_id"
+                    : "false_child_id"]: null,
+                })
+                .eq("graph_node_id", edgeToRemove.source);
+
+              if (error) {
+                console.error(
+                  "Failed to update conditional connection:",
+                  error
+                );
+                toast.error("Failed to remove connection");
+              } else {
+                console.log("Successfully removed conditional connection");
+                toast.success("Connection removed");
+              }
+            } else if (edgeToRemove.source === "1") {
+              // If this is the main graph connection, update the graph
+              const supabase = createClient();
+
+              const { error } = await supabase
+                .from("graphs")
+                .update({ child_node_id: null })
+                .eq("id", graphId);
+
+              if (error) {
+                console.error("Failed to update graph connection:", error);
+                toast.error("Failed to remove connection");
+              } else {
+                console.log("Successfully removed graph connection");
+                toast.success("Connection removed");
+              }
+            }
+          }
+        }
+      }
+
+      // Then apply all changes to the state
       setEdges((eds) => {
         const updatedEdges = applyEdgeChanges(changes, eds);
         return updatedEdges;
       });
     },
-    [setEdges]
+    [setEdges, edges, graphId]
   );
 
   const onConnect = useCallback(
