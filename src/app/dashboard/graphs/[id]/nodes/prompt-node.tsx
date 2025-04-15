@@ -16,7 +16,7 @@ import { LabelledNode } from "./base/labelled-node";
 export function PromptNode({ data }: { data: any }) {
   const { user } = useAuth();
 
-  const [prompt, setPrompt] = useState<Tables<"user_prompts"> | null>(null);
+  const [prompt, setPrompt] = useState<Tables<"user_prompts">>();
 
   useEffect(() => {
     if (!data.id) return;
