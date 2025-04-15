@@ -10,8 +10,10 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
 import { LabelledNode } from "./base/labelled-node";
+import { EditConditionalDialog } from "../dialogs/edit-conditional-dialog";
 
 export function ConditionalNode({ data }: { data: any }) {
+
   useEffect(() => {
     if (!data.id) return;
 
@@ -60,10 +62,7 @@ export function ConditionalNode({ data }: { data: any }) {
     <LabelledNode id={data.id} title="Conditional">
       <Handle type="target" position={Position.Top} />
 
-      <Button className="w-full">
-        <PencilIcon />
-        Edit Conditional
-      </Button>
+      <EditConditionalDialog node_id={data.id} />
 
       <div className="flex justify-between items-center px-17 py-1">
         <div className="flex items-center gap-1">
