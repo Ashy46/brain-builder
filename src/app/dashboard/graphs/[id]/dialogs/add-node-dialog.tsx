@@ -87,11 +87,29 @@ export default function AddNodeDialog() {
     }
 
     if (formData.type === "PROMPT") {
+      let promptId = selectedPrompt?.id;
+      if (!selectedPrompt) {
+        const { data: promptData, error: promptError } = await supabase
+          .from("user_prompts")
+          .insert({
+            description: "Default prompt",
+            content: "Hey, this is a test prompt. Edit this to your fit",
+            user_id: user?.id,
+          })
+          .select("*")
+          .maybeSingle();
+
+        if (promptError) {
+          toast.error("Error adding default prompt");
+          return;
+        }
+        promptId = promptData?.id;
+      }
       const { data: promptData, error: promptError } = await supabase
         .from("graph_prompt_nodes")
         .insert({
           graph_node_id: data.id,
-          prompt_id: selectedPrompt?.id || null,
+          prompt_id: promptId,
         })
 
       if (promptError) {
