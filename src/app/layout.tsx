@@ -35,7 +35,7 @@ export default function RootLayout({
             </ThemeProvider>
           </AuthProvider>
 
-          <Toaster invert position="bottom-right" />
+          <Toaster invert position="top-center" />
         </body>
       </html>
     </>

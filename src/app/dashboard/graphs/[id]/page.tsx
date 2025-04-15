@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { ArrowLeft, Loader2, Plus } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
 import { Graph } from "./graph";
 import AddNodeDialog from "./dialogs/add-node-dialog";
+import { BrainChat } from "./brain";
 
 export default function GraphPage() {
   const router = useRouter();
@@ -24,10 +24,13 @@ export default function GraphPage() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
+
         <AddNodeDialog />
       </div>
 
       <Graph />
+
+      <BrainChat />
     </>
   );
 }

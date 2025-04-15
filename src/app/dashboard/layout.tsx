@@ -4,7 +4,6 @@ import * as React from "react";
 import { ThemeProvider } from "next-themes";
 import { usePathname } from "next/navigation";
 
-import { Toaster } from "@/components/ui/sonner";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import {
   Breadcrumb,
@@ -81,8 +80,6 @@ export default function DashboardLayout({
               </div>
             </div>
           </div>
-
-          <Toaster position="bottom-right" />
         </SidebarProvider>
       )}
     </ThemeProvider>
