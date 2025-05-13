@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { EditPromptDialog } from "@/app/dashboard/prompts/edit-prompt-dialog";
+import AddConditionalDialog from "./add-conditional-dialog";
 
 import { useGraph } from "../layout";
 
@@ -42,18 +43,34 @@ export function EditConditionalDialog({ node_id }: { node_id: string }) {
   const [conditionals, setConditionals] = useState<Tables<"graph_conditional_node_conditions">[]>([]);
   const [usedStates, setUsedStates] = useState<Tables<"graph_states">[]>([]);
   const [availableStates, setAvailableStates] = useState<Tables<"graph_states">[]>([]);
+  const [conditionalNodeId, setConditionalNodeId] = useState<string | null>(null);
 
   const updateConditional = async (id: string, updates: Partial<Tables<"graph_conditional_node_conditions">>) => {
     //update conditionals useState and dont update the database 
     setConditionals(conditionals.map(c => c.id === id ? { ...c, ...updates } : c));
   };
 
+  const fetchConditionalNodeId = async () => {
+    const supabase = createClient();
+    const { data, error } = await supabase.from("graph_conditional_nodes")
+      .select("id")
+      .eq("graph_node_id", node_id)
+      .single();
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setConditionalNodeId(data?.id);
+  }
+
   const fetchConditionals = async () => {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("graph_conditional_node_conditions")
       .select("*")
-      .eq("graph_conditional_node_id", node_id);
+      .eq("graph_conditional_node_id", conditionalNodeId);
 
     if (error) {
       console.error(error);
@@ -94,14 +111,26 @@ export function EditConditionalDialog({ node_id }: { node_id: string }) {
   }
 
   useEffect(() => {
-    fetchConditionals();
-  }, [node_id]);
+    if (node_id) {
+      fetchConditionalNodeId();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (conditionalNodeId) {
+      fetchConditionals();
+    }
+  }, [conditionalNodeId]);
 
   useEffect(() => {
     if (conditionals.length > 0) {
       fetchStates();
     }
     fetchAvailableStates();
+  }, [conditionals]);
+
+  useEffect(() => {
+    console.log("Conditionals", conditionals);
   }, [conditionals]);
 
   return (
@@ -178,10 +207,7 @@ export function EditConditionalDialog({ node_id }: { node_id: string }) {
             })}
           </div>
           <div className="flex justify-center mt-4">
-            <Button variant="outline" className="w-full" >
-              <Plus className="size-4 mr-2" />
-              Add Conditional
-            </Button>
+            <AddConditionalDialog conditionals={conditionals} setConditionals={setConditionals} availableStates={availableStates} node_id={node_id} />
           </div>
           <DialogFooter>
             <Button type="submit">Save</Button>
