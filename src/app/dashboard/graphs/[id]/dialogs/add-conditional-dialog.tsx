@@ -44,7 +44,8 @@ export default function AddConditionalDialog({
       .insert({
         graph_conditional_node_id: conditionalNode.id,
         state_id: selectedState?.id,
-      });
+      })
+      .select();
 
     if (error) {
       toast.error(error.message);

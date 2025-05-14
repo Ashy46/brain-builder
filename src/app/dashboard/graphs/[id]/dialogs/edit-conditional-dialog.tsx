@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 import { z } from "zod";
 import { toast } from "sonner";
-import { PencilIcon, Plus } from "lucide-react";
+import { PencilIcon, Plus, TrashIcon } from "lucide-react";
 
 import { Tables } from "@/types/supabase";
 import { useAuth } from "@/lib/hooks/use-auth";
@@ -108,6 +108,45 @@ export function EditConditionalDialog({ node_id }: { node_id: string }) {
     }
 
     setAvailableStates(data);
+  };
+
+  const handleDeleteConditional = async (id: string) => {
+    const supabase = createClient();
+    const { error } = await supabase.from("graph_conditional_node_conditions")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setConditionals(conditionals.filter(c => c.id !== id));
+  }
+
+  const handleSave = async () => {
+    const supabase = createClient();
+    const { data, error } = await supabase.from("graph_conditional_nodes")
+      .update({
+        conditional_evaluator: conditionalEvaluator,
+      })
+      .eq("id", conditionalNodeId);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    const { data: conditionalsData, error: conditionalsError } = await supabase.from("graph_conditional_node_conditions")
+      .update(conditionals.map(c => ({ value: c.value, conditional_operator: c.conditional_operator })))
+      .eq("graph_conditional_node_id", conditionalNodeId);
+
+    if (conditionalsError) {
+      console.error(conditionalsError);
+      return;
+    };
+
+    setOpen(false);
   }
 
   useEffect(() => {
@@ -166,24 +205,13 @@ export function EditConditionalDialog({ node_id }: { node_id: string }) {
               const state = usedStates.find(s => s.id === conditional.state_id);
               return (
                 <div key={conditional.id} className="flex flex-row items-center gap-2">
-                  <Label>{state?.name}</Label>
-                  <Select
-                    value={conditional.state_id}
-                    onValueChange={(value) => {
-                      updateConditional(conditional.id, { state_id: value });
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableStates.map((state) => (
-                        <SelectItem key={state.id} value={state.id}>
-                          {state.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-row items-center gap-2">
+                    <Label className="whitespace-nowrap">{state?.name}: </Label>
+                  </div>
+                  <Input
+                    value={conditional.value ?? ''}
+                    onChange={(e) => updateConditional(conditional.id, { value: e.target.value })}
+                  />
                   <Select
                     value={conditional.conditional_operator}
                     onValueChange={(value: "EQUALS" | "NOT_EQUALS" | "LESS_THAN" | "LESS_THAN_OR_EQUAL_TO" | "MORE_THAN" | "MORE_THAN_OR_EQUAL_TO") => {
@@ -202,6 +230,9 @@ export function EditConditionalDialog({ node_id }: { node_id: string }) {
                       <SelectItem value="MORE_THAN_OR_EQUAL_TO">More Than or Equal To</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Button variant="outline" size="icon" className="text-destructive" onClick={() => handleDeleteConditional(conditional.id)}>
+                    <TrashIcon />
+                  </Button>
                 </div>
               );
             })}
@@ -210,7 +241,7 @@ export function EditConditionalDialog({ node_id }: { node_id: string }) {
             <AddConditionalDialog conditionals={conditionals} setConditionals={setConditionals} availableStates={availableStates} node_id={node_id} />
           </div>
           <DialogFooter>
-            <Button type="submit">Save</Button>
+            <Button type="submit" onClick={handleSave}>Save</Button>
           </DialogFooter>
         </div>
       </DialogContent>
