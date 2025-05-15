@@ -9,6 +9,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/lib/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { handlePromptNode } from "./handle-nodes/handle-prompt-node";
+import { handleAnalysisNode } from "./handle-nodes/handle-analysis-node";
+
+import { useGraph } from "../layout";
+
 
 interface Message {
   role: "user" | "assistant";
@@ -17,6 +21,7 @@ interface Message {
 
 export function Chat() {
   const { isAuthenticated } = useAuth();
+  const { graphId } = useGraph();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);

@@ -49,13 +49,7 @@ export async function POST(req: Request) {
     const encryptedData = JSON.parse(userData.openai_api_key);
     const apiKey = decrypt(encryptedData);
 
-    const { messages } = await req.json();
-
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      throw new ValidationError(
-        "Messages array is required and cannot be empty"
-      );
-    }
+    const { messages, prompt } = await req.json();
 
     const openai = new OpenAI({ apiKey });
 
@@ -65,14 +59,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system",
-          content: `You are an AI that analyzes conversations and outputs a single number representing the negativity level of the last message. 
-          Output only a number from 0-10, where 0 is completely positive/neutral and 10 is extremely negative.
-          Consider factors like:
-          - Hostile or aggressive language
-          - Complaints or criticism
-          - Negative emotions or mood
-          - Sarcasm or passive-aggressiveness
-          Only analyze the most recent message in the conversation.`,
+          content: prompt,
         },
         ...messages,
       ],
@@ -87,9 +74,11 @@ export async function POST(req: Request) {
 
     const negativityScore = parseFloat(content);
     if (isNaN(negativityScore)) {
+      console.log(`Invalid score from OpenAI: ${content}`);
       throw new Error(`Invalid score from OpenAI: ${content}`);
     }
 
+    console.log("negativityScore", negativityScore);
     return NextResponse.json({ score: negativityScore });
   } catch (error) {
     console.error("Server error:", error);
