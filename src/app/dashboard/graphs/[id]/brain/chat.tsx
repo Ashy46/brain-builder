@@ -69,11 +69,12 @@ export function Chat() {
 
     const userMessage: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
+    const tempMessages = [...messages, userMessage]; //reactive updates async so yeah
     setInput("");
     setIsLoading(true);
 
     try {
-      const response = await handlePromptNode(messages, "1b3b9e4b-15b3-4cf1-b053-ffd2d1fb017d", authToken);
+      const response = await handleAnalysisNode(tempMessages, graphId, authToken);
 
       if (!response?.ok) {
         const errorData = await response?.json().catch(() => null);
