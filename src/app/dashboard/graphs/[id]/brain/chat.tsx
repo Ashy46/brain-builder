@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/lib/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
+import { handlePromptNode } from "./handle-nodes/handle-prompt-node";
 
 interface Message {
   role: "user" | "assistant";
@@ -67,33 +68,20 @@ export function Chat() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/ai/stream", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          prompt: input,
-          messages: messages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          })),
-        }),
-      });
+      const response = await handlePromptNode(messages, "1b3b9e4b-15b3-4cf1-b053-ffd2d1fb017d", authToken);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error("API Error:", response.status, errorData);
-        
+      if (!response?.ok) {
+        const errorData = await response?.json().catch(() => null);
+        console.error("API Error:", response?.status, errorData);
+
         // Handle specific error cases
         if (errorData?.code === "VALIDATION_ERROR" && errorData?.error?.includes("OpenAI API key")) {
           toast.error(
             <div className="flex flex-col gap-2">
               <span>{errorData.error}</span>
-              <Button 
-                size="sm" 
-                variant="outline" 
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={() => window.location.href = "/dashboard/settings"}
                 className="flex items-center gap-2"
               >
@@ -104,10 +92,10 @@ export function Chat() {
             { duration: 10000 }
           );
         } else {
-          toast.error(errorData?.error || `Request failed with status ${response.status}`);
+          toast.error(errorData?.error || `Request failed with status ${response?.status}`);
         }
-        
-        throw new Error(errorData?.error || `Failed to get response: ${response.status}`);
+
+        throw new Error(errorData?.error || `Failed to get response: ${response?.status}`);
       }
 
       const reader = response.body?.getReader();
@@ -161,16 +149,14 @@ export function Chat() {
             messages.map((message, index) => (
               <div
                 key={index}
-                className={`flex ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}
+                  className={`max-w-[80%] rounded-lg p-3 ${message.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                    }`}
                 >
                   {message.content}
                 </div>
