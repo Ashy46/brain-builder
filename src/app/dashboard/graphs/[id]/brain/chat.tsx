@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { handlePromptNode } from "./handle-nodes/handle-prompt-node";
 import { handleAnalysisNode } from "./handle-nodes/handle-analysis-node";
+import { handleConditionalNode } from "./handle-nodes/handle-conditional-node";
 
 import { useGraph } from "../layout";
 
@@ -75,6 +76,9 @@ export function Chat() {
 
     try {
       const response = await handleAnalysisNode(tempMessages, graphId, authToken);
+
+      const node = await handleConditionalNode(4, "d1789460-2cf8-4ec2-963f-f65655ffdea2", authToken);
+      console.log("next node", node);
 
       if (!response?.ok) {
         const errorData = await response?.json().catch(() => null);
