@@ -8,9 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/lib/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
-import { handlePromptNode } from "./handle-nodes/handle-prompt-node";
-import { handleAnalysisNode } from "./handle-nodes/handle-analysis-node";
-import { handleConditionalNode } from "./handle-nodes/handle-conditional-node";
+import { traverseTree } from "./traverse-tree";
 
 import { useGraph } from "../layout";
 
@@ -75,10 +73,7 @@ export function Chat() {
     setIsLoading(true);
 
     try {
-      const response = await handleAnalysisNode(tempMessages, graphId, authToken);
-
-      const node = await handleConditionalNode(4, "d1789460-2cf8-4ec2-963f-f65655ffdea2", authToken);
-      console.log("next node", node);
+      const response = await traverseTree(tempMessages, graphId, authToken);
 
       if (!response?.ok) {
         const errorData = await response?.json().catch(() => null);
