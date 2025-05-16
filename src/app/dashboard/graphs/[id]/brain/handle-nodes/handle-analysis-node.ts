@@ -5,26 +5,21 @@ interface Message {
   content: string;
 }
 
-async function handleAnalysisNode(messages: Message[], graphId: string, authToken: string) {
+interface State {
+  id: string;
+  graph_id: string;
+  name: string;
+  persistent: boolean;
+  starting_value: string | null;
+  current_value: string | null;
+  type: "NUMBER" | "TEXT" | "BOOLEAN";
+  promptId: string;
+}
+
+async function handleAnalysisNode(messages: Message[], state: State, authToken: string) {
   const supabase = createClient();
 
-  const { data: node, error: nodeError } = await supabase
-    .from("graph_states")
-    .select("*")
-    .eq("graph_id", graphId)
-    .single();
-
-  if (nodeError) {
-    console.error("Error fetching node:", nodeError);
-    return null;
-  }
-
-  if (!node) {
-    console.error("Node not found:", graphId);
-    return null;
-  }
-
-  const promptId = node.prompt_id;
+  const promptId = state.promptId;
 
   const { data: prompt, error: promptError } = await supabase
     .from("user_prompts")
@@ -61,7 +56,13 @@ async function handleAnalysisNode(messages: Message[], graphId: string, authToke
     }),
   });
 
-  return response;
+  if (!response.ok) {
+    console.error("Error from /api/ai/analyze:", response.statusText);
+    return null;
+  }
+
+  const data = await response.json();
+  return data;
 }
 
 export { handleAnalysisNode };

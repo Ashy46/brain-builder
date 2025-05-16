@@ -1,7 +1,17 @@
 import { createClient } from "@/lib/supabase/client";
 import { Tables } from "@/types/supabase";
 
-async function handleConditionalNode(stateNum: number, nodeId: string, authToken: string) {
+interface State {
+  id: string;
+  graph_id: string;
+  name: string;
+  persistent: boolean;
+  starting_value: string | null;
+  current_value: string;
+  type: "NUMBER" | "TEXT" | "BOOLEAN";
+  promptId: string;
+}
+async function handleConditionalNode(states: State[], nodeId: string, authToken: string) {
   const supabase = createClient();
 
   const { data: node, error: nodeError } = await supabase
@@ -31,16 +41,16 @@ async function handleConditionalNode(stateNum: number, nodeId: string, authToken
   }
 
   let boolean = false;
-  if (conditional.condition_operator === "EQUALS") {
-    boolean = stateNum === conditional.value;
-  } else if (conditional.condition_operator === "GREATER_THAN") {
-    boolean = stateNum > conditional.value;
-  } else if (conditional.condition_operator === "LESS_THAN") {
-    boolean = stateNum < conditional.value;
-  } else if (conditional.condition_operator === "GREATER_THAN_OR_EQUAL_TO") {
-    boolean = stateNum >= conditional.value;
-  } else if (conditional.condition_operator === "LESS_THAN_OR_EQUAL_TO") {
-    boolean = stateNum <= conditional.value;
+  if (conditional.conditional_operator === "EQUALS") {
+    boolean = parseFloat(states[0].current_value) === parseFloat(conditional.value);
+  } else if (conditional.conditional_operator === "MORE_THAN") {
+    boolean = parseFloat(states[0].current_value) > parseFloat(conditional.value);
+  } else if (conditional.conditional_operator === "LESS_THAN") {
+    boolean = parseFloat(states[0].current_value) < parseFloat(conditional.value);
+  } else if (conditional.conditional_operator === "MORE_THAN_OR_EQUAL_TO") {
+    boolean = parseFloat(states[0].current_value) >= parseFloat(conditional.value);
+  } else if (conditional.conditional_operator === "LESS_THAN_OR_EQUAL_TO") {
+    boolean = parseFloat(states[0].current_value) <= parseFloat(conditional.value);
   }
 
   if (boolean) {
