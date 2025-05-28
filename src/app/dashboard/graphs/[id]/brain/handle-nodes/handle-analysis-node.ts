@@ -48,6 +48,7 @@ async function handleAnalysisNode(messages: Message[], state: State, authToken: 
       Authorization: `Bearer ${authToken}`,
     },
     body: JSON.stringify({
+      label: state.name,
       messages: messages.map(msg => ({
         role: msg.role,
         content: msg.content

@@ -137,13 +137,18 @@ export function EditConditionalDialog({ node_id }: { node_id: string }) {
       return;
     }
 
-    const { data: conditionalsData, error: conditionalsError } = await supabase.from("graph_conditional_node_conditions")
-      .update(conditionals.map(c => ({ value: c.value, conditional_operator: c.conditional_operator })))
-      .eq("graph_conditional_node_id", conditionalNodeId);
+    for (const c of conditionals) {
+      const { error } = await supabase.from("graph_conditional_node_conditions")
+        .update({
+          value: c.value,
+          conditional_operator: c.conditional_operator,
+        })
+        .eq("id", c.id);
 
-    if (conditionalsError) {
-      console.error(conditionalsError);
-      return;
+      if (error) {
+        console.error(error);
+        return;
+      }
     };
 
     setOpen(false);

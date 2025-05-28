@@ -11,6 +11,17 @@ interface State {
   type: "NUMBER" | "TEXT" | "BOOLEAN";
   promptId: string;
 }
+
+/**
+ * Handles the conditional node logic by checking the states of the graph and the conditions of the node.
+ * It correlates the current conditional with the correct state and them evalutes the condiutional, pushing the 
+ * result into an array. Currrently only supports NUMBER states. 
+ * 
+ * @param states - The states of the graph
+ * @param nodeId - The id of the node
+ * @param authToken - The auth token
+ * @returns 
+ */
 async function handleConditionalNode(states: State[], nodeId: string, authToken: string) {
   const supabase = createClient();
 
@@ -30,34 +41,56 @@ async function handleConditionalNode(states: State[], nodeId: string, authToken:
     return null;
   }
 
-  const  { data: conditional, error: conditionalError } = await supabase
+  const  { data: conditionals, error: conditionalError } = await supabase
     .from("graph_conditional_node_conditions")
     .select("*")
     .eq("graph_conditional_node_id", node.id)
-    .single();
 
   if (conditionalError) {
     console.error("Error fetching conditional:", conditionalError);
   }
 
-  let boolean = false;
-  if (conditional.conditional_operator === "EQUALS") {
-    boolean = parseFloat(states[0].current_value) === parseFloat(conditional.value);
-  } else if (conditional.conditional_operator === "MORE_THAN") {
-    boolean = parseFloat(states[0].current_value) > parseFloat(conditional.value);
-  } else if (conditional.conditional_operator === "LESS_THAN") {
-    boolean = parseFloat(states[0].current_value) < parseFloat(conditional.value);
-  } else if (conditional.conditional_operator === "MORE_THAN_OR_EQUAL_TO") {
-    boolean = parseFloat(states[0].current_value) >= parseFloat(conditional.value);
-  } else if (conditional.conditional_operator === "LESS_THAN_OR_EQUAL_TO") {
-    boolean = parseFloat(states[0].current_value) <= parseFloat(conditional.value);
-  }
+  console.log(conditionals);
 
-  if (boolean) {
-    return node.true_child_id;
-  } else {
-    return node.false_child_id;
+
+  let booleans: boolean[] = [];
+  for (const conditional of conditionals || []) {
+
+    let currentState = states.find(state => state.id === conditional.state_id);
+    let boolean: boolean = false;
+
+  if (conditional.conditional_operator === "EQUALS") {
+    boolean = parseFloat(currentState?.current_value || "0") === parseFloat(conditional.value);
+  } else if (conditional.conditional_operator === "MORE_THAN") {
+    boolean = parseFloat(currentState?.current_value || "0") > parseFloat(conditional.value);
+  } else if (conditional.conditional_operator === "LESS_THAN") {
+    boolean = parseFloat(currentState?.current_value || "0") < parseFloat(conditional.value);
+  } else if (conditional.conditional_operator === "MORE_THAN_OR_EQUAL_TO") {
+    boolean = parseFloat(currentState?.current_value || "0") >= parseFloat(conditional.value);
+  } else if (conditional.conditional_operator === "LESS_THAN_OR_EQUAL_TO") {
+    boolean = parseFloat(currentState?.current_value || "0") <= parseFloat(conditional.value);
   }
+  booleans.push(boolean);
 }
 
+  const conditional_evaluator = node.conditional_evaluator;
+
+  if (conditional_evaluator === "and") {
+    for (const boolean of booleans) {
+      console.log(boolean);
+      if (!boolean) {
+        return node.false_child_id;
+      }
+    }
+    return node.true_child_id;
+  } else if (conditional_evaluator === "or") {
+    for (const boolean of booleans) {
+      console.log(boolean);
+      if (boolean) {
+        return node.true_child_id;
+      }
+    }
+    return node.false_child_id; 
+  }
+}
 export { handleConditionalNode };

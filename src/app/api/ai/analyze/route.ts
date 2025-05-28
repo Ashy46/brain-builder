@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     const encryptedData = JSON.parse(userData.openai_api_key);
     const apiKey = decrypt(encryptedData);
 
-    const { messages, prompt } = await req.json();
+    const { label, messages, prompt } = await req.json();
 
     const openai = new OpenAI({ apiKey });
 
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
       throw new Error(`Invalid score from OpenAI: ${content}`);
     }
 
-    console.log("negativityScore", negativityScore);
+    console.log(`${label}: ${negativityScore}`);
     return NextResponse.json({ score: negativityScore });
   } catch (error) {
     console.error("Server error:", error);
