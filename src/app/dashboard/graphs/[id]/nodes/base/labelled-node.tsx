@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 
+import { toast } from "sonner";
+
 import { debounce } from "lodash";
 
 import { createClient } from "@/lib/supabase/client";
 
 import { Input } from "@/components/ui/input";
 
+import { useGraph } from "../../layout";
 import { Node } from "./node";
 
 export function LabelledNode({
@@ -20,6 +23,7 @@ export function LabelledNode({
   children: React.ReactNode;
 }) {
   const [label, setLabel] = useState("");
+  const { refresh, setRefresh } = useGraph();
 
   useEffect(() => {
     const fetchLabel = async () => {
@@ -61,8 +65,27 @@ export function LabelledNode({
     updateLabel(newLabel);
   };
 
+  const deleteNode = async () => {
+    const supabase = createClient();
+
+    console.log("Deleting node:", id);
+
+    const { data, error } = await supabase
+      .from("graph_nodes")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error deleting node:", error);
+    }
+
+    console.log("Node deleted:", data);
+    toast.success("Node deleted successfully");
+    setRefresh(true);
+  }
+
   return (
-    <Node title={title}>
+    <Node title={title} deleteNode={deleteNode}>
       <Input
         value={label}
         onChange={handleLabelChange}
