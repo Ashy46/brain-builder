@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { traverseTree } from "./traverse-tree";
 
-import { useGraph } from "../layout";
+import { useGraph } from "../context/graph-context";
 
 
 interface Message {

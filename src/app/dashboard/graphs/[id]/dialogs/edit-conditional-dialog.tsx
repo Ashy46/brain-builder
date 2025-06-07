@@ -32,7 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import { EditPromptDialog } from "@/app/dashboard/prompts/edit-prompt-dialog";
 import AddConditionalDialog from "./add-conditional-dialog";
 
-import { useGraph } from "../layout";
+import { useGraph } from "../context/graph-context";
 
 export function EditConditionalDialog({ node_id }: { node_id: string }) {
   const { user } = useAuth();

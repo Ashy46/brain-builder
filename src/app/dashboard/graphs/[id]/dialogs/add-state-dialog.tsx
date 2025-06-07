@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/lib/hooks/use-auth";
-import { useGraph } from "../layout";
+import { useGraph } from "../context/graph-context";
 
 const stateSchema = z.object({
   name: z.string().min(1, "Name is required"),

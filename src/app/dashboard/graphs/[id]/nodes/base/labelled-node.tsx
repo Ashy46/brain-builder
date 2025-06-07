@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 
 import { Input } from "@/components/ui/input";
 
-import { useGraph } from "../../layout";
+import { useGraph } from "../../context/graph-context";
 import { Node } from "./node";
 
 export function LabelledNode({
