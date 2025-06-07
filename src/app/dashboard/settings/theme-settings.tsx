@@ -2,7 +2,7 @@ import { SunIcon } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 
-import { SettingsItem } from "./page";
+import { SettingsItem } from "./settings-items";
 
 export function ThemeSettings() {
   return (

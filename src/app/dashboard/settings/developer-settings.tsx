@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 
 import { Button } from "@/components/ui/button";
 
-import { SettingsItem } from "./page";
+import { SettingsItem } from "./settings-items";
 
 export function DeveloperSettings() {
   const [jwt, setJwt] = useState<string | null>(null);

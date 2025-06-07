@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 
 import { createClient } from "@/lib/supabase/client";
 
-import { SettingsItem } from "./page";
+import { SettingsItem } from "./settings-items";
 
 export function OpenAISettings() {
   const [apiKey, setApiKey] = useState("");
