@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 import { Node, Edge } from "@xyflow/react";
 
-import { useGraph } from "../layout";
+import { useGraph } from "../context/graph-context";
 import { fetchNodesAndEdges } from "./database";
 
 export function useGraphData() {

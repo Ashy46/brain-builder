@@ -2,13 +2,16 @@ import { useEffect, useState } from "react";
 
 import { z } from "zod";
 import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, BrainCircuit, Code2 } from "lucide-react";
+
 import { useGraph } from "../context/graph-context";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { createClient } from "@/lib/supabase/client";
 import { Tables } from "@/types/supabase";
 import { useAuth } from "@/lib/hooks/use-auth";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Loader2, Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Handle, Position } from "@xyflow/react";
 import { toast } from "sonner";
 
@@ -12,7 +12,7 @@ import { Tables } from "@/types/supabase";
 
 import { Badge } from "@/components/ui/badge";
 
-import { useGraph } from "../layout";
+import { useGraph } from "../context/graph-context";
 import { EditStateDialog } from "../dialogs/edit-state-dialog";
 import AddStateDialog from "../dialogs/add-state-dialog";
 import { Node } from "./base/node";
@@ -50,7 +50,7 @@ export function AnalysisNode() {
   }, [graphId]);
 
   return (
-    <Node title="Analysis States">
+    <Node title="Analysis States" deleteNode={() => { }}>
       <AddStateDialog fetchStates={fetchStates} />
 
       {isLoading ? (

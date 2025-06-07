@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 
-import { Tables } from "@/types/supabase";
+import { toast } from "sonner";
 
+import { Tables } from "@/types/supabase";
+import { createClient } from "@/lib/supabase/client";
+
+import { Plus } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
-import { toast } from "sonner";
 
 export default function AddConditionalDialog({
   conditionals,
