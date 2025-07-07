@@ -23,6 +23,9 @@ interface State {
  * @returns 
  */
 async function handleConditionalNode(states: State[], nodeId: string, authToken: string) {
+
+  console.log("CONDITIONAL NODE STATES", states);
+
   const supabase = createClient();
 
   const { data: node, error: nodeError } = await supabase

@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/lib/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { traverseTree } from "./traverse-tree";
+import { PersistentStateManager } from "./persistentStateManager";
 
 import { useGraph } from "../context/graph-context";
 
@@ -25,6 +26,8 @@ export function Chat() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [stateManager, setStateManager] = useState<PersistentStateManager | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,6 +50,25 @@ export function Chat() {
   }, [isAuthenticated]);
 
   useEffect(() => {
+    // Initialize state manager when graphId is available
+    async function initializeStateManager() {
+      if (graphId && !stateManager) {
+        try {
+          const manager = new PersistentStateManager(graphId);
+          await manager.loadStates();
+          setStateManager(manager);
+          setIsInitialized(true);
+        } catch (error) {
+          console.error("Error initializing state manager:", error);
+          toast.error("Failed to initialize state manager");
+        }
+      }
+    }
+
+    initializeStateManager();
+  }, [graphId, stateManager]);
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
@@ -56,13 +78,18 @@ export function Chat() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    // Check if we have auth token
+    // Check if we have auth token and state manager
     if (!authToken) {
       setMessages(prev => [
         ...prev,
         { role: "assistant", content: "Authentication error. Please log in again." }
       ]);
       toast.error("Authentication error. Please log in again.");
+      return;
+    }
+
+    if (!stateManager || !isInitialized) {
+      toast.error("State manager not initialized. Please wait or refresh the page.");
       return;
     }
 
@@ -73,7 +100,20 @@ export function Chat() {
     setIsLoading(true);
 
     try {
-      const response = await traverseTree(tempMessages, graphId, authToken);
+      // Get current states from the state manager
+      const currentStates = stateManager.getCurrentStates();
+
+      console.log("Chat currentStates", currentStates);
+
+      // Pass states and stateManager to traverseTree
+      const result = await traverseTree(tempMessages, graphId, authToken, currentStates, stateManager);
+
+      console.log("result", result.updatedStates);
+
+      // Note: States are now updated within traverseTree via the stateManager
+      // No need to update states again here since it's done in analyzeStates
+
+      const response = result.response;
 
       if (!response?.ok) {
         const errorData = await response?.json().catch(() => null);
@@ -149,6 +189,16 @@ export function Chat() {
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               Send a message to start chatting with the brain
+              {!isInitialized && (
+                <div className="text-sm mt-2">
+                  <div className="flex space-x-2 justify-center">
+                    <div className="w-2 h-2 rounded-full bg-foreground/40 animate-bounce"></div>
+                    <div className="w-2 h-2 rounded-full bg-foreground/40 animate-bounce delay-75"></div>
+                    <div className="w-2 h-2 rounded-full bg-foreground/40 animate-bounce delay-150"></div>
+                  </div>
+                  <span className="text-xs">Initializing state manager...</span>
+                </div>
+              )}
             </div>
           ) : (
             messages.map((message, index) => (
@@ -187,16 +237,21 @@ export function Chat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message..."
-            disabled={isLoading}
+            disabled={isLoading || !authToken || !isInitialized}
             className="flex-1"
           />
-          <Button type="submit" disabled={isLoading || !authToken}>
+          <Button type="submit" disabled={isLoading || !authToken || !isInitialized}>
             <Send className="h-4 w-4" />
           </Button>
         </div>
         {!authToken && (
           <p className="text-xs text-red-500 mt-2">
             Authentication error. Please log in or refresh the page.
+          </p>
+        )}
+        {!isInitialized && authToken && (
+          <p className="text-xs text-yellow-500 mt-2">
+            Initializing state manager...
           </p>
         )}
       </form>

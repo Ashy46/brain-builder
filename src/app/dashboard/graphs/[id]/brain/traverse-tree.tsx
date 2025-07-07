@@ -3,6 +3,7 @@ import { handleAnalysisNode } from "./handle-nodes/handle-analysis-node";
 import { handlePromptNode } from "./handle-nodes/handle-prompt-node";
 
 import { createClient } from "@/lib/supabase/client";
+import { State, PersistentStateManager } from "./persistentStateManager";
 
 import { Tables } from "@/types/supabase";
 
@@ -11,23 +12,21 @@ interface Message {
   content: string;
 }
 
-interface State {
-  id: string;
-  graph_id: string;
-  name: string;
-  persistent: boolean;
-  starting_value: string | null;
-  current_value: string;
-  type: "NUMBER" | "TEXT" | "BOOLEAN";
-  promptId: string;
+interface TraverseTreeResult {
+  response: any;
+  updatedStates: State[];
 }
 
-async function traverseTree(messages: Message[], graphId: string, authToken: string) {
+async function traverseTree(
+  messages: Message[],
+  graphId: string,
+  authToken: string,
+  states: State[],
+  stateManager?: PersistentStateManager
+): Promise<TraverseTreeResult> {
   const supabase = createClient();
 
-  const states = await loadStates(graphId);
-
-  const updatedStates = await analyzeStates(states, messages, authToken);
+  const updatedStates = await analyzeStates(states, messages, authToken, stateManager);
 
   const { data, error } = await supabase
     .from("graphs")
@@ -40,51 +39,32 @@ async function traverseTree(messages: Message[], graphId: string, authToken: str
   }
 
   const child_node_id: string = data.child_node_id;
-  const graph_nodes: Tables<"graph_nodes">[] = data.graph_nodes;
 
-  let nextNode: string | null = graph_nodes[0].id;
+  let nextNode: string | null = child_node_id;
 
   while (nextNode) {
     const nodeType = await getNodeType(nextNode);
 
     if (nodeType === "CONDITIONAL") {
+      console.log("About to call handleConditionalNode");
       const response = await handleConditionalNode(updatedStates, nextNode, authToken);
       nextNode = response;
     } else if (nodeType === "PROMPT") {
       const response = await handlePromptNode(messages, nextNode, authToken);
-      return response;
+      return { response, updatedStates };
     }
   }
+
+  // If we reach here, something went wrong
+  throw new Error("No valid response node found");
 }
 
-async function loadStates(graphId: string) {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from("graph_states")
-    .select("id, graph_id, name, persistent, starting_value, type, prompt_id")
-    .eq("graph_id", graphId);
-
-  if (error) {
-    console.error("Error loading states:", error);
-    throw error;
-  }
-
-  const states: State[] = data.map((state) => ({
-    id: state.id,
-    graph_id: state.graph_id,
-    name: state.name,
-    persistent: state.persistent,
-    starting_value: state.starting_value,
-    current_value: state.starting_value ? state.starting_value : "0",
-    type: state.type,
-    promptId: state.prompt_id,
-  }));
-
-  return states;
-}
-
-async function analyzeStates(states: State[], messages: Message[], authToken: string) {
+async function analyzeStates(
+  states: State[],
+  messages: Message[],
+  authToken: string,
+  stateManager?: PersistentStateManager
+) {
   const updatedStates = [];
 
   for (const state of states) {
@@ -97,6 +77,14 @@ async function analyzeStates(states: State[], messages: Message[], authToken: st
   }
 
   console.log("updatedStates", updatedStates);
+
+  // If stateManager is provided, update the states BEFORE we traverse the trees
+  if (stateManager) {
+    console.log("HERE UPDATING STATES", stateManager);
+    stateManager.updateStates(updatedStates);
+    // Return the current states from the manager which now include the persistence logic
+    return stateManager.getCurrentStates();
+  }
 
   return updatedStates;
 }
@@ -116,4 +104,6 @@ async function getNodeType(nodeId: string) {
 
   return data.node_type;
 }
+
 export { traverseTree };
+export type { TraverseTreeResult };
