@@ -20,7 +20,7 @@ export function BrainChat() {
           Test Brain
         </Button>
       ) : (
-        <div className="w-[500px] h-[800px] bg-background/95 backdrop-blur-md rounded-lg border shadow-lg flex flex-col animate-in zoom-in-90 fade-in">
+        <div className="w-[500px] h-[800px] bg-background/95 backdrop-blur-md rounded-lg border shadow-lg flex flex-col animate-in zoom-in-95 fade-in duration-200">
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
