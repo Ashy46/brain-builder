@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 
 import { Graph } from "./graph";
 import AddNodeDialog from "./dialogs/add-node-dialog";
+import ExportGraphDialog from "./dialogs/export-graph-dialog";
 import { BrainChat } from "./brain";
 
 export default function GraphPage() {
@@ -26,6 +27,8 @@ export default function GraphPage() {
         </Button>
 
         <AddNodeDialog />
+
+        <ExportGraphDialog />
       </div>
 
       <Graph />

@@ -5,7 +5,7 @@ import { Send, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { useAuth } from "@/lib/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import { traverseTree } from "./traverse-tree";
@@ -29,6 +29,7 @@ export function Chat() {
   const [stateManager, setStateManager] = useState<PersistentStateManager | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Get session token when component mounts (client-side only)
@@ -68,10 +69,33 @@ export function Chat() {
     initializeStateManager();
   }, [graphId, stateManager]);
 
+  // Scroll to bottom when messages change
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    const scrollToBottom = () => {
+      if (scrollRef.current) {
+        const container = scrollRef.current;
+        console.log('Scroll debug:', {
+          scrollTop: container.scrollTop,
+          scrollHeight: container.scrollHeight,
+          clientHeight: container.clientHeight,
+          canScroll: container.scrollHeight > container.clientHeight
+        });
+
+        // Force scroll to bottom
+        container.scrollTop = container.scrollHeight;
+
+        // Also try scrolling the end element into view
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+        }
+      }
+    };
+
+    // Use multiple timing methods to ensure it works
+    requestAnimationFrame(() => {
+      scrollToBottom();
+      setTimeout(scrollToBottom, 50);
+    });
   }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -184,8 +208,12 @@ export function Chat() {
 
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
+      <div
+        className="flex-1 overflow-y-auto min-h-0"
+        ref={scrollRef}
+        style={{ maxHeight: '100%' }}
+      >
+        <div className="p-4 space-y-4">
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               Send a message to start chatting with the brain
@@ -229,8 +257,9 @@ export function Chat() {
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
-      </ScrollArea>
+      </div>
       <form onSubmit={handleSubmit} className="p-4 border-t">
         <div className="flex gap-2">
           <Input
