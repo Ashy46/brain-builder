@@ -59,11 +59,56 @@ export default function ExportGraphDialog() {
   const { graphId } = useGraph();
 
   const handleExport = async () => {
-    const result = await exportGraph(graphId);
-    console.log(result);
-    // TODO: Implement actual export functionality
-    // toast.success("Export functionality coming soon!");
-    setOpen(false);
+    try {
+      const result = await exportGraph(graphId);
+      const jsonString = JSON.stringify(result, null, 2);
+
+      // Check if clipboard is available and try to get permission
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          // For Safari, we might need to request permission first
+          if ('permissions' in navigator) {
+            const permission = await navigator.permissions.query({ name: 'clipboard-write' as PermissionName });
+            if (permission.state === 'denied') {
+              throw new Error('Clipboard permission denied');
+            }
+          }
+
+          await navigator.clipboard.writeText(jsonString);
+          toast.success("Graph exported and copied to clipboard!");
+        } catch (clipboardError) {
+          console.log('Clipboard failed, falling back to download:', clipboardError);
+          // Fallback: Download as text file if clipboard fails
+          const blob = new Blob([jsonString], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `graph-${graphId}.txt`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast.success("Graph exported and downloaded as text file!");
+        }
+      } else {
+        // No clipboard API available, use download fallback
+        const blob = new Blob([jsonString], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `graph-${graphId}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast.success("Graph exported and downloaded as text file!");
+      }
+
+      setOpen(false);
+    } catch (error) {
+      console.error("Failed to export graph:", error);
+      toast.error("Failed to export graph. Please try again.");
+    }
   };
 
   return (
@@ -245,11 +290,13 @@ async function exportGraph(graphId: string) {
             description
           )
         `)
-        .eq("id", node.id)
+        .eq("graph_node_id", node.id)
 
       if (promptNodeError) {
         console.error(promptNodeError);
       }
+
+      console.log("Prompt Node: ", promptNode?.[0]?.user_prompts);
 
       const nodeData: ExportGraphPrompt = {
         name: promptNode?.[0]?.user_prompts?.description || "",
@@ -328,6 +375,8 @@ async function exportGraph(graphId: string) {
       children: null,
     };
   }
+
+  console.log("Final Result: ", finalResult);
 
   return finalResult;
 }

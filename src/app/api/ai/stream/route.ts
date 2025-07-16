@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     const {
       prompt,
       messages = [],
-      model = "gpt-3.5-turbo",
+      model = "gpt-4o",
       temperature = 0.7,
     } = await request.json();
 
@@ -81,9 +81,10 @@ export async function POST(request: Request) {
           return new HumanMessage(msg.content);
       }
     });
-
     // Add the new prompt
-    langChainMessages.push(new HumanMessage(prompt));
+    langChainMessages.push(new SystemMessage(prompt));
+
+    console.log("LangChain Messages: ", langChainMessages);
 
     const chatStream = await chat.stream(langChainMessages);
     const encoder = new TextEncoder();
