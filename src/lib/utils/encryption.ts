@@ -1,10 +1,17 @@
 import crypto from "crypto";
 
-const secret = process.env.ENCRYPTION_SECRET!;
-const key = Buffer.from(secret, "base64");
 const algorithm = "aes-256-gcm";
 
+function getKey() {
+  const secret = process.env.ENCRYPTION_SECRET;
+  if (!secret) {
+    throw new Error("ENCRYPTION_SECRET environment variable is required");
+  }
+  return Buffer.from(secret, "base64");
+}
+
 export function encrypt(text: string) {
+  const key = getKey();
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv(algorithm, key, iv);
 
@@ -24,6 +31,7 @@ export function decrypt(encryptedData: {
   content: string;
   tag: string;
 }) {
+  const key = getKey();
   const decipher = crypto.createDecipheriv(
     algorithm,
     key,
