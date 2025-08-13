@@ -63,6 +63,13 @@ export default function AddNodeDialog() {
 
   }, [user]);
 
+  // Reset selectedPrompt when switching to CONDITIONAL type
+  useEffect(() => {
+    if (formData.type === "CONDITIONAL") {
+      setSelectedPrompt(null);
+    }
+  }, [formData.type]);
+
   const handleSubmit = async () => {
     const result = nodeSchema.safeParse(formData);
     if (!result.success) {
@@ -135,6 +142,8 @@ export default function AddNodeDialog() {
         return;
       }
 
+      setSelectedPrompt(null);
+
       console.log("Created conditional node:", conditionalData);
       toast.success("Conditional node added successfully");
     }
@@ -142,6 +151,7 @@ export default function AddNodeDialog() {
     toast.success("Node added successfully");
     setOpen(false);
     setFormData({ label: "", type: "CONDITIONAL" });
+    setSelectedPrompt(null);
     setRefresh(true);
   }
 
@@ -198,11 +208,16 @@ export default function AddNodeDialog() {
                   <Select
                     value={selectedPrompt?.id}
                     onValueChange={(value) => {
+                      // If clicking on the same prompt, deselect it
+                      if (selectedPrompt?.id === value) {
+                        setSelectedPrompt(null);
+                        return;
+                      }
                       const prompt = prompts.find(p => p.id === value);
                       setSelectedPrompt(prompt || null);
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger onClick={() => setSelectedPrompt(null)}>
                       <SelectValue placeholder="Select a prompt" />
                     </SelectTrigger>
                     <SelectContent position="popper" side="bottom" align="start">
